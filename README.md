@@ -24,19 +24,17 @@ Juvet offers all the features you need to build a scalable and maintainable chat
 * NLP Support
 * more to come...
 
-## USAGE
-
-### Slack
-
-#### Authorizing with your Slack app
-
-#### Connecting to your Slack app
-
-#### Receiving messages from Slack
-
-#### Sending messages to Slack
-
 ## INSTALLATION
+
+* Add the Juvet dependencies to your `mix.exs` file
+
+```
+# mix.exs
+
+def deps do
+  [{:juvet, "~> 0.0.1"}]
+end
+```
 
 * Install the depedencies
 
@@ -44,11 +42,23 @@ Juvet offers all the features you need to build a scalable and maintainable chat
 mix deps.get
 ```
 
-* Start the worker
+* Start the server
 
 ```
-mix juvet.worker
+mix Juvet.Server.start_link
 ```
+
+## USAGE
+
+### Slack
+
+#### Connecting to your Slack app
+
+#### Authorizing with your Slack app
+
+#### Receiving messages from Slack
+
+#### Sending messages to Slack
 
 ## DOCUMENTATION
 
