@@ -1,23 +1,23 @@
 defmodule Juvet.SlackAPI.RTM.RTMtest do
   use ExUnit.Case, async: true
-
-  import Mock
+  use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
   alias Juvet.SlackAPI
 
+  setup_all do
+    HTTPoison.start()
+  end
+
   setup do
-    {:ok, token: "SLACKBOT_TOKEN"}
+    {:ok, token: "TOKEN"}
   end
 
   describe "SlackAPI.RTM.connect/1" do
-    test "returns the websocket url", %{token: _} = params do
-      with_mock SlackAPI.RTM, connect: fn _url -> successful_response() end do
-        assert {:ok, %HTTPoison.Response{}} = SlackAPI.RTM.connect(params)
+    test "returns the websocket url", %{token: token} do
+      use_cassette "rtm/connect/successful" do
+        assert {:ok, %{} = response} = SlackAPI.RTM.connect(%{token: token})
+        assert response[:url]
       end
     end
-  end
-
-  defp successful_response do
-    {:ok, %HTTPoison.Response{}}
   end
 end
