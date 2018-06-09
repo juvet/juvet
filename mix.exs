@@ -11,14 +11,16 @@ defmodule Juvet.Mixfile do
       docs: docs(),
       source_url: "https://github.com/juvet/juvet",
       description: "The message platform framework built in Elixir",
-      package: package()
+      package: package(),
+      preferred_cli_env: preferred_cli_env()
     ]
   end
 
   defp deps do
     [
+      {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.0"},
-      {:mock, "~> 0.3.0", only: :test}
+      {:poison, "~> 3.1"}
     ]
   end
 
@@ -35,5 +37,14 @@ defmodule Juvet.Mixfile do
         Documentation: "http://hexdocs.pm/juvet/"
       }
     }
+  end
+
+  defp preferred_cli_env do
+    [
+      vcr: :test,
+      "vcr.delete": :test,
+      "vcr.check": :test,
+      "vcr.show": :test
+    ]
   end
 end
