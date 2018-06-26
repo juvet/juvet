@@ -3,9 +3,16 @@ defmodule Juvet.SlackAPI do
 
   alias Juvet.SlackAPI
 
-  def handle_response({:ok, %HTTPoison.Response{body: body}}) do
-    response = body |> Poison.decode!(keys: :atoms)
+  def handle_response({:ok, %{ok: false} = body}) do
+    {:error, body}
+  end
 
+  def handle_response({:ok, %{ok: true} = body}) do
+    {:ok, body}
+  end
+
+  def parse_response({:ok, %HTTPoison.Response{body: body}}) do
+    response = body |> Poison.decode!(keys: :atoms)
     {:ok, response}
   end
 

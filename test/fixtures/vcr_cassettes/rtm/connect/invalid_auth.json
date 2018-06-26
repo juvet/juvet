@@ -1,0 +1,40 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "https://slack.com/api/rtm.connect?token=***"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":false,\"error\":\"invalid_auth\"}",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Date": "Tue, 26 Jun 2018 12:27:03 GMT",
+        "Server": "Apache",
+        "Vary": "Accept-Encoding",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "Referrer-Policy": "no-referrer",
+        "X-Content-Type-Options": "nosniff",
+        "X-Slack-Req-Id": "***",
+        "X-XSS-Protection": "0",
+        "X-Slack-Backend": "h",
+        "Access-Control-Allow-Origin": "*",
+        "X-Via": "***",
+        "X-Cache": "Miss from cloudfront",
+        "Via": "1.1 2ee698688e2d7def4fb570e1a694f743.cloudfront.net (CloudFront)",
+        "X-Amz-Cf-Id": "***"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

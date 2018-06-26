@@ -19,5 +19,12 @@ defmodule Juvet.SlackAPI.RTM.RTMtest do
         assert response[:url]
       end
     end
+
+    test "returns an error from a successful API call", %{token: token} do
+      use_cassette "rtm/connect/invalid_auth" do
+        assert {:error, %{} = response} = SlackAPI.RTM.connect(%{token: token})
+        assert response[:error] == "invalid_auth"
+      end
+    end
   end
 end
