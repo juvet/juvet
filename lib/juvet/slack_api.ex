@@ -16,6 +16,8 @@ defmodule Juvet.SlackAPI do
     {:ok, response}
   end
 
+  def render_response(tuple), do: parse_response(tuple) |> handle_response
+
   def process_url(endpoint) do
     "https://slack.com/api/" <> endpoint
   end

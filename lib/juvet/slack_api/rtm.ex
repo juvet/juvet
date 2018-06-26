@@ -3,7 +3,6 @@ defmodule Juvet.SlackAPI.RTM do
 
   def connect(options \\ %{}) do
     SlackAPI.request("rtm.connect", options)
-    |> SlackAPI.parse_response()
-    |> SlackAPI.handle_response()
+    |> SlackAPI.render_response()
   end
 end
