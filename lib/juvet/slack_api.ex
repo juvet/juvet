@@ -3,6 +3,12 @@ defmodule Juvet.SlackAPI do
 
   alias Juvet.SlackAPI
 
+  def handle_response({:ok, %HTTPoison.Response{body: body}}) do
+    response = body |> Poison.decode!(keys: :atoms)
+
+    {:ok, response}
+  end
+
   def process_url(endpoint) do
     "https://slack.com/api/" <> endpoint
   end
@@ -15,7 +21,7 @@ defmodule Juvet.SlackAPI do
     )
   end
 
-  def headers do
+  defp headers do
     %{
       "Content-Type" => "application/json",
       "Accept" => "application/json"
