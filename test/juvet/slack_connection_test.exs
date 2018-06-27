@@ -10,5 +10,11 @@ defmodule Juvet.SlackConnection.SlackConnectionTest do
         assert {:ok, _pid} = SlackConnection.start(%{token: "SLACK_BOT_TOKEN"})
       end
     end
+
+    test "returns the errors when unsuccessful" do
+      use_cassette "rtm/connect/invalid_auth" do
+        assert {:error, _} = SlackConnection.start(%{token: "SLACK_BOT_TOKEN"})
+      end
+    end
   end
 end
