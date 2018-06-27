@@ -20,7 +20,8 @@ defmodule Juvet.Mixfile do
     [
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.0"},
-      {:poison, "~> 3.1"}
+      {:poison, "~> 3.1"},
+      {:websockex, "~> 0.4.0"}
     ]
   end
 
