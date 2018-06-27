@@ -1,4 +1,4 @@
-defmodule Juvet.SlackConnection do
+defmodule Juvet.Connection.SlackRTM do
   use WebSockex
 
   alias Juvet.{SlackAPI}
