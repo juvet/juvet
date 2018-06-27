@@ -6,6 +6,7 @@ defmodule Juvet.Mixfile do
       app: :juvet,
       version: "0.0.1",
       elixir: "~> 1.6",
+      elixirc_paths: elixirc_paths(Mix.env()),
       name: "Juvet",
       deps: deps(),
       docs: docs(),
@@ -16,12 +17,17 @@ defmodule Juvet.Mixfile do
     ]
   end
 
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
   defp deps do
     [
-      {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.0"},
       {:poison, "~> 3.1"},
-      {:websockex, "~> 0.4.0"}
+      {:websockex, "~> 0.4.0"},
+      {:cowboy, "~> 1.1", only: :test},
+      {:exvcr, "~> 0.10", only: :test},
+      {:plug, "~> 1.6", only: :test}
     ]
   end
 
