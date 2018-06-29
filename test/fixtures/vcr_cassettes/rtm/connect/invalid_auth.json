@@ -9,7 +9,7 @@
       "method": "get",
       "options": [],
       "request_body": "",
-      "url": "https://slack.com/api/rtm.connect?token=***"
+      "url": "http://localhost:51345/api/rtm.connect?token=***"
     },
     "response": {
       "binary": false,

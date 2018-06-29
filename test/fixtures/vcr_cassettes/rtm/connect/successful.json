@@ -9,11 +9,11 @@
       "method": "get",
       "options": [],
       "request_body": "",
-      "url": "https://slack.com/api/rtm.connect?token=TOKEN"
+      "url": "http://localhost:51345/api/rtm.connect?token=TOKEN"
     },
     "response": {
       "binary": false,
-      "body": "{\"ok\":true,\"url\":\"wss:\\/\\/cerberus-xxxx.lb.slack-msgs.com\\/websocket\\/uK2Xj1TS7xbUZK5S2SSZvORkNPXyfzy8Yb8oStMCv_cP_pD1wSHiDui5tqgTppge4fFh_sVxlN_CRZBqCNcJQP1drRjChQVn8HxHviULAqt7DxGeuWgwJvC_SOnX2Cwo0UGouOI=\\/2\",\"team\":{\"id\":\"T024LAWGU\",\"name\":\"Brilliant Fantastic\",\"domain\":\"bf\"},\"self\":{\"id\":\"U024LAWGW\",\"name\":\"jwright\"}}",
+      "body": "{\"ok\":true,\"url\":\"ws:\\/\\/localhost:51345\\/ws\",\"team\":{\"id\":\"T024LAWGU\",\"name\":\"Brilliant Fantastic\",\"domain\":\"bf\"},\"self\":{\"id\":\"U024LAWGW\",\"name\":\"jwright\"}}",
       "headers": {
         "Content-Type": "application/json; charset=utf-8",
         "Transfer-Encoding": "chunked",
