@@ -3,7 +3,7 @@ defmodule Juvet.Connection.SlackRTM do
 
   alias Juvet.{SlackAPI}
 
-  def start(%{token: _token} = parameters) do
+  def connect(%{token: _token} = parameters) do
     SlackAPI.RTM.connect(parameters)
     |> start_link
   end

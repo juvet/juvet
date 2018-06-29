@@ -12,7 +12,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
     end)
   end
 
-  describe "SlackRTM.start/1" do
+  describe "SlackRTM.connect/1" do
     setup do
       {:ok, token: "SLACK_BOT_TOKEN"}
     end
@@ -21,7 +21,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
       Application.put_env(:slack, :test_pid, self())
 
       use_cassette "rtm/connect/successful" do
-        assert {:ok, _pid} = SlackRTM.start(%{token: token})
+        assert {:ok, _pid} = SlackRTM.connect(%{token: token})
       end
     end
 
@@ -29,7 +29,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
       Application.put_env(:slack, :test_pid, self())
 
       use_cassette "rtm/connect/invalid_auth" do
-        assert {:error, _} = SlackRTM.start(%{token: token})
+        assert {:error, _} = SlackRTM.connect(%{token: token})
       end
     end
   end
