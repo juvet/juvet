@@ -1,4 +1,4 @@
-defmodule Juvet.Queue.InMemoryQueue do
+defmodule Juvet.Broadcaster do
   use GenServer
 
   def start_link do
