@@ -24,6 +24,7 @@ defmodule Juvet.Mixfile do
     [
       {:httpoison, "~> 1.0"},
       {:poison, "~> 3.1"},
+      {:pubsub, "~> 1.0"},
       {:websockex, "~> 0.4.0"},
       {:cowboy, "~> 1.1", only: :test},
       {:exvcr, "~> 0.10", only: :test},
