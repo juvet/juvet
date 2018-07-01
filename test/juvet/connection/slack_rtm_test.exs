@@ -5,18 +5,20 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   alias Juvet.Connection.{SlackRTM}
 
   setup_all do
-    Juvet.FakeSlack.start_link()
+    {:ok, server} = Juvet.FakeSlack.start_link()
 
     on_exit(fn ->
       Juvet.FakeSlack.stop()
     end)
+
+    {:ok, server: server}
+  end
+
+  setup context do
+    {:ok, token: "SLACK_BOT_TOKEN", server: context.server}
   end
 
   describe "SlackRTM.connect/1" do
-    setup do
-      {:ok, token: "SLACK_BOT_TOKEN"}
-    end
-
     test "returns a pid", %{token: token} do
       Application.put_env(:slack, :test_pid, self())
 
@@ -25,11 +27,33 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
       end
     end
 
-    test "returns the errors when unsuccessful", %{token: token} do
-      Application.put_env(:slack, :test_pid, self())
+    @tag :skip
+    test "connects to the Slack server" do
+    end
 
+    test "returns the errors when unsuccessful", %{token: token} do
       use_cassette "rtm/connect/invalid_auth" do
         assert {:error, _} = SlackRTM.connect(%{token: token})
+      end
+    end
+  end
+
+  describe "receiving incoming Slack messages" do
+    @tag :skip
+    test "publishes the message", %{token: token} do
+      # Application.put_env(:slack, :test_pid, self())
+
+      use_cassette "rtm/connect/successful" do
+        {:ok, pid} = SlackRTM.connect(%{token: token})
+
+        Juvet.FakeSlack.send_message_to_client(pid, %{
+          type: :message,
+          text: "Hello World"
+        })
+
+        # send(server, {:send, {:text, "Hello World"}})
+        # send(pid, {:text, Poison.encode!(%{type: "hello"})})
+        # send(pid, {:text, "ping"})
       end
     end
   end

@@ -5,31 +5,33 @@ defmodule Juvet.FakeSlack.Websocket do
     {:upgrade, :protocol, :cowboy_websocket}
   end
 
+  # 5 second timeout
   @activity_timeout 5000
 
   def websocket_init(_type, req, _opts) do
     state = %{}
 
+    # TODO: This is not needed as this is just used in the test
     pid = Application.get_env(:slack, :test_pid)
     send(pid, {:websocket_connected, self()})
 
     {:ok, req, state, @activity_timeout}
   end
 
-  def websocket_handle({:text, "ping"}, req, state) do
-    {:reply, {:text, "pong"}, req, state}
-  end
+  # def websocket_handle({:text, "ping"}, req, state) do
+  #  {:reply, {:text, "pong"}, req, state}
+  # end
 
   def websocket_handle({:text, message}, req, state) do
     pid = Application.get_env(:slack, :test_pid)
-    send(pid, {:bot_message, Poison.decode!(message)})
+    send(pid, {:message_received, Poison.decode!(message)})
 
     {:ok, req, state}
   end
 
-  def websocket_info(message, req, state) do
-    {:reply, {:text, message}, req, state}
-  end
+  # def websocket_info(message, req, state) do
+  #  {:reply, {:text, message}, req, state}
+  # end
 
   def websocket_terminate(_reason, _req, _state) do
     :ok
