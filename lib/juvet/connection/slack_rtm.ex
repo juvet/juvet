@@ -8,7 +8,11 @@ defmodule Juvet.Connection.SlackRTM do
     |> start_link
   end
 
-  def handle_frame({type, msg} = message, state) do
+  def get_state(pid) do
+    {:ok, :sys.get_state(pid)}
+  end
+
+  def handle_frame({_type, _msg} = message, state) do
     # TODO: Could receive error from Slack WebSocket here:
     # {type: "error", error: { msg: "Socket URL has expired", code: 1, source: "" }}
     PubSub.publish(:incoming_slack_message, message)
@@ -16,8 +20,8 @@ defmodule Juvet.Connection.SlackRTM do
     {:ok, state}
   end
 
-  defp start_link({:ok, %{url: url}}) do
-    WebSockex.start_link(url, __MODULE__, %{})
+  defp start_link({:ok, %{url: url} = response}) do
+    WebSockex.start_link(url, __MODULE__, response)
   end
 
   defp start_link({:error, _} = response), do: response

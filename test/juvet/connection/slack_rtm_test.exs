@@ -35,6 +35,16 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
       assert_received {:websocket_connected, server}
     end
 
+    test "assigns the latest response to the state", %{token: token} do
+      use_cassette "rtm/connect/successful" do
+        {:ok, pid} = SlackRTM.connect(%{token: token})
+
+        {:ok, state} = SlackRTM.get_state(pid)
+
+        assert state = %{self: %{name: "Brilliant Fantastic"}}
+      end
+    end
+
     test "returns the errors when unsuccessful", %{token: token} do
       use_cassette "rtm/connect/invalid_auth" do
         assert {:error, _} = SlackRTM.connect(%{token: token})
