@@ -11,29 +11,32 @@ defmodule Juvet.FakeSlack.Websocket do
   def websocket_init(_type, req, _opts) do
     state = %{}
 
-    # TODO: This is not needed as this is just used in the test
-    pid = Application.get_env(:slack, :test_pid)
-    send(pid, {:websocket_connected, self()})
+    send_message_to_test_pid({:websocket_connected, self()})
 
     {:ok, req, state, @activity_timeout}
   end
 
-  # def websocket_handle({:text, "ping"}, req, state) do
-  #  {:reply, {:text, "pong"}, req, state}
-  # end
+  def websocket_handle({:text, "ping"}, req, state) do
+    {:reply, {:text, "pong"}, req, state}
+  end
 
   def websocket_handle({:text, message}, req, state) do
-    pid = Application.get_env(:slack, :test_pid)
-    send(pid, {:message_received, Poison.decode!(message)})
+    send_message_to_test_pid({:message_received, Poison.decode!(message)})
 
     {:ok, req, state}
   end
 
-  # def websocket_info(message, req, state) do
-  #  {:reply, {:text, message}, req, state}
-  # end
+  def websocket_info(message, req, state) do
+    {:reply, {:text, message}, req, state}
+  end
 
   def websocket_terminate(_reason, _req, _state) do
     :ok
+  end
+
+  defp send_message_to_test_pid(message) do
+    pid = Application.get_env(:slack, :test_pid)
+
+    if pid, do: send(pid, message)
   end
 end

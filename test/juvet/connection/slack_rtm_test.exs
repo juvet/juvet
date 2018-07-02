@@ -20,15 +20,19 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
 
   describe "SlackRTM.connect/1" do
     test "returns a pid", %{token: token} do
-      Application.put_env(:slack, :test_pid, self())
-
       use_cassette "rtm/connect/successful" do
         assert {:ok, _pid} = SlackRTM.connect(%{token: token})
       end
     end
 
-    @tag :skip
-    test "connects to the Slack server" do
+    test "connects to the Slack server", %{token: token, server: server} do
+      Application.put_env(:slack, :test_pid, self())
+
+      use_cassette "rtm/connect/successful" do
+        SlackRTM.connect(%{token: token})
+      end
+
+      assert_received {:websocket_connected, server}
     end
 
     test "returns the errors when unsuccessful", %{token: token} do
@@ -41,8 +45,6 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   describe "receiving incoming Slack messages" do
     @tag :skip
     test "publishes the message", %{token: token} do
-      # Application.put_env(:slack, :test_pid, self())
-
       use_cassette "rtm/connect/successful" do
         {:ok, pid} = SlackRTM.connect(%{token: token})
 
