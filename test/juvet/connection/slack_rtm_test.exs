@@ -26,7 +26,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
     end
 
     test "connects to the Slack server", %{token: token, server: server} do
-      Application.put_env(:slack, :test_pid, self())
+      Juvet.FakeSlack.set_client_pid(self())
 
       use_cassette "rtm/connect/successful" do
         SlackRTM.connect(%{token: token})
@@ -43,20 +43,21 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   end
 
   describe "receiving incoming Slack messages" do
-    @tag :skip
-    test "publishes the message", %{token: token} do
-      use_cassette "rtm/connect/successful" do
-        {:ok, pid} = SlackRTM.connect(%{token: token})
+    setup do
+      {:ok, pub_sub} = PubSub.start_link()
 
-        Juvet.FakeSlack.send_message_to_client(pid, %{
-          type: :message,
-          text: "Hello World"
-        })
+      on_exit(fn ->
+        PubSub.terminate(pub_sub, :shutdown)
+      end)
+    end
 
-        # send(server, {:send, {:text, "Hello World"}})
-        # send(pid, {:text, Poison.encode!(%{type: "hello"})})
-        # send(pid, {:text, "ping"})
-      end
+    test "publishes the message to incoming slack message subscribers" do
+      PubSub.subscribe(self(), :incoming_slack_message)
+      message = Poison.encode!(%{type: "hello"})
+
+      SlackRTM.handle_frame({:text, message}, %{})
+
+      assert_receive message
     end
   end
 end
