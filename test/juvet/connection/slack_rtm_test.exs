@@ -10,27 +10,82 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
     on_exit(fn ->
       Juvet.FakeSlack.stop()
     end)
+
+    {:ok, token: "SLACK_BOT_TOKEN"}
   end
 
-  describe "SlackRTM.start/1" do
-    setup do
-      {:ok, token: "SLACK_BOT_TOKEN"}
+  describe "SlackRTM.connect/1" do
+    test "returns a pid", %{token: token} do
+      use_cassette "rtm/connect/successful" do
+        assert {:ok, _pid} = SlackRTM.connect(%{token: token})
+      end
     end
 
-    test "returns a pid", %{token: token} do
-      Application.put_env(:slack, :test_pid, self())
-
+    test "connects to the Slack server", %{token: token} do
       use_cassette "rtm/connect/successful" do
-        assert {:ok, _pid} = SlackRTM.start(%{token: token})
+        {:ok, pid} = SlackRTM.connect(%{token: token})
+
+        {:ok, state} = SlackRTM.get_state(pid)
+
+        assert %{url: "ws://localhost:51345/ws"} = state
+      end
+    end
+
+    test "assigns the latest response to the state", %{token: token} do
+      use_cassette "rtm/connect/successful" do
+        {:ok, pid} = SlackRTM.connect(%{token: token})
+
+        {:ok, state} = SlackRTM.get_state(pid)
+
+        assert %{team: %{name: "Brilliant Fantastic"}} = state
       end
     end
 
     test "returns the errors when unsuccessful", %{token: token} do
-      Application.put_env(:slack, :test_pid, self())
-
       use_cassette "rtm/connect/invalid_auth" do
-        assert {:error, _} = SlackRTM.start(%{token: token})
+        assert {:error, _} = SlackRTM.connect(%{token: token})
       end
+    end
+  end
+
+  describe "receiving incoming Slack messages" do
+    setup do
+      {:ok, pub_sub} = PubSub.start_link()
+
+      on_exit(fn ->
+        PubSub.terminate(pub_sub, :shutdown)
+      end)
+    end
+
+    test "publishes a connection message when connected", %{token: token} do
+      PubSub.subscribe(self(), :new_slack_connection)
+
+      use_cassette "rtm/connect/successful" do
+        SlackRTM.connect(%{token: token})
+      end
+
+      assert_receive %{ok: true, team: %{name: "Brilliant Fantastic"}}
+    end
+
+    test "publishes a disconnection message when disconnected", %{token: token} do
+      PubSub.subscribe(self(), :slack_disconnected)
+
+      use_cassette "rtm/connect/successful" do
+        {:ok, pid} = SlackRTM.connect(%{token: token})
+        {:ok, state} = SlackRTM.get_state(pid)
+        SlackRTM.handle_disconnect(nil, state)
+      end
+
+      assert_receive %{ok: true, team: %{name: "Brilliant Fantastic"}}
+    end
+
+    test "publishes the message to incoming slack message subscribers" do
+      PubSub.subscribe(self(), :incoming_slack_message)
+      message = Poison.encode!(%{type: "hello"})
+
+      SlackRTM.handle_frame({:text, message}, %{})
+
+      assert_receive message
     end
   end
 end

@@ -1,17 +1,26 @@
 defmodule Juvet.FakeSlack do
-  def start_link do
-    Application.put_env(:slack, :url, "http://localhost:51345")
+  alias Juvet.FakeSlack
+
+  def start_link(url \\ "http://localhost:51345") do
+    # This is used by the application config so it can be pluggable
+    Application.put_env(:slack, :url, url)
+
+    uri = URI.parse(url)
 
     Plug.Adapters.Cowboy.http(
-      Slack.FakeSlack.Router,
+      __MODULE__,
       [],
-      port: 51345,
+      port: uri.port,
       dispatch: dispatch()
     )
   end
 
+  def set_client_pid(pid) do
+    FakeSlack.Websocket.set_client_pid(pid)
+  end
+
   def stop do
-    Plug.Adapters.Cowboy.shutdown(Slack.FakeSlack.Router)
+    Plug.Adapters.Cowboy.shutdown(FakeSlack.Websocket)
   end
 
   defp dispatch do
@@ -19,8 +28,7 @@ defmodule Juvet.FakeSlack do
       {
         :_,
         [
-          {"/ws", Juvet.FakeSlack.Websocket, []},
-          {:_, Plug.Adapters.Cowboy.Handler, {Juvet.FakeSlack.Router, []}}
+          {"/ws", FakeSlack.Websocket, []}
         ]
       }
     ]

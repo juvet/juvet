@@ -3,23 +3,35 @@ defmodule Juvet.Connection.SlackRTM do
 
   alias Juvet.{SlackAPI}
 
-  def start(%{token: _token} = parameters) do
+  def connect(%{token: _token} = parameters) do
     SlackAPI.RTM.connect(parameters)
     |> start_link
   end
 
-  def handle_frame({type, msg}, state) do
-    # TODO: Could receive error from Slack WebSocket here:
-    # {type: "error", error: { msg: "Socket URL has expired", code: 1, source: "" }}
-    IO.puts(
-      "Received Message - Type: #{inspect(type)} -- Message: #{inspect(msg)}"
-    )
+  def get_state(pid) do
+    {:ok, :sys.get_state(pid)}
+  end
+
+  def handle_connect(_conn, %{ok: true} = state) do
+    PubSub.publish(:new_slack_connection, state)
 
     {:ok, state}
   end
 
-  defp start_link({:ok, %{url: url}}) do
-    WebSockex.start_link(url, __MODULE__, %{})
+  def handle_disconnect(_, state) do
+    PubSub.publish(:slack_disconnected, state)
+
+    {:ok, state}
+  end
+
+  def handle_frame({_type, message}, state) do
+    PubSub.publish(:incoming_slack_message, message)
+
+    {:ok, state}
+  end
+
+  defp start_link({:ok, %{url: url} = response}) do
+    WebSockex.start_link(url, __MODULE__, response)
   end
 
   defp start_link({:error, _} = response), do: response
