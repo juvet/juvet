@@ -5,17 +5,13 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   alias Juvet.Connection.{SlackRTM}
 
   setup_all do
-    {:ok, server} = Juvet.FakeSlack.start_link()
+    Juvet.FakeSlack.start_link()
 
     on_exit(fn ->
       Juvet.FakeSlack.stop()
     end)
 
-    {:ok, server: server}
-  end
-
-  setup context do
-    {:ok, token: "SLACK_BOT_TOKEN", server: context.server}
+    {:ok, token: "SLACK_BOT_TOKEN"}
   end
 
   describe "SlackRTM.connect/1" do
@@ -25,14 +21,14 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
       end
     end
 
-    test "connects to the Slack server", %{token: token, server: server} do
-      Juvet.FakeSlack.set_client_pid(self())
-
+    test "connects to the Slack server", %{token: token} do
       use_cassette "rtm/connect/successful" do
-        SlackRTM.connect(%{token: token})
-      end
+        {:ok, pid} = SlackRTM.connect(%{token: token})
 
-      assert_received {:websocket_connected, server}
+        {:ok, state} = SlackRTM.get_state(pid)
+
+        assert %{url: "ws://localhost:51345/ws"} = state
+      end
     end
 
     test "assigns the latest response to the state", %{token: token} do
@@ -41,7 +37,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
 
         {:ok, state} = SlackRTM.get_state(pid)
 
-        assert state = %{self: %{name: "Brilliant Fantastic"}}
+        assert %{team: %{name: "Brilliant Fantastic"}} = state
       end
     end
 
