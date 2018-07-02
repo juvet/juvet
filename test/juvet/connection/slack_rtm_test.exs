@@ -57,6 +57,16 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
       end)
     end
 
+    test "publishes a connection message when connected", %{token: token} do
+      PubSub.subscribe(self(), :new_slack_connection)
+
+      use_cassette "rtm/connect/successful" do
+        SlackRTM.connect(%{token: token})
+      end
+
+      assert_receive %{ok: true, team: %{name: "Brilliant Fantastic"}}
+    end
+
     test "publishes the message to incoming slack message subscribers" do
       PubSub.subscribe(self(), :incoming_slack_message)
       message = Poison.encode!(%{type: "hello"})
