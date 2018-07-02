@@ -67,6 +67,18 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
       assert_receive %{ok: true, team: %{name: "Brilliant Fantastic"}}
     end
 
+    test "publishes a disconnection message when disconnected", %{token: token} do
+      PubSub.subscribe(self(), :slack_disconnected)
+
+      use_cassette "rtm/connect/successful" do
+        {:ok, pid} = SlackRTM.connect(%{token: token})
+        {:ok, state} = SlackRTM.get_state(pid)
+        SlackRTM.handle_disconnect(nil, state)
+      end
+
+      assert_receive %{ok: true, team: %{name: "Brilliant Fantastic"}}
+    end
+
     test "publishes the message to incoming slack message subscribers" do
       PubSub.subscribe(self(), :incoming_slack_message)
       message = Poison.encode!(%{type: "hello"})
