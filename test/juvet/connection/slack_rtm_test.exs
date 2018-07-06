@@ -77,7 +77,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
 
       SlackRTM.handle_frame({:text, message}, %{})
 
-      assert_receive message
+      assert_receive ^message
     end
   end
 end
