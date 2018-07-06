@@ -49,14 +49,6 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   end
 
   describe "receiving incoming Slack messages" do
-    setup do
-      {:ok, pub_sub} = PubSub.start_link()
-
-      on_exit(fn ->
-        PubSub.terminate(pub_sub, :shutdown)
-      end)
-    end
-
     test "publishes a connection message when connected", %{token: token} do
       PubSub.subscribe(self(), :new_slack_connection)
 
