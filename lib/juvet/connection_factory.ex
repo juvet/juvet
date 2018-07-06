@@ -1,9 +1,17 @@
 defmodule Juvet.ConnectionFactory do
   use GenServer
 
+  alias Juvet.ConnectionFactory
+
   def start_link(supervisor) do
     GenServer.start_link(__MODULE__, [supervisor], name: __MODULE__)
   end
+
+  def connect(platform, arguments) do
+    GenServer.call(ConnectionFactory, {:connect, platform, arguments})
+  end
+
+  ## Callbacks
 
   def init([supervisor]) when is_pid(supervisor) do
     init(%{supervisor: supervisor})
@@ -13,6 +21,24 @@ defmodule Juvet.ConnectionFactory do
     send(self(), :start_connection_supervisor)
 
     {:ok, state}
+  end
+
+  def handle_call(
+        {:connect, _platform, arguments},
+        _from,
+        %{connection_supervisor: connection_supervisor} = state
+      ) do
+    {:ok, pid} =
+      Supervisor.start_child(
+        connection_supervisor,
+        Supervisor.Spec.worker(
+          Juvet.Connection.SlackRTM,
+          [arguments],
+          function: :connect
+        )
+      )
+
+    {:reply, pid, state}
   end
 
   def handle_info(
