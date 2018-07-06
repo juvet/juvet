@@ -43,8 +43,7 @@ defmodule Juvet.BotFactory do
     {:noreply, Map.merge(state, %{bot_supervisor: bot_supervisor})}
   end
 
-  # Handle when a new bot is created...
-  def handle_info(%{ok: true} = message, state) do
+  def handle_info([:new_slack_connection, %{ok: true} = message], state) do
     BotFactory.add_bot(message)
 
     {:noreply, state}

@@ -26,7 +26,7 @@ defmodule Juvet.Bot do
     {:reply, state, state}
   end
 
-  def handle_info(message, state) do
+  def handle_info([:incoming_slack_message, message], state) do
     IO.puts("BOT RECEIVED INFO " <> inspect(message))
     {:noreply, state}
   end

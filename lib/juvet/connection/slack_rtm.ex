@@ -13,19 +13,19 @@ defmodule Juvet.Connection.SlackRTM do
   end
 
   def handle_connect(_conn, %{ok: true} = state) do
-    PubSub.publish(:new_slack_connection, state)
+    PubSub.publish(:new_slack_connection, [:new_slack_connection, state])
 
     {:ok, state}
   end
 
   def handle_disconnect(_, state) do
-    PubSub.publish(:slack_disconnected, state)
+    PubSub.publish(:slack_disconnected, [:slack_disconnected, state])
 
     {:ok, state}
   end
 
   def handle_frame({_type, message}, state) do
-    PubSub.publish(:incoming_slack_message, message)
+    PubSub.publish(:incoming_slack_message, [:incoming_slack_message, message])
 
     {:ok, state}
   end

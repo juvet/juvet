@@ -56,7 +56,10 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
         SlackRTM.connect(%{token: token})
       end
 
-      assert_receive %{ok: true, team: %{name: "Brilliant Fantastic"}}
+      assert_receive [
+        :new_slack_connection,
+        %{ok: true, team: %{name: "Brilliant Fantastic"}}
+      ]
     end
 
     test "publishes a disconnection message when disconnected", %{token: token} do
@@ -68,7 +71,10 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
         SlackRTM.handle_disconnect(nil, state)
       end
 
-      assert_receive %{ok: true, team: %{name: "Brilliant Fantastic"}}
+      assert_receive [
+        :slack_disconnected,
+        %{ok: true, team: %{name: "Brilliant Fantastic"}}
+      ]
     end
 
     test "publishes the message to incoming slack message subscribers" do
@@ -77,7 +83,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
 
       SlackRTM.handle_frame({:text, message}, %{})
 
-      assert_receive ^message
+      assert_receive [:incoming_slack_message, ^message]
     end
   end
 end

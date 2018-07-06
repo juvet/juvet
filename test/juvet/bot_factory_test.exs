@@ -22,7 +22,7 @@ defmodule Juvet.BotFactory.BotFactoryTest do
       :ok = BotFactory.add_bot(%{ok: true, team: %{domain: "Led Zeppelin"}})
 
       # Hack to ensure the child is mounted
-      :timer.sleep(100)
+      :timer.sleep(800)
       children = Supervisor.which_children(BotSupervisor)
 
       assert [{Juvet.Bot, _pid, :worker, [Juvet.Bot]}] = children
