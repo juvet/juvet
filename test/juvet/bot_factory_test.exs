@@ -1,7 +1,7 @@
 defmodule Juvet.BotFactory.BotFactoryTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.{BotFactory, BotFactorySupervisor}
+  alias Juvet.{BotFactory, BotFactorySupervisor, BotSupervisor}
 
   describe "BotFactory.start_link\2" do
     test "adds itself as a child to a supervisor" do
@@ -14,6 +14,18 @@ defmodule Juvet.BotFactory.BotFactoryTest do
       subscribers = PubSub.subscribers(:new_slack_connection)
 
       assert subscribers == [Process.whereis(BotFactory)]
+    end
+  end
+
+  describe "BotFactory.add_bot\2" do
+    test "adds a bot process to the bot supervisor" do
+      :ok = BotFactory.add_bot(%{ok: true, team: %{domain: "Led Zeppelin"}})
+
+      # Hack to ensure the child is mounted
+      :timer.sleep(100)
+      children = Supervisor.which_children(BotSupervisor)
+
+      assert [{Juvet.Bot, _pid, :worker, [Juvet.Bot]}] = children
     end
   end
 end
