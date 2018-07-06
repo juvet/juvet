@@ -1,20 +1,33 @@
 defmodule Juvet.Bot do
   use GenServer
 
-  def start_link(options \\ %{}) do
-    GenServer.start_link(__MODULE__, options)
+  def start_link(%{team: %{domain: domain}} = initial_message) do
+    GenServer.start_link(
+      __MODULE__,
+      initial_message,
+      name: String.to_atom(domain)
+    )
   end
 
-  # Server
-  def init(args) do
+  def get_state(pid) do
+    GenServer.call(pid, :get_state)
+  end
+
+  # Callbacks
+  def init(initial_message) do
     ## Subscribe to messages
+
     PubSub.subscribe(self(), :incoming_slack_message)
 
-    {:ok, args}
+    {:ok, initial_message}
+  end
+
+  def handle_call(:get_state, _from, state) do
+    {:reply, state, state}
   end
 
   def handle_info(message, state) do
-    IO.puts("RECEIVED INFO " <> inspect(message))
+    IO.puts("BOT RECEIVED INFO " <> inspect(message))
     {:noreply, state}
   end
 end
