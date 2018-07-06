@@ -49,14 +49,6 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   end
 
   describe "receiving incoming Slack messages" do
-    setup do
-      {:ok, pub_sub} = PubSub.start_link()
-
-      on_exit(fn ->
-        PubSub.terminate(pub_sub, :shutdown)
-      end)
-    end
-
     test "publishes a connection message when connected", %{token: token} do
       PubSub.subscribe(self(), :new_slack_connection)
 
@@ -64,7 +56,10 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
         SlackRTM.connect(%{token: token})
       end
 
-      assert_receive %{ok: true, team: %{name: "Brilliant Fantastic"}}
+      assert_receive [
+        :new_slack_connection,
+        %{ok: true, team: %{name: "Brilliant Fantastic"}}
+      ]
     end
 
     test "publishes a disconnection message when disconnected", %{token: token} do
@@ -76,7 +71,10 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
         SlackRTM.handle_disconnect(nil, state)
       end
 
-      assert_receive %{ok: true, team: %{name: "Brilliant Fantastic"}}
+      assert_receive [
+        :slack_disconnected,
+        %{ok: true, team: %{name: "Brilliant Fantastic"}}
+      ]
     end
 
     test "publishes the message to incoming slack message subscribers" do
@@ -85,7 +83,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
 
       SlackRTM.handle_frame({:text, message}, %{})
 
-      assert_receive message
+      assert_receive [:incoming_slack_message, ^message]
     end
   end
 end
