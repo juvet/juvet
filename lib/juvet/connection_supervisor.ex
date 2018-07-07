@@ -1,13 +1,13 @@
 defmodule Juvet.ConnectionSupervisor do
-  use Supervisor
+  use DynamicSupervisor
 
   def start_link() do
-    Supervisor.start_link(__MODULE__, [], name: __MODULE__)
+    DynamicSupervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   # Callbacks
 
-  def init(_args) do
-    supervise([], strategy: :one_for_one)
+  def init(:ok) do
+    DynamicSupervisor.init(strategy: :one_for_one)
   end
 end

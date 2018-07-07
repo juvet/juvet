@@ -29,7 +29,7 @@ defmodule Juvet.ConnectionFactory do
         %{connection_supervisor: connection_supervisor} = state
       ) do
     {:ok, pid} =
-      Supervisor.start_child(
+      DynamicSupervisor.start_child(
         connection_supervisor,
         Supervisor.Spec.worker(
           Juvet.Connection.SlackRTM,
