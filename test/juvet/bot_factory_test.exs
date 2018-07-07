@@ -25,7 +25,7 @@ defmodule Juvet.BotFactory.BotFactoryTest do
       :timer.sleep(800)
       children = Supervisor.which_children(BotSupervisor)
 
-      assert [{Juvet.Bot, _pid, :worker, [Juvet.Bot]}] = children
+      assert [{:undefined, _pid, :worker, [Juvet.Bot]}] = children
     end
   end
 end

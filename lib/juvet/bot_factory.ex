@@ -61,9 +61,9 @@ defmodule Juvet.BotFactory do
         {:add_bot, message},
         %{bot_supervisor: bot_supervisor} = state
       ) do
-    Supervisor.start_child(
+    DynamicSupervisor.start_child(
       bot_supervisor,
-      Supervisor.Spec.worker(Juvet.Bot, [message])
+      {Juvet.Bot, message}
     )
 
     {:noreply, state}

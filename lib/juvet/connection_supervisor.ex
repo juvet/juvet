@@ -1,4 +1,4 @@
-defmodule Juvet.BotSupervisor do
+defmodule Juvet.ConnectionSupervisor do
   use DynamicSupervisor
 
   def start_link() do
