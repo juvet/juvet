@@ -1,62 +1,53 @@
 defmodule Juvet.Bot do
-  use GenServer
-
   @moduledoc """
-  A behavior module for implementing a bot.
-
-  A bot can be targeted for one or many platforms. The main function
-  to implement is the `handle_message` function which will fire for
-  any incoming message to the bot. The `send` function will send any
-  message back to the server.
-  """
-
-  @doc ~S"""
-  Starts a new bot process for Slack.
-
-  Returns `{:ok, pid}` where `pid` is the process id of this bot.
+  Bot is a macro interface for working with a bot that is connected to third-party
+  services.
 
   ## Example
+  ```
+  defmodule MyBot do
+    use Bot
 
-  {:ok, pid} = Juvet.Bot.start_link(initial_message)
+    def handle_event(:slack, message = %{type: "message"}, state) do
+      if message.text == "Hi" do
+        send_message(:slack, "Hello to you too!", message.channel)
+      end
+      {:ok, state}
+    end
+
+    def handle_event(_, _, state), do: {:ok, state}
+  end
+  ```
   """
-  def start_link(%{team: %{domain: domain}} = initial_message) do
-    GenServer.start_link(
-      __MODULE__,
-      initial_message,
-      name: String.to_atom(domain)
-    )
-  end
 
-  @doc ~S"""
-  Returns the current state of the Slack process.
+  defmacro __using__(_) do
+    quote do
+      @doc ~S"""
+      Called when a platform is connected to this bot.
 
-  ## Example
+      Returns `{:ok, state}` where the `state` can be modified and placed back onto the
+      process.
+      """
+      def handle_connect(_platform, state), do: {:ok, state}
 
-  {:ok, pid} = Juvet.Bot.start_link(initial_message)
-  message = Juvet.Bot.get_state(pid)
-  """
-  def get_state(pid) do
-    GenServer.call(pid, :get_state)
-  end
+      @doc ~S"""
+      Called when a platform is disconnected from this bot.
 
-  ## Callbacks
+      Returns `{:ok, state}` where the `state` can be modified and placed back onto the
+      process.
+      """
+      def handle_disconnect(_platform, state), do: {:ok, state}
 
-  @doc false
-  def init(initial_message) do
-    ## Subscribe to messages
-    PubSub.subscribe(self(), :incoming_slack_message)
+      @doc ~S"""
+      Called when any event occurs on a platform for this bot. The `message` can be
+      patterned matched so multiple events can be handled.
 
-    {:ok, initial_message}
-  end
+      Returns `{:ok, state}` where the `state` can be modified and placed back onto the
+      process.
+      """
+      def handle_event(_platform, _message, state), do: {:ok, state}
 
-  @doc false
-  def handle_call(:get_state, _from, state) do
-    {:reply, state, state}
-  end
-
-  @doc false
-  def handle_info([:incoming_slack_message, message], state) do
-    IO.puts("BOT RECEIVED INFO " <> inspect(message))
-    {:noreply, state}
+      defoverridable handle_connect: 2, handle_disconnect: 2, handle_event: 3
+    end
   end
 end

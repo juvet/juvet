@@ -20,7 +20,7 @@ defmodule Juvet.BotFactory do
 
   ## Example
 
-  {:ok, pid} = Juvet.BotFactory.start_link(supervisor_pid, %{})
+  {:ok, pid} = Juvet.BotFactory.start_link(supervisor_pid, [%{bot: MyBot}])
   """
   def start_link(supervisor, config) do
     GenServer.start_link(__MODULE__, [supervisor, config], name: __MODULE__)
@@ -48,22 +48,22 @@ defmodule Juvet.BotFactory do
   end
 
   @doc false
-  def init(_config, state) do
+  def init(config, state) do
     PubSub.subscribe(self(), :new_slack_connection)
 
     send(self(), :start_bot_supervisor)
 
-    {:ok, state}
+    {:ok, Map.merge(%{config: config}, state)}
   end
 
   @doc false
   def handle_cast(
         {:add_bot, message},
-        %{bot_supervisor: bot_supervisor} = state
+        %{bot_supervisor: bot_supervisor, config: config} = state
       ) do
     DynamicSupervisor.start_child(
       bot_supervisor,
-      {Juvet.Bot, message}
+      {Juvet.BotServer, {config[:bot], message}}
     )
 
     {:noreply, state}

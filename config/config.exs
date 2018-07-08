@@ -1,3 +1,5 @@
 use Mix.Config
 
-import_config "#{Mix.env}.exs"
+config :juvet, bot: nil
+
+import_config "#{Mix.env()}.exs"

@@ -49,8 +49,11 @@ defmodule Juvet.Connection.SlackRTM do
   @doc ~S"""
   Handles when the SlackRTM receives a incoming message from PubSub.
   """
-  def handle_frame({_type, message}, state) do
-    PubSub.publish(:incoming_slack_message, [:incoming_slack_message, message])
+  def handle_frame({_type, message}, %{team: %{id: id}} = state) do
+    PubSub.publish(:"incoming_slack_message_#{id}", [
+      :incoming_slack_message,
+      message
+    ])
 
     {:ok, state}
   end

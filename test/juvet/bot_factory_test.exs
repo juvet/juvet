@@ -17,7 +17,7 @@ defmodule Juvet.BotFactory.BotFactoryTest do
     end
   end
 
-  describe "BotFactory.add_bot\2" do
+  describe "BotFactory.add_bot\1" do
     test "adds a bot process to the bot supervisor" do
       :ok = BotFactory.add_bot(%{ok: true, team: %{domain: "Led Zeppelin"}})
 
@@ -25,7 +25,7 @@ defmodule Juvet.BotFactory.BotFactoryTest do
       :timer.sleep(800)
       children = Supervisor.which_children(BotSupervisor)
 
-      assert [{:undefined, _pid, :worker, [Juvet.Bot]}] = children
+      assert [{:undefined, _pid, :worker, [Juvet.BotServer]}] = children
     end
   end
 end
