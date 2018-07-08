@@ -15,12 +15,12 @@ defmodule Juvet.BotServer do
 
   ## Example
 
-  {:ok, pid} = Juvet.BotServer.start_link(initial_message)
+  {:ok, pid} = Juvet.BotServer.start_link({MyBot, initial_message})
   """
-  def start_link(%{team: %{domain: domain}} = initial_message) do
+  def start_link({bot, %{team: %{domain: domain}} = initial_message}) do
     GenServer.start_link(
       __MODULE__,
-      initial_message,
+      [bot, initial_message],
       name: String.to_atom(domain)
     )
   end
@@ -30,7 +30,7 @@ defmodule Juvet.BotServer do
 
   ## Example
 
-  {:ok, pid} = Juvet.BotServer.start_link(initial_message)
+  {:ok, pid} = Juvet.BotServer.start_link(MyBot, initial_message)
   message = Juvet.BotServer.get_state(pid)
   """
   def get_state(pid) do
@@ -40,11 +40,11 @@ defmodule Juvet.BotServer do
   ## Callbacks
 
   @doc false
-  def init(initial_message) do
+  def init([bot, initial_message]) do
     ## Subscribe to messages
     PubSub.subscribe(self(), :incoming_slack_message)
 
-    {:ok, initial_message}
+    {:ok, {bot, initial_message}}
   end
 
   @doc false
