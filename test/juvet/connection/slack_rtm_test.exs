@@ -78,10 +78,11 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
     end
 
     test "publishes the message to incoming slack message subscribers" do
-      PubSub.subscribe(self(), :incoming_slack_message)
+      id = "T1234"
+      PubSub.subscribe(self(), :"incoming_slack_message_#{id}")
       message = Poison.encode!(%{type: "hello"})
 
-      SlackRTM.handle_frame({:text, message}, %{})
+      SlackRTM.handle_frame({:text, message}, %{team: %{id: id}})
 
       assert_receive [:incoming_slack_message, ^message]
     end

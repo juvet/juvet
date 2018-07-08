@@ -40,9 +40,9 @@ defmodule Juvet.BotServer do
   ## Callbacks
 
   @doc false
-  def init([bot, initial_message]) do
+  def init([bot, %{team: %{id: id}} = initial_message]) do
     # Subscribe to messages
-    PubSub.subscribe(self(), :incoming_slack_message)
+    PubSub.subscribe(self(), :"incoming_slack_message_#{id}")
 
     bot_state = %{messages: [initial_message]}
     if bot, do: bot.handle_connect(:slack, bot_state)
