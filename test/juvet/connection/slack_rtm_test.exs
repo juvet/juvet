@@ -87,4 +87,19 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
       assert_receive [:incoming_slack_message, ^message]
     end
   end
+
+  describe "sending outgoing Slack messages" do
+    test "subscribes to outgoing slack messages", %{token: token} do
+      use_cassette "rtm/connect/successful" do
+        {:ok, _pid} = SlackRTM.connect(%{token: token})
+        id = "T1234"
+
+        SlackRTM.handle_connect(nil, %{ok: true, team: %{id: id}})
+
+        subscribers = PubSub.subscribers(:"outgoing_slack_message_#{id}")
+
+        assert length(subscribers) == 1
+      end
+    end
+  end
 end
