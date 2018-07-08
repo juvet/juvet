@@ -41,10 +41,13 @@ defmodule Juvet.BotServer do
 
   @doc false
   def init([bot, initial_message]) do
-    ## Subscribe to messages
+    # Subscribe to messages
     PubSub.subscribe(self(), :incoming_slack_message)
 
-    {:ok, {bot, initial_message}}
+    bot_state = %{messages: [initial_message]}
+    if bot, do: bot.handle_connect(:slack, bot_state)
+
+    {:ok, Map.merge(%{bot: bot}, bot_state)}
   end
 
   @doc false
@@ -53,8 +56,8 @@ defmodule Juvet.BotServer do
   end
 
   @doc false
-  def handle_info([:incoming_slack_message, message], state) do
-    IO.puts("BOT RECEIVED INFO " <> inspect(message))
+  def handle_info([:incoming_slack_message, message], %{bot: bot} = state) do
+    if bot, do: bot.handle_event(:slack, message, Map.drop(state, [:bot]))
     {:noreply, state}
   end
 end
