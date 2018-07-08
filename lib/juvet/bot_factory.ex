@@ -63,7 +63,7 @@ defmodule Juvet.BotFactory do
       ) do
     DynamicSupervisor.start_child(
       bot_supervisor,
-      {Juvet.Bot, message}
+      {Juvet.BotServer, message}
     )
 
     {:noreply, state}

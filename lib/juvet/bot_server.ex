@@ -1,13 +1,11 @@
-defmodule Juvet.Bot do
+defmodule Juvet.BotServer do
   use GenServer
 
   @moduledoc """
-  A behavior module for implementing a bot.
+  A server that receives messages and holds the state for a bot.
 
   A bot can be targeted for one or many platforms. The main function
-  to implement is the `handle_message` function which will fire for
-  any incoming message to the bot. The `send` function will send any
-  message back to the server.
+  to send messages to bot macros and hold onto the state of a bot.
   """
 
   @doc ~S"""
@@ -17,7 +15,7 @@ defmodule Juvet.Bot do
 
   ## Example
 
-  {:ok, pid} = Juvet.Bot.start_link(initial_message)
+  {:ok, pid} = Juvet.BotServer.start_link(initial_message)
   """
   def start_link(%{team: %{domain: domain}} = initial_message) do
     GenServer.start_link(
@@ -32,8 +30,8 @@ defmodule Juvet.Bot do
 
   ## Example
 
-  {:ok, pid} = Juvet.Bot.start_link(initial_message)
-  message = Juvet.Bot.get_state(pid)
+  {:ok, pid} = Juvet.BotServer.start_link(initial_message)
+  message = Juvet.BotServer.get_state(pid)
   """
   def get_state(pid) do
     GenServer.call(pid, :get_state)
