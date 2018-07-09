@@ -10,9 +10,10 @@ defmodule Juvet.Mixfile do
       name: "Juvet",
       deps: deps(),
       docs: docs(),
-      source_url: "https://github.com/juvet/juvet",
-      description: "The message platform framework built in Elixir",
       package: package(),
+      description: "The message platform for chat apps",
+      organization: "Juvet",
+      source_url: "https://github.com/juvet/juvet",
       preferred_cli_env: preferred_cli_env()
     ]
   end
@@ -48,8 +49,8 @@ defmodule Juvet.Mixfile do
       maintainers: ["Jamie Wright"],
       licenses: ["MIT"],
       links: %{
-        Github: "https://github.com/juvet/juvet",
-        Documentation: "http://hexdocs.pm/juvet/"
+        github: "https://github.com/juvet/juvet",
+        documentation: "http://hexdocs.pm/juvet/"
       }
     }
   end
