@@ -1,9 +1,8 @@
 ![juvet logo](https://github.com/juvet/juvet/blob/master/logo.svg)
 
-Juvet
-=====
-
 The message platform for chat apps built on a platform designed for communication systems.
+
+[![CircleCI](https://circleci.com/gh/juvet/juvet.svg?style=svg)](https://circleci.com/gh/juvet/juvet)
 
 **THIS IS A WORK IN PROGRESS AND NOT READY FOR ANYTHING REAL YET**
 
