@@ -31,8 +31,9 @@ defmodule Juvet.Connection.SlackRTM do
     {:ok, :sys.get_state(pid)}
   end
 
-  def handle_connect(_conn, %{ok: true} = state) do
+  def handle_connect(_conn, %{ok: true, team: %{id: id}} = state) do
     PubSub.publish(:new_slack_connection, [:new_slack_connection, state])
+    PubSub.subscribe(self(), :"outgoing_slack_message_#{id}")
 
     {:ok, state}
   end
@@ -56,6 +57,13 @@ defmodule Juvet.Connection.SlackRTM do
     ])
 
     {:ok, state}
+  end
+
+  @doc ~S"""
+  Handles when the SlackRTM receives an outgoing message publication.
+  """
+  def handle_info([:outgoing_slack_message, message], state) do
+    {:reply, {:text, Poison.encode!(message)}, state}
   end
 
   @doc false
