@@ -1,4 +1,4 @@
-![juvet logo](https://raw.githubusercontent.com/juvet/juvet/master/logo.svg)
+![juvet logo](https://github.com/juvet/juvet/blob/master/logo.svg)
 
 Juvet
 =====
