@@ -47,6 +47,18 @@ defmodule Juvet.Bot do
       """
       def handle_event(_platform, _message, state), do: {:ok, state}
 
+      @doc ~S"""
+      Sends a message via PubSub to the `platform` specified with the workspace `id`.
+      """
+      def send_message(platform, %{id: id} = state, message) do
+        PubSub.publish(:"outgoing_#{platform}_message_#{id}", [
+          :"outgoing_#{platform}_message",
+          message
+        ])
+
+        :ok
+      end
+
       defoverridable handle_connect: 2, handle_disconnect: 2, handle_event: 3
     end
   end
