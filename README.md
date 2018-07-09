@@ -1,3 +1,5 @@
+![juvet logo](https://raw.githubusercontent.com/juvet/juvet/master/logo.svg)
+
 Juvet
 =====
 
