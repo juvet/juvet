@@ -158,3 +158,9 @@ end
 1. Commit your changes (small commits please)
 1. Push your new branch `git push origin my-awesome-feature`
 1. Create a pull request `hub pull-request -b juvet:master -h juvet:my-awesome-feature`
+
+## Copyright and License
+
+Copyright (c) 2018, Jamie Wright.
+
+Juvet source code is licensed under the [MIT License](LICENSE.md).

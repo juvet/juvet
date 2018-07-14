@@ -51,7 +51,8 @@ defmodule Juvet.Mixfile do
       links: %{
         github: "https://github.com/juvet/juvet",
         documentation: "http://hexdocs.pm/juvet/"
-      }
+      },
+      files: ~w(lib LICENSE.md mix.exs README.md)
     }
   end
 
