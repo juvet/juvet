@@ -37,7 +37,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
 
         {:ok, state} = SlackRTM.get_state(pid)
 
-        assert %{team: %{name: "Brilliant Fantastic"}} = state
+        assert %{team: %{name: "Juvet"}} = state
       end
     end
 
@@ -58,7 +58,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
 
       assert_receive [
         :new_slack_connection,
-        %{ok: true, team: %{name: "Brilliant Fantastic"}}
+        %{ok: true, team: %{name: "Juvet"}}
       ]
     end
 
@@ -73,7 +73,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
 
       assert_receive [
         :slack_disconnected,
-        %{ok: true, team: %{name: "Brilliant Fantastic"}}
+        %{ok: true, team: %{name: "Juvet"}}
       ]
     end
 
