@@ -148,6 +148,24 @@ end
 
 ### Responding to messages
 
+## TESTING
+
+You can run the tasks with the standard mix command:
+
+```
+mix test
+```
+
+### Re-recording responses
+
+You can re-record the responses from Slack with the following mix command:
+
+```
+mix record <slack token here>
+```
+
+You can create a Slack token for any of your teams [here](https://api.slack.com/custom-integrations/legacy-tokens)/.
+
 ## COMMUNITY
 
 ### Contributing
