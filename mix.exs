@@ -61,7 +61,8 @@ defmodule Juvet.Mixfile do
       vcr: :test,
       "vcr.delete": :test,
       "vcr.check": :test,
-      "vcr.show": :test
+      "vcr.show": :test,
+      record: :test
     ]
   end
 end
