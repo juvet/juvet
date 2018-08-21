@@ -9,7 +9,7 @@
       "method": "get",
       "options": [],
       "request_body": "",
-      "url": "https://slack.com/api/im.open?token=***&user=UC9PT43RV"
+      "url": "http://localhost:51345/api/im.open?token=***&user=UC9PT43RV"
     },
     "response": {
       "binary": false,
