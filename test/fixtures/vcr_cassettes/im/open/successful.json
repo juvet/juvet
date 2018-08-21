@@ -1,0 +1,46 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/im.open?token=***&user=UC9PT43RV"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":true,\"no_op\":true,\"already_open\":true,\"channel\":{\"id\":\"DCA36754N\"}}",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Date": "Tue, 21 Aug 2018 00:33:21 GMT",
+        "Server": "Apache",
+        "X-Content-Type-Options": "nosniff",
+        "X-Slack-Req-Id": "***",
+        "Expires": "Mon, 26 Jul 1997 05:00:00 GMT",
+        "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        "X-OAuth-Scopes": "read,client,admin,identify,post,apps",
+        "Vary": "Accept-Encoding",
+        "Pragma": "no-cache",
+        "X-Accepted-OAuth-Scopes": "im:write,post",
+        "X-XSS-Protection": "0",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "Referrer-Policy": "no-referrer",
+        "X-Slack-Exp": "1",
+        "X-Slack-Backend": "h",
+        "Access-Control-Allow-Origin": "*",
+        "X-Via": "***",
+        "X-Cache": "Miss from cloudfront",
+        "Via": "1.1 2ee698688e2d7def4fb570e1a694f743.cloudfront.net (CloudFront)",
+        "X-Amz-Cf-Id": "***"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
