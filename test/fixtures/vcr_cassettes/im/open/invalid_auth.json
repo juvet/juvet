@@ -1,0 +1,42 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "https://slack.com/api/im.open?token=***&user=USER1"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":false,\"error\":\"invalid_auth\"}",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Date": "Tue, 21 Aug 2018 00:34:04 GMT",
+        "Server": "Apache",
+        "Vary": "Accept-Encoding",
+        "X-Slack-Exp": "1",
+        "X-Slack-Backend": "h",
+        "x-slack-router": "p",
+        "Referrer-Policy": "no-referrer",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "X-Slack-Req-Id": "***",
+        "X-XSS-Protection": "0",
+        "X-Content-Type-Options": "nosniff",
+        "Access-Control-Allow-Origin": "*",
+        "X-Via": "***",
+        "X-Cache": "Miss from cloudfront",
+        "Via": "1.1 d63a8908759a2f4775b3f672ebf823cc.cloudfront.net (CloudFront)",
+        "X-Amz-Cf-Id": "***"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
