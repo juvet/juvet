@@ -9,7 +9,7 @@
       "method": "get",
       "options": [],
       "request_body": "",
-      "url": "http://localhost:51345/api/rtm.connect?token=***"
+      "url": "http://localhost:51345/api/rtm.connect?token=***&user=UC9PT43RV"
     },
     "response": {
       "binary": false,
@@ -18,7 +18,7 @@
         "Content-Type": "application/json; charset=utf-8",
         "Transfer-Encoding": "chunked",
         "Connection": "keep-alive",
-        "Date": "Fri, 17 Aug 2018 03:04:43 GMT",
+        "Date": "Tue, 21 Aug 2018 01:03:10 GMT",
         "Server": "Apache",
         "X-Content-Type-Options": "nosniff",
         "X-Slack-Req-Id": "***",
@@ -36,7 +36,7 @@
         "Access-Control-Allow-Origin": "*",
         "X-Via": "***",
         "X-Cache": "Miss from cloudfront",
-        "Via": "1.1 40103a74234cffea6fb9d916df139b63.cloudfront.net (CloudFront)",
+        "Via": "1.1 281d8890b24665c536cc04e40040a321.cloudfront.net (CloudFront)",
         "X-Amz-Cf-Id": "***"
       },
       "status_code": 200,
