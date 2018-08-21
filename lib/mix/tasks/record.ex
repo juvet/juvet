@@ -5,18 +5,25 @@ defmodule Mix.Tasks.Record do
   alias Juvet.SlackAPI
 
   @shortdoc "Re-record ExVCR cassettes for the Slack endpoints"
-  def run([token]) do
-    Enum.each(["rtm.connect"], fn method_name ->
+  def run(args) do
+    params =
+      args
+      |> Enum.chunk(2)
+      |> Enum.into(%{}, fn [a, b] -> {String.trim_trailing(a, ":"), b} end)
+
+    methods = ["im.open", "rtm.connect"]
+
+    Enum.each(methods, fn method_name ->
       delete_cassettes(method_name)
     end)
 
     SlackAPI.start()
 
-    Enum.each(["rtm.connect"], fn method_name ->
-      record_successful(method_name, token)
+    Enum.each(methods, fn method_name ->
+      record_successful(method_name, params)
     end)
 
-    Enum.each(["rtm.connect"], fn method_name ->
+    Enum.each(methods, fn method_name ->
       record_invalid_auth(method_name)
     end)
   end
@@ -28,7 +35,7 @@ defmodule Mix.Tasks.Record do
   def delete_cassettes(method_name) do
     cassette_library_dir = ExVCR.Setting.get(:cassette_library_dir)
 
-    Mix.Task.run("vcr.delete", [
+    Mix.Task.rerun("vcr.delete", [
       "-d",
       "#{cassette_library_dir}/#{cassette_directory_name(method_name)}",
       "--all"
@@ -41,9 +48,9 @@ defmodule Mix.Tasks.Record do
     end
   end
 
-  def record_successful(method_name, token) do
+  def record_successful(method_name, params) do
     use_cassette "#{cassette_directory_name(method_name)}/successful" do
-      SlackAPI.request(method_name, %{token: token})
+      SlackAPI.request(method_name, params)
     end
   end
 end
