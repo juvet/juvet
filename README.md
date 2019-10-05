@@ -28,6 +28,8 @@ Juvet offers all the features you need to build a scalable and maintainable chat
 * NLP Support (coming soon)
 * more to come...
 
+The [ROADMAP](./ROADMAP.md) describes major upcoming features within each release.
+
 ## INSTALLATION
 
 * Add the Juvet dependencies to your `mix.exs` file
