@@ -1,6 +1,6 @@
 ![juvet logo](https://github.com/juvet/juvet/blob/master/logo.svg)
 
-The message platform for chat apps built on a platform designed for communication systems.
+> The MVC framework for chat apps built on a platform designed for communication systems.
 
 [![CircleCI](https://circleci.com/gh/juvet/juvet.svg?style=svg)](https://circleci.com/gh/juvet/juvet)
 
@@ -8,27 +8,38 @@ The message platform for chat apps built on a platform designed for communicatio
 
 ## DESCRIPTION
 
-Juvet is an application framework that includes everything you need to build a chat application for all the major messaging platforms including
+Build chat bot applications for the major chat bot application platforms using familiar model-view-controller architecture patterns that developers have been using for decades.
+
+Juvet is an application framework that includes everything you need to build a chat application for all the major messaging platforms including:
 
 * [Slack RTM](https://api.slack.com/rtm) (currently implemented)
 * [Slack Events API](https://api.slack.com/events-api) (coming soon)
 * [Slack Incoming Webhook](https://api.slack.com/incoming-webhooks) (coming soon)
-* Amazon Alexa (coming soon)
-* Facebook Messenger (coming soon)
-* Twillio (coming soon)
-* Custom (coming soon)
-* more to come...
+* [Amazon Alexa](https://developer.amazon.com/)
+* [Facebook Messenger](https://developers.facebook.com/docs/messenger-platform/)
+* [Twillio SMS](https://www.twilio.com/docs/sms)
+* Custom...
 
 Juvet offers all the features you need to build a scalable and maintainable chat application, including
 
 * API Wrappers
-* Message Queuing (coming soon)
-* Middleware and Plugins (coming soon)
-* Conversation Support (coming soon)
-* NLP Support (coming soon)
+* Message Queuing
+* Middleware and Plugins
+* Conversation Support
+* NLP Support
 * more to come...
 
 The [ROADMAP](./ROADMAP.md) describes major upcoming features within each release.
+
+## THIS FRAMEWORK IS SPONSORWARE :open_hands:
+
+This repository supports sustainable open source work via [Sponsorware](https://github.com/sponsorware/docs).
+
+It will be fully open sourced but it is currently only available to people who [sponsor me on GitHub](https://github.com/sponsors/jwright).
+
+I want this framework to be supported for the community with a high-degree of quality for a long time and in order to make that happen at a sustainable pace, I need to have the time and availability to support it appropriately. Sponsorware helps achieve that mission.
+
+Thank you for the support! :heartbeat:
 
 ## INSTALLATION
 
