@@ -7,7 +7,10 @@ defmodule Juvet do
       Supervisor.Spec.supervisor(Juvet.BotFactorySupervisor, [
         Application.get_all_env(:juvet)
       ]),
-      Supervisor.Spec.supervisor(Juvet.ConnectionFactorySupervisor, [])
+      Supervisor.Spec.supervisor(Juvet.ConnectionFactorySupervisor, []),
+      Supervisor.Spec.supervisor(Juvet.BotShop, [
+        Application.get_all_env(:juvet)
+      ])
     ]
 
     Supervisor.start_link(children, strategy: :one_for_all)

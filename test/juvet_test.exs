@@ -9,5 +9,9 @@ defmodule Juvet.JuvetTest do
     test "starts the bot factory supervisor" do
       assert Process.whereis(Juvet.BotFactorySupervisor) |> Process.alive?()
     end
+
+    test "starts the bot shop" do
+      assert Process.whereis(Juvet.BotShop) |> Process.alive?()
+    end
   end
 end
