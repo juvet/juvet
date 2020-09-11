@@ -16,6 +16,7 @@ defmodule Juvet.BotShop do
   end
 
   # Server Callbacks
+
   def init(config) do
     {:ok, %{config: config}}
   end
