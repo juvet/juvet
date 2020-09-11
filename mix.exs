@@ -20,13 +20,13 @@ defmodule Juvet.Mixfile do
 
   def application do
     [
-      mod: {Juvet, []},
-      extra_applications: [:logger, :httpoison, :websockex]
+      extra_applications: [:logger, :httpoison, :websockex],
+      mod: {Juvet, []}
     ]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib/juvet*"]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
     [
@@ -36,7 +36,7 @@ defmodule Juvet.Mixfile do
       {:poison, "~> 3.1"},
       {:pubsub, "~> 1.0"},
       {:websockex, "~> 0.4.0"},
-      {:exvcr, "~> 0.10", only: :test}
+      {:exvcr, "~> 0.10", only: [:test]}
     ]
   end
 
