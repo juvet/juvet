@@ -3,7 +3,7 @@ defmodule CowboyHandler do
     {:ok, req, []}
   end
 
-  def handle(request, state) do
+  def handle(_request, state) do
     {:ok, reply} =
       :cowboy_req.reply(
         200,
@@ -29,7 +29,7 @@ defmodule Juvet.Slack.EventsListener do
   # Server Callbacks
 
   def init(config) do
-    start_server
+    start_server()
 
     {:ok, %{config: config}}
   end
