@@ -36,7 +36,7 @@ defmodule Juvet.Mixfile do
       {:poison, "~> 3.1"},
       {:pubsub, "~> 1.0"},
       {:websockex, "~> 0.4.0"},
-      {:exvcr, "~> 0.10", only: [:test]}
+      {:exvcr, "~> 0.10", only: [:dev, :test]}
     ]
   end
 
