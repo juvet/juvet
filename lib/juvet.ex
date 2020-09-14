@@ -11,6 +11,16 @@ defmodule Juvet do
       Supervisor.Spec.supervisor(Juvet.BotShop, [config])
     ]
 
+    children =
+      children ++
+        [
+          Plug.Cowboy.child_spec(
+            scheme: :http,
+            plug: Juvet.Endpoint,
+            options: [port: 8080]
+          )
+        ]
+
     children = children ++ slack_processes(config)
 
     Supervisor.start_link(children, strategy: :one_for_all)
