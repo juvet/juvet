@@ -20,7 +20,7 @@ defmodule Juvet.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger, :httpoison, :websockex],
+      extra_applications: [:logger, :httpoison, :plug_cowboy, :websockex],
       mod: {Juvet, []}
     ]
   end
@@ -30,9 +30,8 @@ defmodule Juvet.Mixfile do
 
   defp deps do
     [
-      {:cowboy, "~> 1.1"},
       {:httpoison, "~> 1.0"},
-      {:plug, "~> 1.6"},
+      {:plug_cowboy, "~> 2.0"},
       {:poison, "~> 3.1"},
       {:pubsub, "~> 1.0"},
       {:websockex, "~> 0.4.0"},
