@@ -1,16 +1,19 @@
 defmodule Juvet.Endpoint do
-  use Plug.Router
+  use Supervisor
 
-  plug(Plug.Logger)
-  plug(:match)
-  plug(Plug.Parsers, parsers: [:json], json_decoder: Poison)
-  plug(:dispatch)
-
-  get "/ping" do
-    send_resp(conn, 200, "pong!")
+  def start_link(config) do
+    Supervisor.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  match _ do
-    send_resp(conn, 404, "oops... Nothing here :(")
+  def init(_config) do
+    children = [
+      Plug.Cowboy.child_spec(
+        scheme: :http,
+        plug: Juvet.Router,
+        options: [port: 8080]
+      )
+    ]
+
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end

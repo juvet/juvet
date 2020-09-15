@@ -13,6 +13,10 @@ defmodule Juvet.JuvetTest do
     test "starts the BotShop" do
       assert Process.whereis(Juvet.BotShop) |> Process.alive?()
     end
+
+    test "starts the Endpoint" do
+      assert Process.whereis(Juvet.Endpoint) |> Process.alive?()
+    end
   end
 
   describe "Juvet.start/2 with Slack configured" do

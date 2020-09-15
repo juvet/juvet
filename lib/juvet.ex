@@ -8,18 +8,9 @@ defmodule Juvet do
       Supervisor.Spec.supervisor(PubSub, []),
       Supervisor.Spec.supervisor(Juvet.BotFactorySupervisor, [config]),
       Supervisor.Spec.supervisor(Juvet.ConnectionFactorySupervisor, []),
-      Supervisor.Spec.supervisor(Juvet.BotShop, [config])
+      Supervisor.Spec.supervisor(Juvet.BotShop, [config]),
+      Supervisor.Spec.supervisor(Juvet.Endpoint, [config])
     ]
-
-    children =
-      children ++
-        [
-          Plug.Cowboy.child_spec(
-            scheme: :http,
-            plug: Juvet.Endpoint,
-            options: [port: 8080]
-          )
-        ]
 
     children = children ++ slack_processes(config)
 
