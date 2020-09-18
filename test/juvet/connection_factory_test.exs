@@ -1,6 +1,8 @@
 defmodule Juvet.ConnectionFactory.ConnectionFactoryTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
+
+  import Juvet.ProcessHelpers
 
   alias Juvet.{
     ConnectionFactory,
@@ -9,6 +11,8 @@ defmodule Juvet.ConnectionFactory.ConnectionFactoryTest do
   }
 
   setup_all do
+    start_supervised_application!()
+
     Juvet.FakeSlack.start_link()
 
     on_exit(fn ->

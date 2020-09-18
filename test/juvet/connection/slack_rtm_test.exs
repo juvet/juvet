@@ -1,6 +1,8 @@
 defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
+
+  import Juvet.ProcessHelpers
 
   alias Juvet.Connection.{SlackRTM}
 
@@ -49,6 +51,8 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   end
 
   describe "receiving incoming Slack messages" do
+    setup :setup_with_supervised_pubsub!
+
     test "publishes a connection message when connected", %{token: token} do
       PubSub.subscribe(self(), :new_slack_connection)
 
@@ -89,6 +93,8 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   end
 
   describe "sending outgoing Slack messages" do
+    setup :setup_with_supervised_pubsub!
+
     test "subscribes to outgoing slack messages", %{token: token} do
       use_cassette "rtm/connect/successful" do
         {:ok, _pid} = SlackRTM.connect(%{token: token})

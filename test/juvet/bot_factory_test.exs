@@ -1,9 +1,13 @@
 defmodule Juvet.BotFactory.BotFactoryTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
+
+  import Juvet.ProcessHelpers
 
   alias Juvet.{BotFactory, BotFactorySupervisor, BotSupervisor}
 
-  describe "BotFactory.start_link\2" do
+  describe "BotFactory.start_link/2" do
+    setup :setup_with_supervised_application!
+
     test "adds itself as a child to a supervisor" do
       [_ | t] = Supervisor.which_children(BotFactorySupervisor)
 
@@ -18,6 +22,8 @@ defmodule Juvet.BotFactory.BotFactoryTest do
   end
 
   describe "BotFactory.add_bot\1" do
+    setup :setup_with_supervised_application!
+
     @tag :skip
     test "adds a bot process to the bot supervisor" do
       :ok = BotFactory.add_bot(%{ok: true, team: %{domain: "Led Zeppelin"}})
