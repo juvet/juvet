@@ -11,6 +11,7 @@ defmodule Juvet.Mixfile do
       deps: deps(),
       docs: docs(),
       package: package(),
+      aliases: aliases(),
       description: "The messaging platform for chat apps",
       organization: "Juvet",
       source_url: "https://github.com/juvet/juvet",
@@ -22,6 +23,12 @@ defmodule Juvet.Mixfile do
     [
       extra_applications: [:logger, :httpoison, :plug_cowboy, :websockex],
       mod: {Juvet, []}
+    ]
+  end
+
+  defp aliases() do
+    [
+      test: "test --no-start"
     ]
   end
 
