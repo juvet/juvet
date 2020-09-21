@@ -12,16 +12,8 @@ defmodule Juvet.EndpointTest do
 
       start_supervised!({Juvet.Endpoint, config})
 
-      conn = conn(:get, "/ping")
-
-      IO.inspect(conn)
-
-      child =
-        Supervisor.which_children(Juvet.Endpoint)
-        |> List.first()
-        |> Kernel.elem(1)
-
-      IO.inspect(Process.info(child))
+      assert {:ok, _ref} =
+               :hackney.get("http://127.0.0.1:4002/ping", [], "", async: :once)
     end
   end
 end
