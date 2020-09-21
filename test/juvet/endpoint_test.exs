@@ -27,7 +27,7 @@ defmodule Juvet.EndpointTest do
       start_supervised!({Juvet.Endpoint, config})
 
       assert {:ok, _ref} =
-               :hackney.get("https://127.0.0.1:8080/ping", [], "", async: :once)
+               :hackney.get("https://127.0.0.1:80/ping", [], "", async: :once)
     end
   end
 end
