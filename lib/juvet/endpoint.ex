@@ -6,20 +6,21 @@ defmodule Juvet.Endpoint do
   end
 
   def init(config) do
+    endpoint = Access.get(config, :endpoint, Keyword.new())
+
+    scheme =
+      if endpoint[:https] || endpoint |> Keyword.has_key?(:https),
+        do: :https,
+        else: :http
+
     port =
-      Access.get(
-        Access.get(
-          Access.get(config, :endpoint, Keyword.new()),
-          :http,
-          Keyword.new()
-        ),
-        :port,
-        8080
-      )
+      endpoint
+      |> Access.get(scheme, Keyword.new())
+      |> Access.get(:port, 8080)
 
     children = [
       Plug.Cowboy.child_spec(
-        scheme: :http,
+        scheme: scheme,
         plug: Juvet.Router,
         options: [port: port]
       )
