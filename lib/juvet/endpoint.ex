@@ -5,12 +5,23 @@ defmodule Juvet.Endpoint do
     Supervisor.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  def init(_config) do
+  def init(config) do
+    port =
+      Access.get(
+        Access.get(
+          Access.get(config, :endpoint, Keyword.new()),
+          :http,
+          Keyword.new()
+        ),
+        :port,
+        8080
+      )
+
     children = [
       Plug.Cowboy.child_spec(
         scheme: :http,
         plug: Juvet.Router,
-        options: [port: 8080]
+        options: [port: port]
       )
     ]
 
