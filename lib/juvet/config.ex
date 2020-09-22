@@ -8,7 +8,7 @@ defmodule Juvet.Config do
   config :juvet,
     bot: MyBot,
     endpoint: [
-      http: [port: 80]
+      http: [port: 4000]
     ],
     slack: [
       actions_endpoint_path: "/slack/actions",
@@ -17,7 +17,12 @@ defmodule Juvet.Config do
   """
 
   def bot, do: get_application_env(:bot, MyBot)
-  def endpoint, do: get_application_env(:endpoint, http: [port: 80])
+
+  def endpoint,
+    do:
+      get_application_env(:endpoint,
+        http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+      )
 
   def port do
     port(endpoint() || Keyword.new())
@@ -26,6 +31,10 @@ defmodule Juvet.Config do
   def scheme do
     scheme(Keyword.keys(endpoint() || Keyword.new()))
   end
+
+  def slack, do: slack(get_application_env(:slack))
+
+  def slack_configured?, do: slack_configured?(slack())
 
   defp get_application_env(key, default \\ nil) do
     Application.get_env(:juvet, key, default)
@@ -36,4 +45,8 @@ defmodule Juvet.Config do
   defp scheme([:https]), do: :https
   defp scheme([:http]), do: :http
   defp scheme(_), do: nil
+  defp slack(nil), do: nil
+  defp slack(list), do: Enum.into(list, %{})
+  defp slack_configured?(nil), do: false
+  defp slack_configured?(_), do: true
 end

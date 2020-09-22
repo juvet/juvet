@@ -71,6 +71,34 @@ defmodule Juvet.ConfigTest do
     end
   end
 
+  describe "Juvet.Config.slack/0" do
+    test "returns a map containing the Slack configuration" do
+      Application.put_env(:juvet, :slack, actions_endpoint_path: "")
+
+      assert Juvet.Config.slack() == %{actions_endpoint_path: ""}
+    end
+
+    test "returns nil if Slack is not configured" do
+      Application.put_env(:juvet, :slack, nil)
+
+      assert Juvet.Config.slack() == nil
+    end
+  end
+
+  describe "Juvet.Config.slack_configured?/0" do
+    test "returns true if Slack is configured" do
+      Application.put_env(:juvet, :slack, actions_endpoint_path: "")
+
+      assert Juvet.Config.slack_configured?()
+    end
+
+    test "returns false if Slack is not configured" do
+      Application.put_env(:juvet, :slack, nil)
+
+      refute Juvet.Config.slack_configured?()
+    end
+  end
+
   defp reset_config(config),
     do: Application.put_all_env([{:juvet, config}])
 end
