@@ -9,9 +9,10 @@ defmodule Juvet.Endpoint do
     endpoint = Access.get(config, :endpoint, Keyword.new())
 
     scheme =
-      if endpoint[:https] || endpoint |> Keyword.has_key?(:https),
-        do: :https,
-        else: :http
+      if endpoint != nil &&
+           (endpoint[:https] || endpoint |> Keyword.has_key?(:https)),
+         do: :https,
+         else: :http
 
     port =
       endpoint
