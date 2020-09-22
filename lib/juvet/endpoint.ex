@@ -16,7 +16,7 @@ defmodule Juvet.Endpoint do
     port =
       endpoint
       |> Access.get(scheme, Keyword.new())
-      |> Access.get(:port, 80)
+      |> Access.get(:port, String.to_integer(System.get_env("PORT", "4000")))
 
     children = [
       Plug.Cowboy.child_spec(
