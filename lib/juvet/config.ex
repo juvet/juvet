@@ -19,6 +19,10 @@ defmodule Juvet.Config do
   def bot, do: get_application_env(:bot, MyBot)
   def endpoint, do: get_application_env(:endpoint, http: [port: 80])
 
+  def port do
+    port(endpoint() || Keyword.new())
+  end
+
   def scheme do
     scheme(Keyword.keys(endpoint() || Keyword.new()))
   end
@@ -27,8 +31,9 @@ defmodule Juvet.Config do
     Application.get_env(:juvet, key, default)
   end
 
+  defp port(http: [port: port]), do: port
+  defp port(_), do: nil
   defp scheme([:https]), do: :https
   defp scheme([:http]), do: :http
-  defp scheme([_]), do: nil
-  defp scheme([]), do: nil
+  defp scheme(_), do: nil
 end

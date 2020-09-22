@@ -31,6 +31,20 @@ defmodule Juvet.ConfigTest do
     end
   end
 
+  describe "Juvet.Config.port/0" do
+    test "returns the port if the endpoint specifies it" do
+      Application.put_env(:juvet, :endpoint, http: [port: 4002])
+
+      assert Juvet.Config.port() == 4002
+    end
+
+    test "returns nil if the endpoint is not specified" do
+      Application.put_env(:juvet, :endpoint, nil)
+
+      assert Juvet.Config.port() == nil
+    end
+  end
+
   describe "Juvet.Config.scheme/0" do
     test "returns http if the endpoint specifies http" do
       Application.put_env(:juvet, :endpoint, http: [port: 4002])
