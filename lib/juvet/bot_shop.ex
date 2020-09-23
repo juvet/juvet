@@ -11,13 +11,13 @@ defmodule Juvet.BotShop do
 
   # Client API
 
-  def start_link(config) do
-    GenServer.start_link(__MODULE__, config, name: __MODULE__)
+  def start_link(_state \\ []) do
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   # Server Callbacks
 
-  def init(config) do
-    {:ok, %{config: config}}
+  def init(:ok) do
+    {:ok, []}
   end
 end

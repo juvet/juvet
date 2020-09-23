@@ -8,7 +8,7 @@ defmodule Juvet do
       Supervisor.Spec.supervisor(PubSub, []),
       Supervisor.Spec.supervisor(Juvet.BotFactorySupervisor, [config]),
       Supervisor.Spec.supervisor(Juvet.ConnectionFactorySupervisor, []),
-      Supervisor.Spec.supervisor(Juvet.BotShop, [config]),
+      Supervisor.Spec.supervisor(Juvet.BotShop, []),
       Supervisor.Spec.supervisor(Juvet.Endpoint, [])
     ]
 
