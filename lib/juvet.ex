@@ -2,11 +2,9 @@ defmodule Juvet do
   use Application
 
   def start(_types, _args) do
-    config = Application.get_all_env(:juvet)
-
     children = [
       Supervisor.Spec.supervisor(PubSub, []),
-      Supervisor.Spec.supervisor(Juvet.BotFactorySupervisor, [config]),
+      Supervisor.Spec.supervisor(Juvet.BotFactorySupervisor, []),
       Supervisor.Spec.supervisor(Juvet.ConnectionFactorySupervisor, []),
       Supervisor.Spec.supervisor(Juvet.BotShop, []),
       Supervisor.Spec.supervisor(Juvet.Endpoint, [])

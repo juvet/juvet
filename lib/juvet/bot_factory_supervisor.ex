@@ -14,18 +14,18 @@ defmodule Juvet.BotFactorySupervisor do
 
   ## Example
 
-  {:ok, pid} = Juvet.BotFactorySupervisor.start_link([bot: MyBot])
+  {:ok, pid} = Juvet.BotFactorySupervisor.start_link()
   """
-  def start_link(config) do
-    Supervisor.start_link(__MODULE__, config, name: __MODULE__)
+  def start_link(_state \\ []) do
+    Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   ## Callbacks
 
   @doc false
-  def init(config) do
+  def init(:ok) do
     children = [
-      worker(Juvet.BotFactory, [self(), config])
+      worker(Juvet.BotFactory, [self()])
     ]
 
     supervise(children, strategy: :one_for_one)
