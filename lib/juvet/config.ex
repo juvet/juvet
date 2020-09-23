@@ -8,7 +8,7 @@ defmodule Juvet.Config do
   config :juvet,
     bot: MyBot,
     endpoint: [
-      http: [port: 4000]
+      http: [port: {system: "PORT"}]
     ],
     slack: [
       actions_endpoint_path: "/slack/actions",
