@@ -9,7 +9,7 @@ defmodule Juvet do
       Supervisor.Spec.supervisor(Juvet.BotFactorySupervisor, [config]),
       Supervisor.Spec.supervisor(Juvet.ConnectionFactorySupervisor, []),
       Supervisor.Spec.supervisor(Juvet.BotShop, [config]),
-      Supervisor.Spec.supervisor(Juvet.Endpoint, [config])
+      Supervisor.Spec.supervisor(Juvet.Endpoint, [])
     ]
 
     children = children ++ slack_processes(config)

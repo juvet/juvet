@@ -1,29 +1,16 @@
 defmodule Juvet.Endpoint do
   use Supervisor
 
-  def start_link(config) do
-    Supervisor.start_link(__MODULE__, config, name: __MODULE__)
+  def start_link(_state \\ []) do
+    Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def init(config) do
-    endpoint = Access.get(config, :endpoint, Keyword.new())
-
-    scheme =
-      if endpoint != nil &&
-           (endpoint[:https] || endpoint |> Keyword.has_key?(:https)),
-         do: :https,
-         else: :http
-
-    port =
-      endpoint
-      |> Access.get(scheme, Keyword.new())
-      |> Access.get(:port, String.to_integer(System.get_env("PORT", "4000")))
-
+  def init(:ok) do
     children = [
       Plug.Cowboy.child_spec(
-        scheme: scheme,
+        scheme: Juvet.Config.scheme(),
         plug: Juvet.Router,
-        options: [port: port]
+        options: [port: Juvet.Config.port()]
       )
     ]
 

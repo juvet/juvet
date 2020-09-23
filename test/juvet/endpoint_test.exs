@@ -2,15 +2,16 @@ defmodule Juvet.EndpointTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
-  describe "Juvet.Endpoint.start_link\1" do
-    test "initializes with configuration for the port" do
-      config = [
-        endpoint: [
-          http: [port: 4002]
-        ]
-      ]
+  import Juvet.ConfigurationHelpers
 
-      start_supervised!({Juvet.Endpoint, config})
+  setup_all :setup_reset_config_on_exit
+  setup :setup_reset_config
+
+  describe "Juvet.Endpoint.start_link/0" do
+    test "initializes with configuration for the port" do
+      Application.put_env(:juvet, :endpoint, http: [port: 4002])
+
+      start_supervised!(Juvet.Endpoint)
 
       assert {:ok, _ref} =
                :hackney.get("http://127.0.0.1:4002/ping", [], "", async: :once)
@@ -18,13 +19,9 @@ defmodule Juvet.EndpointTest do
 
     @tag :skip
     test "initializes with configuration for the scheme" do
-      config = [
-        endpoint: [
-          :https
-        ]
-      ]
+      Application.put_env(:juvet, :endpoint, https: [])
 
-      start_supervised!({Juvet.Endpoint, config})
+      start_supervised!(Juvet.Endpoint)
 
       assert {:ok, _ref} =
                :hackney.get("https://127.0.0.1:80/ping", [], "", async: :once)
