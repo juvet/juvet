@@ -1,6 +1,7 @@
 defmodule Juvet.JuvetTest do
   use ExUnit.Case
 
+  import Juvet.ConfigurationHelpers
   import Juvet.ProcessHelpers
 
   describe "Juvet.start/2" do
@@ -24,13 +25,7 @@ defmodule Juvet.JuvetTest do
   end
 
   describe "Juvet.start/2 with Slack configured" do
-    setup do
-      config = Application.get_all_env(:juvet)
-
-      on_exit(fn ->
-        Application.put_all_env([{:juvet, config}])
-      end)
-    end
+    setup :setup_reset_config_on_exit
 
     test "starts Slack.EventsListener" do
       Application.put_env(:juvet, :slack, events_endpoint: "/slack/events")
