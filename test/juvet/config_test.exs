@@ -1,19 +1,10 @@
 defmodule Juvet.ConfigTest do
   use ExUnit.Case
 
-  setup_all do
-    config = Application.get_all_env(:juvet)
+  import Juvet.ConfigurationHelpers
 
-    on_exit(fn ->
-      reset_config(config)
-    end)
-  end
-
-  setup do
-    reset_config([])
-
-    :ok
-  end
+  setup_all :setup_reset_config_on_exit
+  setup :setup_reset_config
 
   describe "Juvet.Config.bot/0" do
     test "returns the value specified in the config" do
@@ -98,7 +89,4 @@ defmodule Juvet.ConfigTest do
       refute Juvet.Config.slack_configured?()
     end
   end
-
-  defp reset_config(config),
-    do: Application.put_all_env([{:juvet, config}])
 end
