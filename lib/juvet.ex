@@ -12,24 +12,17 @@ defmodule Juvet do
       Supervisor.Spec.supervisor(Juvet.Endpoint, [])
     ]
 
-    children = children ++ slack_processes(config)
+    children = children ++ slack_processes()
 
     Supervisor.start_link(children, strategy: :one_for_all)
   end
 
-  defp slack_processes(config) do
-    slack_events_processes(config, slack_events_configured?(config))
+  defp slack_processes do
+    slack_events_processes(Juvet.Config.slack_configured?())
   end
 
-  defp slack_events_processes(config, true),
-    do: [Supervisor.Spec.supervisor(Juvet.Slack.EventsListener, [config])]
+  defp slack_events_processes(true),
+    do: [Supervisor.Spec.supervisor(Juvet.Slack.EventsListener, [])]
 
-  defp slack_events_processes(_config, false), do: []
-
-  defp slack_events_configured?(config) do
-    Keyword.has_key?(
-      Keyword.get(config, :slack) || [],
-      :events_endpoint
-    )
-  end
+  defp slack_events_processes(false), do: []
 end

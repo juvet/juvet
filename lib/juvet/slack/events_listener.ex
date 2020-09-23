@@ -3,13 +3,13 @@ defmodule Juvet.Slack.EventsListener do
 
   # Client API
 
-  def start_link(config) do
-    GenServer.start_link(__MODULE__, config, name: __MODULE__)
+  def start_link(state \\ []) do
+    GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
 
   # Server Callbacks
 
-  def init(config) do
-    {:ok, %{config: config}}
+  def init(state) do
+    {:ok, state}
   end
 end

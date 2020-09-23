@@ -3,9 +3,9 @@ defmodule Juvet.Slack.EventsListenerTest do
 
   describe "Juvet.Slack.EventsListener.start_link/1" do
     test "starts an http server to listen for events" do
-      config = [slack: [events_endpoint: "slack/events"]]
+      Juvet.Slack.EventsListener.start_link()
 
-      Juvet.Slack.EventsListener.start_link(config)
+      assert Process.whereis(Juvet.Slack.EventsListener) |> Process.alive?()
     end
   end
 end

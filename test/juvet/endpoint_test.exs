@@ -7,7 +7,7 @@ defmodule Juvet.EndpointTest do
   setup_all :setup_reset_config_on_exit
   setup :setup_reset_config
 
-  describe "Juvet.Endpoint.start_link/0" do
+  describe "Juvet.Endpoint.start_link/1" do
     test "initializes with configuration for the port" do
       Application.put_env(:juvet, :endpoint, http: [port: 4002])
 
