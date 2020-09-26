@@ -1,13 +1,15 @@
 defmodule Juvet do
   use Application
 
+  import Supervisor.Spec
+
   def start(_types, _args) do
     children = [
-      Supervisor.Spec.supervisor(PubSub, []),
-      Supervisor.Spec.supervisor(Juvet.BotFactorySupervisor, []),
-      Supervisor.Spec.supervisor(Juvet.ConnectionFactorySupervisor, []),
-      Supervisor.Spec.supervisor(Juvet.BotShop, []),
-      Supervisor.Spec.supervisor(Juvet.Endpoint, [])
+      supervisor(PubSub, []),
+      supervisor(Juvet.BotFactorySupervisor, []),
+      supervisor(Juvet.ConnectionFactorySupervisor, []),
+      supervisor(Juvet.BotShop, []),
+      supervisor(Juvet.Endpoint, [])
     ]
 
     children = children ++ slack_processes()
@@ -20,7 +22,7 @@ defmodule Juvet do
   end
 
   defp slack_events_processes(true),
-    do: [Supervisor.Spec.supervisor(Juvet.Slack.EventsListener, [])]
+    do: [supervisor(Juvet.Slack.EventsListener, [])]
 
   defp slack_events_processes(false), do: []
 end
