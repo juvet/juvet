@@ -1,38 +1,47 @@
 defmodule Juvet.JuvetTest do
   use ExUnit.Case
 
-  import Juvet.ConfigurationHelpers
   import Juvet.ProcessHelpers
+  import Juvet.ConfigurationHelpers
 
-  describe "Juvet.start/2" do
-    setup :setup_with_supervised_application!
+  setup_all :setup_with_supervised_application!
+  setup_all :setup_reset_config_on_exit
 
-    test "starts the pub sub process" do
-      assert Process.whereis(PubSub) |> Process.alive?()
+  describe "Juvet.start/2 with valid configuration" do
+    test "starts the BotFactory" do
+      assert Process.whereis(Juvet.BotFactory) |> Process.alive?()
     end
 
-    test "starts the bot factory supervisor" do
-      assert Process.whereis(Juvet.BotFactorySupervisor) |> Process.alive?()
+    test "starts the Superintendent" do
+      assert Process.whereis(Juvet.Superintendent) |> Process.alive?()
     end
 
-    test "starts the BotShop" do
-      assert Process.whereis(Juvet.BotShop) |> Process.alive?()
-    end
+    test "starts the BotSupervisor" do
+      # ensure process is started after Superintendent
+      :timer.sleep(500)
 
-    test "starts the Endpoint" do
-      assert Process.whereis(Juvet.Endpoint) |> Process.alive?()
+      [{id, pid, type, [modules]} | _] =
+        Supervisor.which_children(Juvet.BotFactory)
+
+      assert id == Juvet.BotSupervisor
+      assert Process.alive?(pid)
+      assert type == :supervisor
+      assert [modules] == [Juvet.BotSupervisor]
     end
   end
 
-  describe "Juvet.start/2 with Slack configured" do
-    setup :setup_reset_config_on_exit
+  describe "Juvet.start/2 with invalid configuration" do
+    setup :setup_reset_config
 
-    test "starts Slack.EventsListener" do
-      Application.put_env(:juvet, :slack, events_endpoint: "/slack/events")
+    test "does not start the BotSupervisor" do
+      Application.put_env(:juvet, :bot, nil)
 
-      start_supervised_application!()
+      # ensure process is started after Superintendent
+      :timer.sleep(500)
 
-      assert Process.whereis(Juvet.Slack.EventsListener) |> Process.alive?()
+      children = Supervisor.which_children(Juvet.BotFactory)
+
+      IO.inspect(children)
     end
   end
 end

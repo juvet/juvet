@@ -1,8 +1,13 @@
 defmodule Juvet do
   use Application
 
-  import Supervisor.Spec
+  # import Supervisor.Spec
 
+  def start(_types, _args) do
+    Juvet.BotFactory.start_link()
+  end
+
+  """
   def start(_types, _args) do
     children = [
       supervisor(PubSub, []),
@@ -25,4 +30,5 @@ defmodule Juvet do
     do: [supervisor(Juvet.Slack.EventsListener, [])]
 
   defp slack_events_processes(false), do: []
+  """
 end

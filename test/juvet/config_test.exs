@@ -89,4 +89,18 @@ defmodule Juvet.ConfigTest do
       refute Juvet.Config.slack_configured?()
     end
   end
+
+  describe "Juvet.Config.valid?/0" do
+    @tag :skip
+    test "returns true when the configuration is valid" do
+      assert Juvet.Config.valid?()
+    end
+
+    @tag :skip
+    test "returns false when the configuration is invalid" do
+      Application.put_env(:juvet, :bot, nil)
+
+      refute Juvet.Config.valid?()
+    end
+  end
 end
