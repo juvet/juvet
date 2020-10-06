@@ -16,13 +16,7 @@ defmodule Juvet.Config do
     ]
   """
 
-  defmodule Configuration do
-    defstruct bot: MyBot, endpoint: Keyword.new()
-  end
-
-  @configuration struct(Configuration, Application.get_all_env(:juvet))
-
-  def bot, do: @configuration.bot
+  def bot, do: get_application_env(:bot, MyBot)
 
   def endpoint,
     do:
@@ -43,7 +37,8 @@ defmodule Juvet.Config do
   def slack_configured?, do: slack_configured?(slack())
 
   def valid? do
-    true
+    bot() |> to_string() |> String.trim() != "" &&
+      endpoint() != nil
   end
 
   defp get_application_env(key, default \\ nil) do

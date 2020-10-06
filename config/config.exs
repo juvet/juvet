@@ -1,7 +1,6 @@
 use Mix.Config
 
 config :juvet,
-  bot: nil,
   endpoint: [
     http: [port: String.to_integer(System.get_env("PORT"))]
   ],

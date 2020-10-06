@@ -4,9 +4,10 @@ defmodule Juvet.ConfigTest do
   import Juvet.ConfigurationHelpers
 
   setup_all :setup_reset_config_on_exit
-  setup :setup_reset_config
 
   describe "Juvet.Config.bot/0" do
+    setup :setup_reset_config
+
     test "returns the value specified in the config" do
       Application.put_env(:juvet, :bot, HelloWorld)
 
@@ -15,6 +16,8 @@ defmodule Juvet.ConfigTest do
   end
 
   describe "Juvet.Config.endpoint/0" do
+    setup :setup_reset_config
+
     test "returns the value specified in the config" do
       Application.put_env(:juvet, :endpoint, http: [port: 4002])
 
@@ -23,6 +26,8 @@ defmodule Juvet.ConfigTest do
   end
 
   describe "Juvet.Config.port/0" do
+    setup :setup_reset_config
+
     test "returns the port if the endpoint specifies it" do
       Application.put_env(:juvet, :endpoint, http: [port: 4002])
 
@@ -37,6 +42,8 @@ defmodule Juvet.ConfigTest do
   end
 
   describe "Juvet.Config.scheme/0" do
+    setup :setup_reset_config
+
     test "returns http if the endpoint specifies http" do
       Application.put_env(:juvet, :endpoint, http: [port: 4002])
 
@@ -63,6 +70,8 @@ defmodule Juvet.ConfigTest do
   end
 
   describe "Juvet.Config.slack/0" do
+    setup :setup_reset_config
+
     test "returns a map containing the Slack configuration" do
       Application.put_env(:juvet, :slack, actions_endpoint_path: "")
 
@@ -77,6 +86,8 @@ defmodule Juvet.ConfigTest do
   end
 
   describe "Juvet.Config.slack_configured?/0" do
+    setup :setup_reset_config
+
     test "returns true if Slack is configured" do
       Application.put_env(:juvet, :slack, actions_endpoint_path: "")
 
@@ -91,14 +102,29 @@ defmodule Juvet.ConfigTest do
   end
 
   describe "Juvet.Config.valid?/0" do
-    @tag :skip
+    setup :setup_reset_config
+
     test "returns true when the configuration is valid" do
+      IO.puts("Should have a valid bot")
+      IO.inspect(Juvet.Config.bot())
+      IO.inspect(Juvet.Config.endpoint())
+
       assert Juvet.Config.valid?()
     end
 
-    @tag :skip
-    test "returns false when the configuration is invalid" do
+    test "returns false when the bot is blank" do
       Application.put_env(:juvet, :bot, nil)
+
+      IO.puts("Should have a nil bot")
+      IO.inspect(Juvet.Config.bot())
+      IO.inspect(Juvet.Config.endpoint())
+
+      refute Juvet.Config.valid?()
+    end
+
+    @tag :skip
+    test "returns false when the endpoint is not specified" do
+      Application.put_env(:juvet, :endpoint, nil)
 
       refute Juvet.Config.valid?()
     end
