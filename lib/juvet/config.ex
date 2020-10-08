@@ -24,6 +24,12 @@ defmodule Juvet.Config do
         http: [port: String.to_integer(System.get_env("PORT", "4000"))]
       )
 
+  def invalid? do
+    bot() |> to_string() |> String.trim() == "" ||
+      endpoint() == nil ||
+      (scheme() == :http && port() == nil)
+  end
+
   def port do
     port(endpoint() || Keyword.new())
   end
@@ -36,10 +42,7 @@ defmodule Juvet.Config do
 
   def slack_configured?, do: slack_configured?(slack())
 
-  def valid? do
-    bot() |> to_string() |> String.trim() != "" &&
-      endpoint() != nil
-  end
+  def valid?, do: !__MODULE__.invalid?()
 
   defp get_application_env(key, default \\ nil) do
     Application.get_env(:juvet, key, default)

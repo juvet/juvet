@@ -105,26 +105,29 @@ defmodule Juvet.ConfigTest do
     setup :setup_reset_config
 
     test "returns true when the configuration is valid" do
-      IO.puts("Should have a valid bot")
-      IO.inspect(Juvet.Config.bot())
-      IO.inspect(Juvet.Config.endpoint())
+      Application.put_env(:juvet, :bot, MyBot)
+      Application.put_env(:juvet, :endpoint, http: [port: 4002])
 
       assert Juvet.Config.valid?()
     end
 
     test "returns false when the bot is blank" do
       Application.put_env(:juvet, :bot, nil)
-
-      IO.puts("Should have a nil bot")
-      IO.inspect(Juvet.Config.bot())
-      IO.inspect(Juvet.Config.endpoint())
+      Application.put_env(:juvet, :endpoint, http: [port: 4002])
 
       refute Juvet.Config.valid?()
     end
 
-    @tag :skip
     test "returns false when the endpoint is not specified" do
+      Application.put_env(:juvet, :bot, MyBot)
       Application.put_env(:juvet, :endpoint, nil)
+
+      refute Juvet.Config.valid?()
+    end
+
+    test "returns false when the scheme is http but no port is specified" do
+      Application.put_env(:juvet, :bot, MyBot)
+      Application.put_env(:juvet, :endpoint, http: [foo: :bar])
 
       refute Juvet.Config.valid?()
     end
