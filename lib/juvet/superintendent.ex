@@ -7,14 +7,20 @@ defmodule Juvet.Superintendent do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
+  def get_state, do: GenServer.call(__MODULE__, :get_state)
+
   # Server Callbacks
 
   def init(:ok) do
-    # TODO: Ensure the configuration is specified correct
-
-    send(self(), :start_bot_supervisor)
+    if Juvet.Config.valid?() do
+      send(self(), :start_bot_supervisor)
+    end
 
     {:ok, %{}}
+  end
+
+  def handle_call(:get_state, _from, state) do
+    {:reply, state, state}
   end
 
   def handle_info(:start_bot_supervisor, state) do

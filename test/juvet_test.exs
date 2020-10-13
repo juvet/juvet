@@ -29,19 +29,4 @@ defmodule Juvet.JuvetTest do
       assert [modules] == [Juvet.BotSupervisor]
     end
   end
-
-  describe "Juvet.start/2 with invalid configuration" do
-    setup :setup_reset_config
-
-    test "does not start the BotSupervisor" do
-      Application.put_env(:juvet, :bot, nil)
-
-      # ensure process is started after Superintendent
-      :timer.sleep(500)
-
-      children = Supervisor.which_children(Juvet.BotFactory)
-
-      IO.inspect(children)
-    end
-  end
 end
