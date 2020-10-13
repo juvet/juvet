@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Record do
   def run(args) do
     params =
       args
-      |> Enum.chunk(2)
+      |> Enum.chunk_every(2)
       |> Enum.into(%{}, fn [a, b] -> {String.trim_trailing(a, ":"), b} end)
 
     methods = ["im.open", "rtm.connect"]
