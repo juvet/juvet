@@ -1,7 +1,7 @@
 defmodule Juvet.Config do
   @moduledoc """
-  Provides a small wrapper around `Application.get_env(:juvet)`, providing an
-  accessor to configuration values.
+  Provides a small wrapper around a Keyword list to extract various configuration
+  options from config.
 
   Each of the following items can be included in your `config/config.exs` file:
 
@@ -16,45 +16,44 @@ defmodule Juvet.Config do
     ]
   """
 
-  def bot, do: get_application_env(:bot, MyBot)
+  @defaults [
+    bot: MyBot,
+    endpoint: [http: [port: String.to_integer(System.get_env("PORT", "4000"))]],
+    slack: nil
+  ]
 
-  def endpoint,
-    do:
-      get_application_env(:endpoint,
-        http: [port: String.to_integer(System.get_env("PORT", "4000"))]
-      )
+  def bot(config), do: Keyword.get(config, :bot, @defaults[:bot])
 
-  def invalid? do
-    bot() |> to_string() |> String.trim() == "" ||
-      endpoint() == nil ||
-      (scheme() == :http && port() == nil)
+  def endpoint(config), do: Keyword.get(config, :endpoint, @defaults[:endpoint])
+
+  def invalid?(config) do
+    bot(config) |> to_string() |> String.trim() == "" ||
+      endpoint(config) == nil ||
+      (scheme(config) == :http && port(config) == nil)
   end
 
-  def port do
-    port(endpoint() || Keyword.new())
+  def port(config) do
+    port_config(endpoint(config))
   end
 
-  def scheme do
-    scheme(Keyword.keys(endpoint() || Keyword.new()))
+  def scheme(config) do
+    scheme_config(Keyword.keys(endpoint(config) || Keyword.new()))
   end
 
-  def slack, do: slack(get_application_env(:slack))
+  def slack(config),
+    do: slack_config(Keyword.get(config, :slack, @defaults[:slack]))
 
-  def slack_configured?, do: slack_configured?(slack())
+  def slack_configured?(config), do: slack_config_configured?(slack(config))
 
-  def valid?, do: !__MODULE__.invalid?()
+  def valid?(config), do: !__MODULE__.invalid?(config)
 
-  defp get_application_env(key, default \\ nil) do
-    Application.get_env(:juvet, key, default)
-  end
-
-  defp port(http: [port: port]), do: port
-  defp port(_), do: nil
-  defp scheme([:https]), do: :https
-  defp scheme([:http]), do: :http
-  defp scheme(_), do: nil
-  defp slack(nil), do: nil
-  defp slack(list), do: Enum.into(list, %{})
-  defp slack_configured?(nil), do: false
-  defp slack_configured?(_), do: true
+  defp port_config(http: [port: port]), do: port
+  defp port_config(_), do: nil
+  defp scheme_config([:https]), do: :https
+  defp scheme_config([:http]), do: :http
+  defp scheme_config(_), do: nil
+  defp slack_config(nil), do: nil
+  defp slack_config(list), do: Enum.into(list, %{})
+  defp slack_config_configured?(nil), do: false
+  defp slack_config_configured?(_), do: true
 end

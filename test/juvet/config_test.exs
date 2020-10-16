@@ -3,133 +3,93 @@ defmodule Juvet.ConfigTest do
 
   import Juvet.ConfigurationHelpers
 
-  setup_all :setup_reset_config_on_exit
-
-  describe "Juvet.Config.bot/0" do
-    setup :setup_reset_config
-
+  describe "Juvet.Config.bot/1" do
     test "returns the value specified in the config" do
-      Application.put_env(:juvet, :bot, HelloWorld)
-
-      assert Juvet.Config.bot() == HelloWorld
+      assert Juvet.Config.bot(bot: HelloWorld) == HelloWorld
     end
   end
 
-  describe "Juvet.Config.endpoint/0" do
-    setup :setup_reset_config
-
+  describe "Juvet.Config.endpoint/1" do
     test "returns the value specified in the config" do
-      Application.put_env(:juvet, :endpoint, http: [port: 4002])
-
-      assert Juvet.Config.endpoint() == [http: [port: 4002]]
+      assert Juvet.Config.endpoint(endpoint: [http: [port: 4002]]) == [
+               http: [port: 4002]
+             ]
     end
   end
 
-  describe "Juvet.Config.port/0" do
-    setup :setup_reset_config
-
+  describe "Juvet.Config.port/1" do
     test "returns the port if the endpoint specifies it" do
-      Application.put_env(:juvet, :endpoint, http: [port: 4002])
-
-      assert Juvet.Config.port() == 4002
+      assert Juvet.Config.port(endpoint: [http: [port: 4002]]) == 4002
     end
 
     test "returns nil if the endpoint is not specified" do
-      Application.put_env(:juvet, :endpoint, nil)
-
-      assert Juvet.Config.port() == nil
+      assert Juvet.Config.port(endpoint: nil) == nil
     end
   end
 
-  describe "Juvet.Config.scheme/0" do
-    setup :setup_reset_config
-
+  describe "Juvet.Config.scheme/1" do
     test "returns http if the endpoint specifies http" do
-      Application.put_env(:juvet, :endpoint, http: [port: 4002])
-
-      assert Juvet.Config.scheme() == :http
+      assert Juvet.Config.scheme(endpoint: [http: [port: 4002]]) == :http
     end
 
     test "returns https if the endpoint specifies https as a keyword" do
-      Application.put_env(:juvet, :endpoint, https: true)
-
-      assert Juvet.Config.scheme() == :https
+      assert Juvet.Config.scheme(endpoint: [https: true]) == :https
     end
 
     test "returns nil if the endpoint is not specified" do
-      Application.put_env(:juvet, :endpoint, nil)
-
-      assert Juvet.Config.scheme() == nil
+      assert Juvet.Config.scheme(endpoint: nil) == nil
     end
 
     test "returns nil if the endpoint does not contain scheme" do
-      Application.put_env(:juvet, :endpoint, foo: :bar)
-
-      assert Juvet.Config.scheme() == nil
+      assert Juvet.Config.scheme(endpoint: [foo: :bar]) == nil
     end
   end
 
   describe "Juvet.Config.slack/0" do
-    setup :setup_reset_config
-
     test "returns a map containing the Slack configuration" do
-      Application.put_env(:juvet, :slack, actions_endpoint_path: "")
-
-      assert Juvet.Config.slack() == %{actions_endpoint_path: ""}
+      assert Juvet.Config.slack(slack: [actions_endpoint_path: ""]) == %{
+               actions_endpoint_path: ""
+             }
     end
 
     test "returns nil if Slack is not configured" do
-      Application.put_env(:juvet, :slack, nil)
-
-      assert Juvet.Config.slack() == nil
+      assert Juvet.Config.slack(slack: nil) == nil
     end
   end
 
   describe "Juvet.Config.slack_configured?/0" do
-    setup :setup_reset_config
-
     test "returns true if Slack is configured" do
-      Application.put_env(:juvet, :slack, actions_endpoint_path: "")
-
-      assert Juvet.Config.slack_configured?()
+      assert Juvet.Config.slack_configured?(slack: [actions_endpoint_path: ""])
     end
 
     test "returns false if Slack is not configured" do
-      Application.put_env(:juvet, :slack, nil)
-
-      refute Juvet.Config.slack_configured?()
+      refute Juvet.Config.slack_configured?(slack: nil)
     end
   end
 
   describe "Juvet.Config.valid?/0" do
-    setup :setup_reset_config
-
-    test "returns true when the configuration is valid" do
-      Application.put_env(:juvet, :bot, MyBot)
-      Application.put_env(:juvet, :endpoint, http: [port: 4002])
-
-      assert Juvet.Config.valid?()
+    setup do
+      {:ok, config: default_config()}
     end
 
-    test "returns false when the bot is blank" do
-      Application.put_env(:juvet, :bot, nil)
-      Application.put_env(:juvet, :endpoint, http: [port: 4002])
-
-      refute Juvet.Config.valid?()
+    test "returns true when the configuration is valid", %{config: config} do
+      assert Juvet.Config.valid?(config)
     end
 
-    test "returns false when the endpoint is not specified" do
-      Application.put_env(:juvet, :bot, MyBot)
-      Application.put_env(:juvet, :endpoint, nil)
-
-      refute Juvet.Config.valid?()
+    test "returns false when the bot is blank", %{config: config} do
+      refute Juvet.Config.valid?(Keyword.merge(config, bot: nil))
     end
 
-    test "returns false when the scheme is http but no port is specified" do
-      Application.put_env(:juvet, :bot, MyBot)
-      Application.put_env(:juvet, :endpoint, http: [foo: :bar])
+    test "returns false when the endpoint is not specified", %{config: config} do
+      refute Juvet.Config.valid?(Keyword.merge(config, endpoint: nil))
+    end
 
-      refute Juvet.Config.valid?()
+    test "returns false when the scheme is http but no port is specified", %{
+      config: config
+    } do
+      refute Juvet.Config.valid?(
+               Keyword.merge(config, endpoint: [http: [foo: :bar]])
+             )
     end
   end
 end
