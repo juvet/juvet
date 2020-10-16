@@ -5,6 +5,14 @@ defmodule Juvet.ConfigurationHelpers do
 
   import ExUnit.Callbacks, only: [on_exit: 1]
 
+  def default_config do
+    [
+      bot: MyBot,
+      endpoint: [http: [port: 8080]],
+      slack: [events_endpoint: "/slack/events"]
+    ]
+  end
+
   def setup_reset_config_on_exit(_context) do
     config = Application.get_all_env(:juvet)
 
