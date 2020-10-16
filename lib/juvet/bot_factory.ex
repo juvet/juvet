@@ -5,13 +5,16 @@ defmodule Juvet.BotFactory do
   The top-level Supervisor for the whole factory floor.
   """
 
-  # Client API
-
   def start_link(_args \\ []) do
     Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  # Server Callbacks
+  def create([slack: _params] = parameters, options \\ []) do
+    bot = Juvet.Superintendent.create_bot(parameters, options)
+    {:ok, bot}
+  end
+
+  # Callbacks
 
   def init(:ok) do
     children = [

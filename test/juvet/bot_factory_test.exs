@@ -30,4 +30,23 @@ defmodule Juvet.BotFactoryTest do
       refute Map.has_key?(Juvet.Superintendent.get_state(), :bot_supervisor)
     end
   end
+
+  describe "Juvet.BotFactory.create/2" do
+    setup do
+      # TODO: May need to check if it's already started so first test does not fail
+      Juvet.BotFactory.start_link()
+
+      :ok
+    end
+
+    test "starts a new process for a bot" do
+      {:ok, bot} =
+        Juvet.BotFactory.create(
+          [slack: %{team_id: "T12345"}],
+          name: "Jamie's Bot"
+        )
+
+      assert Process.alive?(bot)
+    end
+  end
 end

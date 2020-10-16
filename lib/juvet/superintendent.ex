@@ -7,6 +7,10 @@ defmodule Juvet.Superintendent do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
+  def create_bot(parameters, options \\ []) do
+    GenServer.call(__MODULE__, {:create_bot, parameters, options})
+  end
+
   def get_state, do: GenServer.call(__MODULE__, :get_state)
 
   # Server Callbacks
@@ -17,6 +21,20 @@ defmodule Juvet.Superintendent do
     end
 
     {:ok, %{}}
+  end
+
+  def handle_call(
+        {:create_bot, parameters, options},
+        _from,
+        state = %{bot_supervisor: bot_supervisor}
+      ) do
+    {:ok, bot} =
+      DynamicSupervisor.start_child(
+        bot_supervisor,
+        bot_spec(parameters, options)
+      )
+
+    {:reply, bot, state}
   end
 
   def handle_call(:get_state, _from, state) do
@@ -33,5 +51,11 @@ defmodule Juvet.Superintendent do
     # TODO: Make state a struct and use %{state | bot_supervisor: bot_supervisor}
 
     {:noreply, Map.merge(state, %{bot_supervisor: bot_supervisor})}
+  end
+
+  defp bot_spec(parameters, _options) do
+    # TODO: Apply options to the bot
+
+    {Juvet.Config.bot(), parameters}
   end
 end
