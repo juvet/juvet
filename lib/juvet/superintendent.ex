@@ -3,8 +3,8 @@ defmodule Juvet.Superintendent do
 
   # Client API
 
-  def start_link(_args \\ []) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  def start_link(config) do
+    GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
   def create_bot(parameters, options \\ []) do
@@ -15,8 +15,8 @@ defmodule Juvet.Superintendent do
 
   # Server Callbacks
 
-  def init(:ok) do
-    if Juvet.Config.valid?() do
+  def init(config) do
+    if Juvet.Config.valid?(config) do
       send(self(), :start_bot_supervisor)
     end
 

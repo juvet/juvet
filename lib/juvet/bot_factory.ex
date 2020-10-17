@@ -16,9 +16,9 @@ defmodule Juvet.BotFactory do
 
   # Callbacks
 
-  def init(_config) do
+  def init(config) do
     children = [
-      Juvet.Superintendent
+      {Juvet.Superintendent, config}
     ]
 
     opts = [strategy: :one_for_all]
