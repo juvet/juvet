@@ -20,18 +20,18 @@ defmodule Juvet.Superintendent do
       send(self(), :start_bot_supervisor)
     end
 
-    {:ok, %{}}
+    {:ok, %{config: config}}
   end
 
   def handle_call(
         {:create_bot, parameters, options},
         _from,
-        state = %{bot_supervisor: bot_supervisor}
+        state = %{bot_supervisor: bot_supervisor, config: config}
       ) do
     {:ok, bot} =
       DynamicSupervisor.start_child(
         bot_supervisor,
-        bot_spec(parameters, options)
+        bot_spec(config[:bot], parameters, options)
       )
 
     {:reply, bot, state}
@@ -53,9 +53,10 @@ defmodule Juvet.Superintendent do
     {:noreply, Map.merge(state, %{bot_supervisor: bot_supervisor})}
   end
 
-  defp bot_spec(parameters, _options) do
-    # TODO: Apply options to the bot
-
-    {Juvet.Config.bot(), parameters}
+  defp bot_spec(bot, parameters, options) do
+    %{
+      id: bot,
+      start: {bot, :start_link, [parameters, options]}
+    }
   end
 end

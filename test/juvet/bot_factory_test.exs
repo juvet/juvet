@@ -3,8 +3,6 @@ defmodule Juvet.BotFactoryTest do
 
   import Juvet.ConfigurationHelpers
 
-  setup_all :setup_reset_config_on_exit
-
   setup do
     {:ok, config: default_config()}
   end
@@ -41,15 +39,18 @@ defmodule Juvet.BotFactoryTest do
       :ok
     end
 
-    @tag :skip
     test "starts a new process for a bot" do
       {:ok, bot} =
         Juvet.BotFactory.create(
           [slack: %{team_id: "T12345"}],
-          name: "Jamie's Bot"
+          name: :"Jamie's Bot"
         )
 
       assert Process.alive?(bot)
+
+      assert String.to_atom("Jamie's Bot")
+             |> Process.whereis()
+             |> Process.alive?()
     end
   end
 end
