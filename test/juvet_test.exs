@@ -12,12 +12,10 @@ defmodule Juvet.JuvetTest do
       assert Process.whereis(Juvet.BotFactory) |> Process.alive?()
     end
 
-    @tag :skip
     test "starts the Superintendent" do
       assert Process.whereis(Juvet.Superintendent) |> Process.alive?()
     end
 
-    @tag :skip
     test "starts the BotSupervisor" do
       # ensure process is started after Superintendent
       :timer.sleep(500)

@@ -1,6 +1,5 @@
 defmodule MyBot do
   use Juvet.Bot
-  use GenServer
 
   def start_link(state, options \\ []) do
     GenServer.start_link(__MODULE__, state, options)
