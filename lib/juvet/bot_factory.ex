@@ -9,9 +9,8 @@ defmodule Juvet.BotFactory do
     Supervisor.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  def create([slack: _params] = parameters, options \\ []) do
-    bot = Juvet.Superintendent.create_bot(parameters, options)
-    {:ok, bot}
+  def create(name) do
+    Juvet.Superintendent.create_bot(name)
   end
 
   # Callbacks

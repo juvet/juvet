@@ -32,7 +32,7 @@ defmodule Juvet.BotFactoryTest do
     end
   end
 
-  describe "Juvet.BotFactory.create/2" do
+  describe "Juvet.BotFactory.create/1" do
     setup context do
       start_supervised!({Juvet.BotFactory, context.config})
 
@@ -40,11 +40,7 @@ defmodule Juvet.BotFactoryTest do
     end
 
     test "starts a new process for a bot" do
-      {:ok, bot} =
-        Juvet.BotFactory.create(
-          [slack: %{team_id: "T12345"}],
-          name: :"Jamie's Bot"
-        )
+      {:ok, bot} = Juvet.BotFactory.create("Jamie's Bot")
 
       assert Process.alive?(bot)
 
