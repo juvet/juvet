@@ -13,6 +13,19 @@ defmodule Juvet.BotFactory do
     Juvet.Superintendent.create_bot(name)
   end
 
+  def create!(name) do
+    case Juvet.Superintendent.create_bot(name) do
+      {:ok, bot} ->
+        bot
+
+      {:error, {:already_started, _pid}} ->
+        raise RuntimeError, message: "Bot already started."
+
+      {:error, error} ->
+        raise RuntimeError, message: "Error starting bot (#{error})."
+    end
+  end
+
   # Callbacks
 
   def init(config) do

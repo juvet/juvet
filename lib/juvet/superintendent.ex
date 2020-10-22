@@ -28,9 +28,9 @@ defmodule Juvet.Superintendent do
         _from,
         state = %{bot_supervisor: bot_supervisor, config: config}
       ) do
-    {:ok, bot} = Juvet.BotSupervisor.add_bot(bot_supervisor, config[:bot], name)
+    reply = Juvet.BotSupervisor.add_bot(bot_supervisor, config[:bot], name)
 
-    {:reply, {:ok, bot}, state}
+    {:reply, reply, state}
   end
 
   def handle_call(:get_state, _from, state) do

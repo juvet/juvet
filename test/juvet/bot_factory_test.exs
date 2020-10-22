@@ -49,4 +49,30 @@ defmodule Juvet.BotFactoryTest do
              |> Process.alive?()
     end
   end
+
+  describe "Juvet.BotFactory.create!/1" do
+    setup context do
+      start_supervised!({Juvet.BotFactory, context.config})
+
+      :ok
+    end
+
+    test "starts a new process for a bot and returns just the pid" do
+      bot = Juvet.BotFactory.create!("Jamie's Bot")
+
+      assert Process.alive?(bot)
+
+      assert String.to_atom("Jamie's Bot")
+             |> Process.whereis()
+             |> Process.alive?()
+    end
+
+    test "raises an error if the bot is already created" do
+      Juvet.BotFactory.create!("Jamie's Bot")
+
+      assert_raise RuntimeError, fn ->
+        Juvet.BotFactory.create!("Jamie's Bot")
+      end
+    end
+  end
 end

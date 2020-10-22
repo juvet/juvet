@@ -8,4 +8,8 @@ defmodule Juvet do
   def create_bot(name) do
     Juvet.BotFactory.create(name)
   end
+
+  def create_bot!(name) do
+    Juvet.BotFactory.create!(name)
+  end
 end
