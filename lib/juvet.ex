@@ -17,8 +17,9 @@ defmodule Juvet do
     Juvet.Superintendent.connect_bot(bot, platform, parameters)
   end
 
-  # def start_bot(name, platform, parameters) -> creates and connects the bot
-
-  # TODO: In Juvet.Bot, add def connect(platform, parameters)
-  # -> Adds a GenServer to the bot (in this case, it is a SlackRTM connection)
+  def start_bot!(name, platform, parameters) do
+    bot = __MODULE__.create_bot!(name)
+    __MODULE__.connect_bot(bot, platform, parameters)
+    bot
+  end
 end

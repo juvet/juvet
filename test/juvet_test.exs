@@ -29,4 +29,23 @@ defmodule Juvet.JuvetTest do
       assert [modules] == [Juvet.BotSupervisor]
     end
   end
+
+  describe "Juvet.start_bot!/3" do
+    test "starts a new process for the bot" do
+      bot = Juvet.start_bot!("Jimmy", :slack, %{team_id: "T12345"})
+
+      assert Process.alive?(bot)
+    end
+
+    test "adds the platform to the bot" do
+      bot = Juvet.start_bot!("Robert", :slack, %{team_id: "T12345"})
+
+      :timer.sleep(500)
+
+      %{platforms: platforms} = MyBot.get_state(bot)
+
+      assert List.first(platforms).platform == :slack
+      assert List.first(platforms).id == "T12345"
+    end
+  end
 end
