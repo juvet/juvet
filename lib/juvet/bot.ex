@@ -15,9 +15,16 @@ defmodule Juvet.Bot do
     quote do
       use GenServer
 
+      # Client API
+
       def start_link(state, options \\ []) do
         GenServer.start_link(__MODULE__, state, options)
       end
+
+      def get_state(pid) do
+      end
+
+      # Server Callbacks
 
       def init(state) do
         {:ok, state}

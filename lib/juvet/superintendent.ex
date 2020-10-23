@@ -7,6 +7,10 @@ defmodule Juvet.Superintendent do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
+  def connect_bot(bot, :slack, parameters = %{team_id: _team_id}) do
+    GenServer.cast(__MODULE__, {:connect_bot, bot, :slack, parameters})
+  end
+
   def create_bot(name) do
     GenServer.call(__MODULE__, {:create_bot, name})
   end
@@ -35,6 +39,17 @@ defmodule Juvet.Superintendent do
 
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
+  end
+
+  def handle_cast(
+        {:connect_bot, bot, platform, parameters},
+        state = %{config: config}
+      ) do
+    bot_module = Juvet.Config.bot(config)
+
+    bot_module.connect(bot, platform, parameters)
+
+    {:noreply, state}
   end
 
   def handle_info(:start_bot_supervisor, state) do

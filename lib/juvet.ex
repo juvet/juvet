@@ -12,4 +12,16 @@ defmodule Juvet do
   def create_bot!(name) do
     Juvet.BotFactory.create!(name)
   end
+
+  # bot could be a pid, converted id, or a name
+  def connect_bot(bot, platform, parameters) do
+  end
+
+  def connect_bot!(bot, platform, parameters) do
+  end
+
+  # def start_bot(name, platform, parameters) -> creates and connects the bot
+
+  # TODO: In Juvet.Bot, add def connect(platform, parameters)
+  # -> Adds a GenServer to the bot (in this case, it is a SlackRTM connection)
 end
