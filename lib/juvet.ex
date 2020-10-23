@@ -13,11 +13,8 @@ defmodule Juvet do
     Juvet.BotFactory.create!(name)
   end
 
-  # bot could be a pid, converted id, or a name
   def connect_bot(bot, platform, parameters) do
-  end
-
-  def connect_bot!(bot, platform, parameters) do
+    Juvet.Superintendent.connect_bot(bot, platform, parameters)
   end
 
   # def start_bot(name, platform, parameters) -> creates and connects the bot

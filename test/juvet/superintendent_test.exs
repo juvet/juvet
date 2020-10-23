@@ -15,6 +15,8 @@ defmodule Juvet.SuperintendentTest do
 
       Juvet.Superintendent.connect_bot(bot, :slack, %{team_id: "T12345"})
 
+      :timer.sleep(500)
+
       %{platforms: platforms} = MyBot.get_state(bot)
 
       assert List.first(platforms).platform == :slack
