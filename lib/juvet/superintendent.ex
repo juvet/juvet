@@ -1,6 +1,10 @@
 defmodule Juvet.Superintendent do
   use GenServer
 
+  defmodule State do
+    defstruct bot_supervisor: nil, config: %{}
+  end
+
   # Client API
 
   def start_link(config) do
@@ -24,7 +28,7 @@ defmodule Juvet.Superintendent do
       send(self(), :start_bot_supervisor)
     end
 
-    {:ok, %{config: config}}
+    {:ok, %State{config: config}}
   end
 
   def handle_call(
@@ -38,7 +42,7 @@ defmodule Juvet.Superintendent do
   end
 
   def handle_call(:get_state, _from, state) do
-    {:reply, state, state}
+    {:reply, state, Map.from_struct(state)}
   end
 
   def handle_cast(
@@ -59,8 +63,6 @@ defmodule Juvet.Superintendent do
         Supervisor.child_spec({Juvet.BotSupervisor, [[]]}, restart: :temporary)
       )
 
-    # TODO: Make state a struct and use %{state | bot_supervisor: bot_supervisor}
-
-    {:noreply, Map.merge(state, %{bot_supervisor: bot_supervisor})}
+    {:noreply, %{state | bot_supervisor: bot_supervisor}}
   end
 end

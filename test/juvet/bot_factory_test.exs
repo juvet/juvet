@@ -28,7 +28,7 @@ defmodule Juvet.BotFactoryTest do
          %{config: config} do
       start_supervised!({Juvet.BotFactory, Keyword.merge(config, bot: nil)})
 
-      refute Map.has_key?(Juvet.Superintendent.get_state(), :bot_supervisor)
+      refute Juvet.Superintendent.get_state().bot_supervisor
     end
   end
 
