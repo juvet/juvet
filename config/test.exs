@@ -14,3 +14,6 @@ config :exvcr,
     "X-Via",
     "X-Amz-Cf-Id"
   ]
+
+config :juvet,
+  bot: MyBot

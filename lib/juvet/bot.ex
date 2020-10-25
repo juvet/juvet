@@ -14,6 +14,7 @@ defmodule Juvet.Bot do
   defmacro __using__(_) do
     quote do
       use GenServer
+      use Juvet.ReceiverTarget
 
       defmodule Platform do
         defstruct platform: nil, id: nil
@@ -29,6 +30,10 @@ defmodule Juvet.Bot do
         GenServer.start_link(__MODULE__, state, options)
       end
 
+      def add_receiver(pid, type, parameters) do
+        GenServer.call(pid, {:add_receiver, type, parameters})
+      end
+
       def connect(pid, :slack, parameters = %{team_id: _team_id}) do
         GenServer.cast(pid, {:connect, :slack, parameters})
       end
@@ -41,6 +46,17 @@ defmodule Juvet.Bot do
         {:ok, struct(State, state)}
       end
 
+      def handle_call({:add_receiver, type, parameters}, _from, state) do
+        bot = self()
+        result = generate_receiver(type).start(bot, parameters)
+
+        {:reply, result, state}
+      end
+
+      def handle_call(:get_state, _from, state) do
+        {:reply, state, state}
+      end
+
       def handle_cast(
             {:connect, :slack, %{team_id: team_id}},
             %{platforms: platforms} = state
@@ -51,10 +67,6 @@ defmodule Juvet.Bot do
         }
 
         {:noreply, state}
-      end
-
-      def handle_call(:get_state, _from, state) do
-        {:reply, state, state}
       end
     end
   end
