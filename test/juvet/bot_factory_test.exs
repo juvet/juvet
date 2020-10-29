@@ -14,21 +14,21 @@ defmodule Juvet.BotFactoryTest do
       assert Process.whereis(Juvet.Superintendent) |> Process.alive?()
     end
 
-    test "starts the bot supervisor if the configuration is valid", %{
+    test "starts the factory supervisor if the configuration is valid", %{
       config: config
     } do
       start_supervised!({Juvet.BotFactory, config})
 
-      %{bot_supervisor: supervisor_pid} = Juvet.Superintendent.get_state()
+      %{factory_supervisor: supervisor_pid} = Juvet.Superintendent.get_state()
 
       assert Process.alive?(supervisor_pid)
     end
 
-    test "does not start the bot supervisor via the superintendent if the configuration is not valid",
+    test "does not start the factory supervisor via the superintendent if the configuration is not valid",
          %{config: config} do
       start_supervised!({Juvet.BotFactory, Keyword.merge(config, bot: nil)})
 
-      refute Juvet.Superintendent.get_state().bot_supervisor
+      refute Juvet.Superintendent.get_state().factory_supervisor
     end
   end
 

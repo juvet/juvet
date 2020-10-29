@@ -2,7 +2,7 @@ defmodule Juvet.Superintendent do
   use GenServer
 
   defmodule State do
-    defstruct bot_supervisor: nil, config: %{}
+    defstruct factory_supervisor: nil, config: %{}
   end
 
   # Client API
@@ -25,7 +25,7 @@ defmodule Juvet.Superintendent do
 
   def init(config) do
     if Juvet.Config.valid?(config) do
-      send(self(), :start_bot_supervisor)
+      send(self(), :start_factory_supervisor)
     end
 
     {:ok, %State{config: config}}
@@ -34,9 +34,10 @@ defmodule Juvet.Superintendent do
   def handle_call(
         {:create_bot, name},
         _from,
-        state = %{bot_supervisor: bot_supervisor, config: config}
+        state = %{factory_supervisor: factory_supervisor, config: config}
       ) do
-    reply = Juvet.BotSupervisor.add_bot(bot_supervisor, config[:bot], name)
+    reply =
+      Juvet.FactorySupervisor.add_bot(factory_supervisor, config[:bot], name)
 
     {:reply, reply, state}
   end
@@ -56,13 +57,15 @@ defmodule Juvet.Superintendent do
     {:noreply, state}
   end
 
-  def handle_info(:start_bot_supervisor, state) do
-    {:ok, bot_supervisor} =
+  def handle_info(:start_factory_supervisor, state) do
+    {:ok, factory_supervisor} =
       Supervisor.start_child(
         Juvet.BotFactory,
-        Supervisor.child_spec({Juvet.BotSupervisor, [[]]}, restart: :temporary)
+        Supervisor.child_spec({Juvet.FactorySupervisor, [[]]},
+          restart: :temporary
+        )
       )
 
-    {:noreply, %{state | bot_supervisor: bot_supervisor}}
+    {:noreply, %{state | factory_supervisor: factory_supervisor}}
   end
 end

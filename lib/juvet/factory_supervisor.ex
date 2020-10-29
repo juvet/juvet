@@ -1,4 +1,4 @@
-defmodule Juvet.BotSupervisor do
+defmodule Juvet.FactorySupervisor do
   use DynamicSupervisor
 
   # Client API

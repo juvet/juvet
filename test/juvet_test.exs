@@ -16,17 +16,17 @@ defmodule Juvet.JuvetTest do
       assert Process.whereis(Juvet.Superintendent) |> Process.alive?()
     end
 
-    test "starts the BotSupervisor" do
+    test "starts the FactorySupervisor" do
       # ensure process is started after Superintendent
       :timer.sleep(500)
 
       [{id, pid, type, [modules]} | _] =
         Supervisor.which_children(Juvet.BotFactory)
 
-      assert id == Juvet.BotSupervisor
+      assert id == Juvet.FactorySupervisor
       assert Process.alive?(pid)
       assert type == :supervisor
-      assert [modules] == [Juvet.BotSupervisor]
+      assert [modules] == [Juvet.FactorySupervisor]
     end
   end
 
