@@ -21,7 +21,7 @@ defmodule Juvet.Bot do
       end
 
       defmodule State do
-        defstruct platforms: []
+        defstruct bot_supervisor: nil, platforms: []
       end
 
       # Client API
@@ -47,8 +47,7 @@ defmodule Juvet.Bot do
       end
 
       def handle_call({:add_receiver, type, parameters}, _from, state) do
-        bot = self()
-        result = generate_receiver(type).start(bot, parameters)
+        result = generate_receiver(type).start(state.bot_supervisor, parameters)
 
         {:reply, result, state}
       end

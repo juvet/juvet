@@ -21,7 +21,10 @@ defmodule Juvet.BotSupervisor do
   def init([module, name]) do
     opts = [strategy: :one_for_one]
 
-    Supervisor.init([bot_spec(module, %{}, name: name)], opts)
+    Supervisor.init(
+      [bot_spec(module, %{bot_supervisor: self()}, name: name)],
+      opts
+    )
   end
 
   defp bot_spec(bot, parameters, options) do
