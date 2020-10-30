@@ -47,18 +47,27 @@ defmodule Juvet.Bot.BotTest do
       end
     end
 
-    @tag :skip
     test "adds the hello message to the bot's messages", %{bot: bot} do
-      MyBot.add_receiver(bot, :slack_rtm, %{
-        via: :start,
-        token: "MY TOKEN",
-        include_locale: true,
-        mpim_aware: true
-      })
+      use_cassette "rtm/connect/successful" do
+        {:ok, pid} =
+          MyBot.add_receiver(bot, :slack_rtm, %{
+            via: :start,
+            token: "MY TOKEN",
+            include_locale: true,
+            mpim_aware: true
+          })
 
-      messages = MyBot.get_messages(bot)
+        client = Juvet.Receivers.SlackRTMReceiver.get_connection(pid)
 
-      assert List.last(messages).raw_message == %{type: "hello"}
+        message = Poison.encode!(%{type: "hello"})
+        WebSockex.send_frame(client, {:text, message})
+
+        :timer.sleep(500)
+
+        messages = MyBot.get_messages(bot)
+
+        assert List.last(messages) == message
+      end
     end
 
     @tag :skip

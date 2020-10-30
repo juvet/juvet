@@ -41,7 +41,7 @@ defmodule Juvet.Connection.SlackRTM do
   end
 
   def handle_connect(_conn, state = %{receiver: receiver, message: {_, body}}) do
-    send(receiver, [:connected, :slack, body])
+    send(receiver, {:connected, :slack, body})
 
     {:ok, state}
   end
@@ -50,7 +50,7 @@ defmodule Juvet.Connection.SlackRTM do
   Handles when the SlackRTM receives a disconnected message from the websocket.
   """
   def handle_disconnect(_, state = %{receiver: receiver, message: {_, body}}) do
-    send(receiver, [:disconnected, :slack, body])
+    send(receiver, {:disconnected, :slack, body})
 
     {:ok, state}
   end
@@ -59,7 +59,7 @@ defmodule Juvet.Connection.SlackRTM do
   Handles when the SlackRTM receives a incoming message from the websocket.
   """
   def handle_frame({_type, message}, state = %{receiver: receiver}) do
-    send(receiver, [:new_message, :slack, message])
+    send(receiver, {:new_message, :slack, message})
 
     {:ok, %{state | message: {:ok, message}}}
   end

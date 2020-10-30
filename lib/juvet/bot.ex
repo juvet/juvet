@@ -17,11 +17,34 @@ defmodule Juvet.Bot do
       use Juvet.ReceiverTarget
 
       defmodule Platform do
-        defstruct platform: nil, id: nil
+        defstruct platform: nil, id: nil, messages: []
+
+        def add_message(platform, message) do
+          messages = platform.messages
+
+          %{platform | messages: messages ++ [message]}
+        end
       end
 
       defmodule State do
         defstruct bot_supervisor: nil, platforms: []
+
+        def add_platform_message(state, platform, message) do
+          platforms =
+            Enum.map(state.platforms, fn
+              %Platform{platform: platform} = p ->
+                Platform.add_message(p, message)
+
+              p ->
+                p
+            end)
+
+          %{state | platforms: platforms}
+        end
+
+        def get_platform_messages(state) do
+          Enum.flat_map(state.platforms, fn platform -> platform.messages end)
+        end
       end
 
       # Client API
@@ -60,8 +83,7 @@ defmodule Juvet.Bot do
       end
 
       def handle_call(:get_messages, _from, state) do
-        # TODO: Add messages to the State
-        {:reply, [], state}
+        {:reply, State.get_platform_messages(state), state}
       end
 
       def handle_call(:get_state, _from, state) do
@@ -78,6 +100,14 @@ defmodule Juvet.Bot do
         }
 
         {:noreply, state}
+      end
+
+      def handle_info({:connected, platform, message}, state) do
+        {:noreply, State.add_platform_message(state, platform, message)}
+      end
+
+      def handle_info({:new_message, platform, message}, state) do
+        {:noreply, State.add_platform_message(state, platform, message)}
       end
     end
   end

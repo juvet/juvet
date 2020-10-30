@@ -54,11 +54,11 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
         SlackRTM.connect(self(), %{token: token})
       end
 
-      assert_receive [
+      assert_receive {
         :connected,
         :slack,
         %{ok: true, team: %{name: "Juvet"}}
-      ]
+      }
     end
 
     test "publishes a disconnection message when disconnected", %{token: token} do
@@ -72,11 +72,11 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
         })
       end
 
-      assert_receive [
+      assert_receive {
         :disconnected,
         :slack,
         %{ok: true, team: %{name: "Juvet"}}
-      ]
+      }
     end
 
     test "publishes the message to incoming slack message subscribers", %{
@@ -90,7 +90,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
         WebSockex.send_frame(pid, {:text, message})
       end
 
-      assert_receive [:new_message, :slack, ^message]
+      assert_receive {:new_message, :slack, ^message}
     end
   end
 end
