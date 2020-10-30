@@ -38,6 +38,8 @@ defmodule Juvet.Bot do
         GenServer.cast(pid, {:connect, :slack, parameters})
       end
 
+      def get_messages(pid), do: GenServer.call(pid, :get_messages)
+
       def get_state(pid), do: GenServer.call(pid, :get_state)
 
       # Server Callbacks
@@ -47,9 +49,19 @@ defmodule Juvet.Bot do
       end
 
       def handle_call({:add_receiver, type, parameters}, _from, state) do
-        result = generate_receiver(type).start(state.bot_supervisor, parameters)
+        result =
+          generate_receiver(type).start(
+            state.bot_supervisor,
+            self(),
+            parameters
+          )
 
         {:reply, result, state}
+      end
+
+      def handle_call(:get_messages, _from, state) do
+        # TODO: Add messages to the State
+        {:reply, [], state}
       end
 
       def handle_call(:get_state, _from, state) do

@@ -7,70 +7,68 @@ defmodule Juvet.Connection.SlackRTM do
 
   alias Juvet.{SlackAPI}
 
+  defmodule State do
+    defstruct receiver: nil, message: nil
+  end
+
   @doc ~S"""
   Makes a call to the Slack API RTM.connect endpoint with the specified
   `token` and uses that url to connect to the websocket server on Slack.
 
   ## Example
 
-  {:ok, pid} = Juvet.Connection.SlackRTM.connect(%{token: token})
+  {:ok, pid} = Juvet.Connection.SlackRTM.connect(pid, %{token: token})
   """
-  def connect(%{token: _token} = parameters) do
+  def connect(receiver, %{token: _token} = parameters) do
+    state = %State{receiver: receiver}
+
     SlackAPI.RTM.connect(parameters)
+    |> (&Kernel.put_in(state.message, &1)).()
     |> start_link
   end
 
   @doc ~S"""
-    Returns the current state of the Slack process.
+    Returns the last message received from the connection.
 
     ## Example
 
-    {:ok, pid} = Juvet.Connection.SlackRTM.get_state(pid)
+    {:ok, message} = Juvet.Connection.SlackRTM.get_message(pid)
   """
-  def get_state(pid) do
-    {:ok, :sys.get_state(pid)}
+  def get_message(pid) do
+    %{message: {_, body}} = :sys.get_state(pid)
+
+    {:ok, body}
   end
 
-  def handle_connect(_conn, %{ok: true, team: %{id: id}} = state) do
-    PubSub.publish(:new_slack_connection, [:new_slack_connection, state])
-    PubSub.subscribe(self(), :"outgoing_slack_message_#{id}")
+  def handle_connect(_conn, state = %{receiver: receiver, message: {_, body}}) do
+    send(receiver, [:connected, :slack, body])
 
     {:ok, state}
   end
 
   @doc ~S"""
-  Handles when the SlackRTM receives a disconnected message from PubSub.
+  Handles when the SlackRTM receives a disconnected message from the websocket.
   """
-  def handle_disconnect(_, state) do
-    PubSub.publish(:slack_disconnected, [:slack_disconnected, state])
+  def handle_disconnect(_, state = %{receiver: receiver, message: {_, body}}) do
+    send(receiver, [:disconnected, :slack, body])
 
     {:ok, state}
   end
 
   @doc ~S"""
-  Handles when the SlackRTM receives a incoming message from PubSub.
+  Handles when the SlackRTM receives a incoming message from the websocket.
   """
-  def handle_frame({_type, message}, %{team: %{id: id}} = state) do
-    PubSub.publish(:"incoming_slack_message_#{id}", [
-      :incoming_slack_message,
-      message
-    ])
+  def handle_frame({_type, message}, state = %{receiver: receiver}) do
+    send(receiver, [:new_message, :slack, message])
 
-    {:ok, state}
-  end
-
-  @doc ~S"""
-  Handles when the SlackRTM receives an outgoing message publication.
-  """
-  def handle_info([:outgoing_slack_message, message], state) do
-    {:reply, {:text, Poison.encode!(message)}, state}
+    {:ok, %{state | message: {:ok, message}}}
   end
 
   @doc false
-  defp start_link({:ok, %{url: url} = response}) do
-    WebSockex.start_link(url, __MODULE__, response)
+  defp start_link(state = %State{message: {:ok, %{url: url}}}) do
+    WebSockex.start_link(url, __MODULE__, state)
   end
 
   @doc false
-  defp start_link({:error, _} = response), do: response
+  defp start_link(%State{message: {:error, _error} = response}), do: response
 end

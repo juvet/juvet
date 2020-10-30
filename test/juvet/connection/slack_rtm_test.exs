@@ -16,36 +16,36 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
     {:ok, token: "SLACK_BOT_TOKEN"}
   end
 
-  describe "SlackRTM.connect/1" do
+  describe "SlackRTM.connect/2" do
     test "returns a pid", %{token: token} do
       use_cassette "rtm/connect/successful" do
-        assert {:ok, _pid} = SlackRTM.connect(%{token: token})
+        assert {:ok, _pid} = SlackRTM.connect(self(), %{token: token})
       end
     end
 
     test "connects to the Slack server", %{token: token} do
       use_cassette "rtm/connect/successful" do
-        {:ok, pid} = SlackRTM.connect(%{token: token})
+        {:ok, pid} = SlackRTM.connect(self(), %{token: token})
 
-        {:ok, state} = SlackRTM.get_state(pid)
+        {:ok, message} = SlackRTM.get_message(pid)
 
-        assert %{url: "ws://localhost:51345/ws"} = state
+        assert %{url: "ws://localhost:51345/ws"} = message
       end
     end
 
     test "assigns the latest response to the state", %{token: token} do
       use_cassette "rtm/connect/successful" do
-        {:ok, pid} = SlackRTM.connect(%{token: token})
+        {:ok, pid} = SlackRTM.connect(self(), %{token: token})
 
-        {:ok, state} = SlackRTM.get_state(pid)
+        {:ok, message} = SlackRTM.get_message(pid)
 
-        assert %{team: %{name: "Juvet"}} = state
+        assert %{team: %{name: "Juvet"}} = message
       end
     end
 
     test "returns the errors when unsuccessful", %{token: token} do
       use_cassette "rtm/connect/invalid_auth" do
-        assert {:error, _} = SlackRTM.connect(%{token: token})
+        assert {:error, _} = SlackRTM.connect(self(), %{token: token})
       end
     end
   end
@@ -54,58 +54,47 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
     setup :setup_with_supervised_pubsub!
 
     test "publishes a connection message when connected", %{token: token} do
-      PubSub.subscribe(self(), :new_slack_connection)
-
       use_cassette "rtm/connect/successful" do
-        SlackRTM.connect(%{token: token})
+        SlackRTM.connect(self(), %{token: token})
       end
 
       assert_receive [
-        :new_slack_connection,
+        :connected,
+        :slack,
         %{ok: true, team: %{name: "Juvet"}}
       ]
     end
 
     test "publishes a disconnection message when disconnected", %{token: token} do
-      PubSub.subscribe(self(), :slack_disconnected)
-
       use_cassette "rtm/connect/successful" do
-        {:ok, pid} = SlackRTM.connect(%{token: token})
-        {:ok, state} = SlackRTM.get_state(pid)
-        SlackRTM.handle_disconnect(nil, state)
+        {:ok, pid} = SlackRTM.connect(self(), %{token: token})
+        {:ok, message} = SlackRTM.get_message(pid)
+
+        SlackRTM.handle_disconnect(nil, %{
+          receiver: self(),
+          message: {:ok, message}
+        })
       end
 
       assert_receive [
-        :slack_disconnected,
+        :disconnected,
+        :slack,
         %{ok: true, team: %{name: "Juvet"}}
       ]
     end
 
-    test "publishes the message to incoming slack message subscribers" do
-      id = "T1234"
-      PubSub.subscribe(self(), :"incoming_slack_message_#{id}")
+    test "publishes the message to incoming slack message subscribers", %{
+      token: token
+    } do
       message = Poison.encode!(%{type: "hello"})
 
-      SlackRTM.handle_frame({:text, message}, %{team: %{id: id}})
-
-      assert_receive [:incoming_slack_message, ^message]
-    end
-  end
-
-  describe "sending outgoing Slack messages" do
-    setup :setup_with_supervised_pubsub!
-
-    test "subscribes to outgoing slack messages", %{token: token} do
       use_cassette "rtm/connect/successful" do
-        {:ok, _pid} = SlackRTM.connect(%{token: token})
-        id = "T1234"
+        {:ok, pid} = SlackRTM.connect(self(), %{token: token})
 
-        SlackRTM.handle_connect(nil, %{ok: true, team: %{id: id}})
-
-        subscribers = PubSub.subscribers(:"outgoing_slack_message_#{id}")
-
-        assert length(subscribers) == 1
+        WebSockex.send_frame(pid, {:text, message})
       end
+
+      assert_receive [:new_message, :slack, ^message]
     end
   end
 end
