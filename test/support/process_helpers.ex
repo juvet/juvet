@@ -5,11 +5,6 @@ defmodule Juvet.ProcessHelpers do
 
   import ExUnit.Callbacks, only: [start_supervised!: 1]
 
-  def setup_with_supervised_pubsub!(_context) do
-    start_supervised!(PubSub)
-    :ok
-  end
-
   def setup_with_supervised_application!(_context) do
     start_supervised_application!()
     :ok
