@@ -1,17 +1,17 @@
 defmodule Juvet.Endpoint do
   use Supervisor
 
-  def start_link(args = %{scheme: _scheme}) do
-    Supervisor.start_link(__MODULE__, args, name: __MODULE__)
+  def start_link(config) do
+    Supervisor.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  def init(args = %{scheme: scheme}) do
-    options = Map.merge(%{options: []}, args).options
+  def init(config) do
+    [{scheme, options}] = Juvet.Config.endpoint(config)
 
     children = [
       Plug.Cowboy.child_spec(
         scheme: scheme,
-        plug: Juvet.Router,
+        plug: {Juvet.EndpointRouter, config},
         options: options
       )
     ]
