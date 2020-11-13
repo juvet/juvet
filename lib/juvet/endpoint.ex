@@ -11,7 +11,7 @@ defmodule Juvet.Endpoint do
     children = [
       Plug.Cowboy.child_spec(
         scheme: scheme,
-        plug: {Juvet.EndpointRouter, config},
+        plug: Juvet.EndpointRouter,
         options: options
       )
     ]

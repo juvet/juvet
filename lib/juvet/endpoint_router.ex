@@ -6,14 +6,29 @@ defmodule Juvet.EndpointRouter do
   plug(Plug.Parsers, parsers: [:json], json_decoder: Poison)
   plug(:dispatch)
 
-  def call(conn, config) do
-    case Juvet.Config.slack(config) do
-      %{actions_endpoint: _actions_endpoint} -> IO.puts("Found actions")
-      %{events_endpoint: _events_endpoint} -> IO.puts("Found events")
-    end
+  @config Application.get_all_env(:juvet)
 
-    unquote(do: match(_, do: send_resp(conn, 404, "oops ... Nothing here :(")))
+  if Juvet.Config.slack_configured?(@config) do
+    defaults = %{actions_endpoint: nil, events_endpoint: nil}
 
-    super(conn, config)
+    %{actions_endpoint: actions_endpoint, events_endpoint: events_endpoint} =
+      Map.merge(defaults, Juvet.Config.slack(@config))
+
+    if events_endpoint,
+      do:
+        post(events_endpoint,
+          to: Juvet.SlackEventsEndpointRouter,
+          init_opts: @config
+        )
+
+    if actions_endpoint,
+      do:
+        post(actions_endpoint,
+          to: Juvet.SlackActionsEndpointRouter,
+          init_opts: @config
+        )
   end
+
+  # TODO: Make this response configurable like in Phoenix
+  match(_, do: send_resp(conn, 404, "Oh no! This route is not handled in Juvet"))
 end
