@@ -11,8 +11,8 @@ defmodule Juvet.Config do
       http: [port: {system: "PORT"}]
     ],
     slack: [
-      actions_endpoint_path: "/slack/actions",
-      events_endpoint_path: "/slack/events"
+      actions_endpoint: "/slack/actions",
+      events_endpoint: "/slack/events"
     ]
   """
 
