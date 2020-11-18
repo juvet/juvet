@@ -25,6 +25,7 @@ defmodule Juvet.Superintendent do
 
   def init(config) do
     if Juvet.Config.valid?(config) do
+      send(self(), :start_endpoint)
       send(self(), :start_factory_supervisor)
     end
 
@@ -67,5 +68,17 @@ defmodule Juvet.Superintendent do
       )
 
     {:noreply, %{state | factory_supervisor: factory_supervisor}}
+  end
+
+  def handle_info(:start_endpoint, state = %{config: config}) do
+    {:ok, _endpoint} =
+      Supervisor.start_child(
+        Juvet.BotFactory,
+        Supervisor.child_spec({Juvet.Endpoint, [config]},
+          restart: :permanent
+        )
+      )
+
+    {:noreply, state}
   end
 end

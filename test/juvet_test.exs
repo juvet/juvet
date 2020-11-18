@@ -28,6 +28,10 @@ defmodule Juvet.JuvetTest do
       assert type == :supervisor
       assert [modules] == [Juvet.FactorySupervisor]
     end
+
+    test "starts the Endpoint" do
+      assert Process.whereis(Juvet.Endpoint) |> Process.alive?()
+    end
   end
 
   describe "Juvet.start_bot!/3" do
