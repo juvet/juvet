@@ -90,10 +90,10 @@ defmodule Juvet do
 
   ```
 
-  * **Juvet** - Application that starts the `BotFactory` supervisor
-  * **BotFactory** - Supervisor that starts the `Superintendent` process
+  * **Juvet** - Application that starts the `Juvet.BotFactory` supervisor
+  * **BotFactory** - Supervisor that starts the `Juvet.Superintendent` process
   * **Superintdendent** - The brains of the operation. Process checks the validity of the configuration and if
-                          it is configured correctly, it starts the `Endpoint` process and the `FactorySupervisor`
+                          it is configured correctly, it starts the `Juvet.Endpoint` process and the `Juvet.FactorySupervisor`
   * **Endpoint** - Process that receives all webhook events
   * **FactorySupervisor** - Supervisor for the whole factory
   * **BotSupervisor** - Supervisor over one or many bot processes

@@ -10,8 +10,8 @@ Build chat bot applications for the major chat bot application platforms using f
 
 Juvet is an application framework that includes everything you need to build a chat application for all the major messaging platforms including:
 
-* [Slack RTM](https://api.slack.com/rtm) (currently implemented)
-* [Slack Events API](https://api.slack.com/events-api) (coming soon)
+* [Slack RTM](https://api.slack.com/rtm)
+* [Slack Events API](https://api.slack.com/events-api)
 * [Slack Incoming Webhook](https://api.slack.com/incoming-webhooks) (coming soon)
 * [Amazon Alexa](https://developer.amazon.com/)
 * [Facebook Messenger](https://developers.facebook.com/docs/messenger-platform/)
@@ -69,6 +69,52 @@ end
 
 ## USAGE
 
+### Initial Processes
+
+When Juvet starts, the following is what that process tree should look like.
+
+```asciidoc
+                                            +----------+
+                                            |          |
+                                         +--| Endpoint |
+                                         |  |          |
+                                         |  +----------+
+  +---------------+    +--------------+--+  +----------------+
+  |               |    |              |     |                |
+  |     Juvet     |----|  BotFactory  |-----| Superintendent |
+  | (application) |    |              |     |                |
+  |               |    +--------------+--+  +----------------+
+  +---------------+                      |  +-------------------+
+                                         |  |                   |
+                                         +--| FactorySupervisor |
+                                            |                   |
+                                            +-------------------+
+                                             |                 |
+                                             |                 |
+                                      +---------------+ +---------------+
+                                      |               | |               |
+                                      | BotSupervisor | | BotSupervisor |
+                                      |               | |               |
+                                      +---------------+ +---------------+
+                                               |                |
+                                               |                |
+                                            +-----+          +-----+
+                                            | Bot |          | Bot |
+                                            +-----+          +-----+
+
+  ```
+
+  * **Juvet** - Application that starts the `Juvet.BotFactory` supervisor
+  * **BotFactory** - Supervisor that starts the `Juvet.Superintendent` process
+  * **Superintdendent** - The brains of the operation. Process checks the validity of the
+                          configuration and if it is configured correctly, it starts
+                          the `Juvet.Endpoint` process and the `Juvet.FactorySupervisor`
+  * **Endpoint** - Process that receives all webhook events
+  * **FactorySupervisor** - Supervisor over all of the `Juvet.BotSupervisor` processes.
+  * **BotSupervisor** - Supervisor over one `Juvet.Bot` process as well as any additional
+                        supporting processes (like `Juvet.Receivers.SlackRTMReceiver`)
+  * **Bot** - Receives messages from the chat providers. It is responsible for processing messages and generating responses
+
 ### Configuration
 
 You need to tell Juvet what bot module should be created when a new connection is made. You can do that with the following configuration.
@@ -76,7 +122,15 @@ You need to tell Juvet what bot module should be created when a new connection i
 ```
 # config/config.exs
 
-config :juvet, bot: MyBot
+config :juvet,
+  bot: MyBot,
+  endpoint: [
+    http: [port: {system: "PORT"}]
+  ],
+  slack: [
+    actions_endpoint: "/slack/actions",
+    events_endpoint: "/slack/events"
+  ]
 ```
 
 ### Slack
@@ -92,25 +146,7 @@ Once your get the bot access token for your team, you are ready to go.
 Once you have a bot access token for your team, you can connect to Slack via:
 
 ```
-{:ok, pid} = Juvet.ConnectionFactory.connect(:slack, %{token: "YOUR BOT ACCESS TOKEN"})
-```
-
-The above will create two processes for your connected bot. One process (`Juvet.Connection.SlackRTM`) is created to listen to and send messages via the [Slack RTM](https://api.slack.com/rtm) api.
-
-The second process (`Juvet.BotServer`) is created to receive incoming messages from the Slack RTM process and pass them along to your bot.
-
-If you want to perform any custom logic when your bot is connected, you can override the `handle_connect/2` function on your bot.
-
-```
-defmodule MyBot do
-  use Juvet.Bot
-
-  def handle_connect(platform, state) do
-    # Add your custom logic here
-
-    {:ok, state}
-  end
-end
+{:ok, bot} = Juvet.create_bot("MyBot")
 ```
 
 #### Handling events from Slack
