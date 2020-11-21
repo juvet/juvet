@@ -1,12 +1,33 @@
 defmodule Juvet.BotSupervisor do
+  @moduledoc """
+  The Supervisor for a `Juvet.Bot` process as well as any supporting processes
+  like receivers.
+  """
+
   use Supervisor
 
   # Client API
 
+  @doc """
+  Starts a `Juvet.BotSupervisor` supervisor linked to the current process.
+
+  ## Options
+
+  * `args` - Keyword list with the module and name for the bot process.
+  """
   def start_link(args) do
     Supervisor.start_link(__MODULE__, args, [])
   end
 
+  @doc """
+  Returns the bot `pid` for the bot with the specified `module`.
+
+  ## Example
+
+  ```
+  {:ok, bot} = Juvet.BotSupervisor.get_bot(supervisor, MyBot)
+  ```
+  """
   def get_bot(pid, module) do
     bot =
       Supervisor.which_children(pid)
@@ -18,6 +39,7 @@ defmodule Juvet.BotSupervisor do
 
   # Server Callbacks
 
+  @doc false
   def init([module, name]) do
     opts = [strategy: :one_for_one]
 

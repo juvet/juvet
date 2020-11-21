@@ -1,4 +1,8 @@
 defmodule Juvet.SlackEndpointRouter do
+  @moduledoc """
+  Creates routes necessary for incoming Slack messages from configuration.
+  """
+
   defmacro __using__(opts) do
     config = Keyword.get(opts, :config)
 

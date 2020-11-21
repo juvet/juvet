@@ -1,11 +1,11 @@
 defmodule Juvet.SlackAPI.RTM do
-  alias Juvet.SlackAPI
-
   @moduledoc """
   A wrapper around the rtm methods on the Slack API.
   """
 
-  @doc ~S"""
+  alias Juvet.SlackAPI
+
+  @doc """
   Requests a new connection via websockets for the Slack API
   and retrieves a websocket address as well as some information
   about the team and the user that requested the connection.
@@ -27,7 +27,6 @@ defmodule Juvet.SlackAPI.RTM do
     }
   } = Juvet.Connection.SlackRTM.connect(%{token: token})
   """
-
   def connect(options \\ %{}) do
     SlackAPI.request("rtm.connect", options)
     |> SlackAPI.render_response()

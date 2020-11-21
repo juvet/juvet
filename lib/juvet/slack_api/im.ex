@@ -1,11 +1,11 @@
 defmodule Juvet.SlackAPI.IM do
-  alias Juvet.SlackAPI
-
   @moduledoc """
   A wrapper around the im methods on the Slack API.
   """
 
-  @doc ~S"""
+  alias Juvet.SlackAPI
+
+  @doc """
   Requests a new IM channel between the requestor and the user specified.
 
   Returns a map of the Slack response.

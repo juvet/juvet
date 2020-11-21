@@ -1,9 +1,9 @@
 defmodule Juvet.Connection.SlackRTM do
-  use WebSockex
-
   @moduledoc """
   A process to start a websocket connection to the Slack RTM api.
   """
+
+  use WebSockex
 
   alias Juvet.{SlackAPI}
 
@@ -11,7 +11,7 @@ defmodule Juvet.Connection.SlackRTM do
     defstruct receiver: nil, message: nil
   end
 
-  @doc ~S"""
+  @doc """
   Makes a call to the Slack API RTM.connect endpoint with the specified
   `token` and uses that url to connect to the websocket server on Slack.
 
@@ -27,12 +27,12 @@ defmodule Juvet.Connection.SlackRTM do
     |> start_link
   end
 
-  @doc ~S"""
-    Returns the last message received from the connection.
+  @doc """
+  Returns the last message received from the connection.
 
-    ## Example
+  ## Example
 
-    {:ok, message} = Juvet.Connection.SlackRTM.get_message(pid)
+  {:ok, message} = Juvet.Connection.SlackRTM.get_message(pid)
   """
   def get_message(pid) do
     %{message: {_, body}} = :sys.get_state(pid)
@@ -40,24 +40,21 @@ defmodule Juvet.Connection.SlackRTM do
     {:ok, body}
   end
 
+  @doc false
   def handle_connect(_conn, state = %{receiver: receiver, message: {_, body}}) do
     send(receiver, {:connected, :slack, body})
 
     {:ok, state}
   end
 
-  @doc ~S"""
-  Handles when the SlackRTM receives a disconnected message from the websocket.
-  """
+  @doc false
   def handle_disconnect(_, state = %{receiver: receiver, message: {_, body}}) do
     send(receiver, {:disconnected, :slack, body})
 
     {:ok, state}
   end
 
-  @doc ~S"""
-  Handles when the SlackRTM receives a incoming message from the websocket.
-  """
+  @doc false
   def handle_frame({_type, message}, state = %{receiver: receiver}) do
     send(receiver, {:new_message, :slack, message})
 
