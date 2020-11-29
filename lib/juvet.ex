@@ -144,8 +144,8 @@ defmodule Juvet do
   end
 
   @doc """
-  Adds a receive to the specific bot so it can receive messages from the specified `platform` with the
-  specified `parameters`.
+  Documents that the bot is connected to the platform so it can receive messages from the
+  specified `platform` with the specified `parameters`.
 
   * `:bot` - The `pid` of the bot to connect to.
   * `:platform` - The platform to connect the bot with.
@@ -168,13 +168,13 @@ defmodule Juvet do
   end
 
   @doc """
-  A shortcut function that creates a bot process (using `create_bot!/1`) and connects that bot
-  (using `connect_bot`) with one convienence function.
+  A shortcut function that creates a bot process (using `create_bot!/1`) and documents (using `connect_bot`)
+  that the bot is connected to the specified platform.
 
   ## Example
 
   ```
-  bot = Juvet.start_bot!("MyBot", :slack_rtm, %{token: "MY_TOKEN"})
+  bot = Juvet.start_bot!("MyBot", :slack, %{token: "MY_TOKEN"})
   ```
   """
   def start_bot!(name, platform, parameters) do
