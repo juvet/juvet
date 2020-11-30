@@ -5,13 +5,14 @@ defmodule Juvet.Mixfile do
     [
       app: :juvet,
       version: "0.0.1",
-      elixir: "~> 1.6",
+      elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "Juvet",
       deps: deps(),
       docs: docs(),
       package: package(),
-      description: "The message platform for chat apps",
+      aliases: aliases(),
+      description: "The messaging platform for chat apps",
       organization: "Juvet",
       source_url: "https://github.com/juvet/juvet",
       preferred_cli_env: preferred_cli_env()
@@ -20,23 +21,27 @@ defmodule Juvet.Mixfile do
 
   def application do
     [
-      mod: {Juvet, []},
-      extra_applications: [:logger, :httpoison, :websockex]
+      extra_applications: [:logger, :httpoison, :plug_cowboy, :websockex],
+      mod: {Juvet, []}
+    ]
+  end
+
+  defp aliases() do
+    [
+      test: "test --no-start"
     ]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib/juvet*"]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
     [
       {:httpoison, "~> 1.0"},
+      {:plug_cowboy, "~> 2.0"},
       {:poison, "~> 3.1"},
-      {:pubsub, "~> 1.0"},
       {:websockex, "~> 0.4.0"},
-      {:cowboy, "~> 1.1", only: :test},
-      {:exvcr, "~> 0.10", only: :test},
-      {:plug, "~> 1.6", only: :test}
+      {:exvcr, "~> 0.10", only: [:dev, :test]}
     ]
   end
 

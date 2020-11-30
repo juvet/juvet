@@ -1,95 +1,71 @@
 defmodule Juvet.BotFactory do
-  use GenServer
-
   @moduledoc """
-  A Module for instructing a supervisor on adding and removing bot
-  processes.
+  The top-level Supervisor for the whole factory floor.
   """
 
-  alias Juvet.BotFactory
+  use Supervisor
 
-  @doc ~S"""
-  Starts a new process for managing bots in an application.
+  @doc """
+  Starts a `Juvet.BotFactory` supervisor linked to the current process.
+  """
+  def start_link(config) do
+    Supervisor.start_link(__MODULE__, config, name: __MODULE__)
+  end
 
-  Upon initialization, this adds this bot factory as a child process to
-  a bot supervisor. In addition, another supervisor is created as a
-  sibling to this bot factory work process which supervises all of the
-  bots that are added through this factory.
+  @doc """
+  Creates a `Juvet.Bot` process with the specified `name` and adds
+  the new bot process to the `Juvet.BotSupervisor`.
 
-  Returns `{:ok, pid}` where `pid` is the process id of this factory.
+  * `:name` - Can be an atom or string which will be the name of the process, so it must be unique
 
   ## Example
 
-  {:ok, pid} = Juvet.BotFactory.start_link(supervisor_pid, [%{bot: MyBot}])
+  ```
+  {:ok, bot} = Juvet.BotFactory.create("MyBot")
+  ```
   """
-  def start_link(supervisor, config) do
-    GenServer.start_link(__MODULE__, [supervisor, config], name: __MODULE__)
+  def create(name) do
+    Juvet.Superintendent.create_bot(name)
   end
 
-  @doc ~S"""
-  Adds a new bot process to the bot supervisor with the `message` as an
-  argument.
+  @doc """
+  Creates a bot process using the configured bot module and specifies the name of the
+  process as the name provided.
 
-  Returns `:ok`.
+  This will return a `pid` of the bot if successful, otherwise a `RuntimeError` is raised.
+
+  * `:name` - Can be an atom or string which will be the name of the process, so it must be unique
+              bewteen all of the bots under the `Juvet.FactorySupervisor`.
 
   ## Example
 
-  :ok = Juvet.BotFactory.add_bot(%{team: %{domain: "Led Zeppelin"}})
+  ```
+  pid = Juvet.BotFactory.create!("MyBot")
+  ```
   """
-  def add_bot(message) do
-    GenServer.cast(BotFactory, {:add_bot, message})
+  def create!(name) do
+    case Juvet.Superintendent.create_bot(name) do
+      {:ok, bot} ->
+        bot
+
+      {:error, {:already_started, _pid}} ->
+        raise RuntimeError, message: "Bot already started."
+
+      {:error, error} ->
+        raise RuntimeError, message: "Error starting bot (#{error})."
+    end
   end
 
-  ## Callbacks
+  # Callbacks
 
   @doc false
-  def init([supervisor, config]) when is_pid(supervisor) do
-    init(config, %{supervisor: supervisor})
-  end
+  def init(config) do
+    children = [
+      {Juvet.Superintendent, config}
+    ]
 
-  @doc false
-  def init(config, state) do
-    PubSub.subscribe(self(), :new_slack_connection)
+    opts = [strategy: :one_for_all]
 
-    send(self(), :start_bot_supervisor)
-
-    {:ok, Map.merge(%{config: config}, state)}
-  end
-
-  @doc false
-  def handle_cast(
-        {:add_bot, message},
-        %{bot_supervisor: bot_supervisor, config: config} = state
-      ) do
-    DynamicSupervisor.start_child(
-      bot_supervisor,
-      {Juvet.BotServer, {config[:bot], message}}
-    )
-
-    {:noreply, state}
-  end
-
-  @doc false
-  def handle_info(:start_bot_supervisor, %{supervisor: supervisor} = state) do
-    {:ok, bot_supervisor} =
-      Supervisor.start_child(supervisor, bot_supervisor_spec())
-
-    {:noreply, Map.merge(state, %{bot_supervisor: bot_supervisor})}
-  end
-
-  @doc false
-  def handle_info([:new_slack_connection, %{ok: true} = message], state) do
-    BotFactory.add_bot(message)
-
-    {:noreply, state}
-  end
-
-  @doc false
-  defp bot_supervisor_spec() do
-    Supervisor.Spec.supervisor(
-      Juvet.BotSupervisor,
-      [],
-      restart: :permanent
-    )
+    Supervisor.init(children, opts)
   end
 end

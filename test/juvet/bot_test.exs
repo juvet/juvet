@@ -1,24 +1,77 @@
 defmodule Juvet.Bot.BotTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
+  use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
-  defmodule TestBot do
-    use Juvet.Bot
+  import Juvet.ConfigurationHelpers
+
+  setup_all do
+    Juvet.FakeSlack.start_link()
+
+    on_exit(fn ->
+      Juvet.FakeSlack.stop()
+    end)
   end
 
-  describe "Bot.send_message\1" do
-    test "publishes a message to an outgoing platform" do
-      id = "T1234"
-      PubSub.subscribe(self(), :"outgoing_slack_message_#{id}")
+  setup do
+    config = default_config()
 
-      TestBot.send_message(:slack, %{id: id}, %{
-        type: :message,
-        text: "Hello world"
-      })
+    start_supervised!({Juvet.BotFactory, config})
 
-      assert_receive [
-        :outgoing_slack_message,
-        %{type: :message, text: "Hello world"}
-      ]
+    {:ok, config: config}
+  end
+
+  describe "Juvet.Bot.add_receiver/2" do
+    setup do
+      bot =
+        Juvet.start_bot!("Jimmy", :slack, %{
+          team_id: "T12345",
+          token: "BOT_TOKEN"
+        })
+
+      {:ok, bot: bot}
+    end
+
+    test "creates a child receiver to receive messages from Slack RTM", %{
+      bot: bot
+    } do
+      use_cassette "rtm/connect/successful" do
+        {:ok, pid} =
+          MyBot.add_receiver(bot, :slack_rtm, %{
+            via: :start,
+            token: "MY TOKEN",
+            include_locale: true,
+            mpim_aware: true
+          })
+
+        assert Process.alive?(pid)
+      end
+    end
+
+    test "adds the hello message to the bot's messages", %{bot: bot} do
+      use_cassette "rtm/connect/successful" do
+        {:ok, pid} =
+          MyBot.add_receiver(bot, :slack_rtm, %{
+            via: :start,
+            token: "MY TOKEN",
+            include_locale: true,
+            mpim_aware: true
+          })
+
+        client = Juvet.Receivers.SlackRTMReceiver.get_connection(pid)
+
+        message = Poison.encode!(%{type: "hello"})
+        WebSockex.send_frame(client, {:text, message})
+
+        :timer.sleep(500)
+
+        messages = MyBot.get_messages(bot)
+
+        assert List.last(messages) == message
+      end
+    end
+
+    @tag :skip
+    test "without a token parameter returns an error" do
     end
   end
 end
