@@ -97,6 +97,27 @@ defmodule Juvet.BotFactoryTest do
     end
   end
 
+  describe "Juvet.BotFactory.find_or_create!/1" do
+    setup context do
+      start_supervised!({Juvet.BotFactory, context.config})
+
+      :ok
+    end
+
+    test "starts a new process for a bot if it does not exist" do
+      bot = Juvet.BotFactory.find_or_create!("Jamie's Bot")
+
+      assert Process.alive?(bot)
+    end
+
+    test "finds the existing bot process if it already exists" do
+      {:ok, new_bot} = Juvet.BotFactory.create("Jamie's Bot")
+      bot = Juvet.BotFactory.find_or_create!("Jamie's Bot")
+
+      assert bot == new_bot
+    end
+  end
+
   describe "Juvet.BotFactory.create!/1" do
     setup context do
       start_supervised!({Juvet.BotFactory, context.config})
