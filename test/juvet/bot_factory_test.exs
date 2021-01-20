@@ -60,19 +60,40 @@ defmodule Juvet.BotFactoryTest do
       [bot_name: bot_name]
     end
 
-    test "returns the process for a bot", %{bot_name: bot_name} do
+    test "returns the process for a bot in a response tuple", %{
+      bot_name: bot_name
+    } do
       {:ok, bot} = Juvet.BotFactory.find(bot_name)
 
       assert Process.alive?(bot)
-
-      assert String.to_atom(bot_name)
-             |> Process.whereis()
-             |> Process.alive?()
     end
 
     test "returns error if the bot does not exist" do
       assert {:error, "Bot named 'blah' not found"} =
                Juvet.BotFactory.find("blah")
+    end
+  end
+
+  describe "Juvet.BotFactory.find!/1" do
+    setup context do
+      start_supervised!({Juvet.BotFactory, context.config})
+
+      bot_name = "My Bot"
+      Juvet.BotFactory.create(bot_name)
+
+      [bot_name: bot_name]
+    end
+
+    test "returns just the pid for a bot", %{bot_name: bot_name} do
+      bot = Juvet.BotFactory.find!(bot_name)
+
+      assert Process.alive?(bot)
+    end
+
+    test "raises an error if the bot is not found" do
+      assert_raise RuntimeError, fn ->
+        Juvet.BotFactory.find!("Jamie's Bot")
+      end
     end
   end
 
