@@ -56,6 +56,10 @@ defmodule Juvet.BotFactory do
     end
   end
 
+  def find(name) do
+    Juvet.Superintendent.find_bot(name)
+  end
+
   # Callbacks
 
   @doc false

@@ -45,6 +45,10 @@ defmodule Juvet.Superintendent do
     GenServer.call(__MODULE__, {:create_bot, name})
   end
 
+  def find_bot(name) do
+    GenServer.call(__MODULE__, {:find_bot, name})
+  end
+
   @doc """
   Returns the current state for the bot.
 
@@ -76,6 +80,21 @@ defmodule Juvet.Superintendent do
       ) do
     reply =
       Juvet.FactorySupervisor.add_bot(factory_supervisor, config[:bot], name)
+
+    {:reply, reply, state}
+  end
+
+  @doc false
+  def handle_call(
+        {:find_bot, name},
+        _from,
+        state
+      ) do
+    reply =
+      case String.to_atom(name) |> Process.whereis() do
+        nil -> {:error, "Bot named '#{name}' not found"}
+        pid -> {:ok, pid}
+      end
 
     {:reply, reply, state}
   end
