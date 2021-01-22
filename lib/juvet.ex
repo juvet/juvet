@@ -168,6 +168,38 @@ defmodule Juvet do
   end
 
   @doc """
+  Finds or creates a `Juvet.Bot` process with the specified `name`.
+
+  * `:name` - The name of the bot to find or create
+
+  ## Example
+
+  ```
+  {:ok, bot} = Juvet.find_or_create_bot("MyBot")
+  ```
+  """
+  def find_or_create_bot(name) do
+    Juvet.BotFactory.find_or_create(name)
+  end
+
+  @doc """
+  Finds or creates a `Juvet.Bot` process with the specified `name`.
+
+  This will return a `pid` of the bot if successful, otherwise a `RuntimeError` is raised.
+
+  * `:name` - The name of the bot to find or create
+
+  ## Example
+
+  ```
+  pid = Juvet.find_or_create_bot!("MyBot")
+  ```
+  """
+  def find_or_create_bot!(name) do
+    Juvet.BotFactory.find_or_create!(name)
+  end
+
+  @doc """
   A shortcut function that creates a bot process (using `create_bot!/1`) and documents (using `connect_bot`)
   that the bot is connected to the specified platform.
 
