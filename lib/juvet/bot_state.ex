@@ -15,6 +15,15 @@ defmodule Juvet.BotState do
   end
 
   def has_platform?(state, platform) do
-    Enum.any?(state.platforms, fn p -> Kernel.elem(p, 0) == platform end)
+    Enum.any?(state.platforms, &find(&1, platform))
   end
+
+  def platform(state, platform) do
+    case Enum.find(state.platforms, &find(&1, platform)) do
+      {_platform, platform_state} -> platform_state
+      nil -> nil
+    end
+  end
+
+  defp find(platform, name), do: Kernel.elem(platform, 0) == name
 end

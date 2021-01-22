@@ -33,4 +33,16 @@ defmodule Juvet.BotStateTest do
       assert Juvet.BotState.has_platform?(state, :slack)
     end
   end
+
+  describe "Juvet.BotState.platform/2" do
+    test "returns the state for the specified platform", %{state: state} do
+      state = Juvet.BotState.add_platform(state, :slack)
+
+      assert %Juvet.PlatformState{} = Juvet.BotState.platform(state, :slack)
+    end
+
+    test "returns nil if the platform does not exist", %{state: state} do
+      assert Juvet.BotState.platform(state, :slack) == nil
+    end
+  end
 end
