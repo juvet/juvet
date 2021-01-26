@@ -1,27 +1,33 @@
 defmodule Juvet.PlatformState do
-  defstruct name: nil, teams: []
+  @enforce_keys [:name]
+  defstruct [:name, teams: []]
 
-  def add_team(state, team) do
-    case has_team?(state, team) do
-      false ->
+  alias Juvet.TeamState
+
+  def put_team(state, %{id: team_id} = team) do
+    # TODO: Call new_team_callback \\ nil if it is a new team and the callback is specified
+    case team(state, team_id) do
+      nil ->
         teams = state.teams
-        %{state | teams: teams ++ [{team, %Juvet.TeamState{}}]}
+        new_team = struct(TeamState, team)
 
-      true ->
-        state
+        {%{state | teams: teams ++ [new_team]}, new_team}
+
+      existing_team ->
+        {state, existing_team}
     end
   end
 
-  def has_team?(state, team) do
-    Enum.any?(state.teams, &find(&1, team))
+  def has_team?(state, team_id) do
+    Enum.any?(state.teams, &find(&1, team_id))
   end
 
-  def team(state, team) do
-    case Enum.find(state.teams, &find(&1, team)) do
-      {_team, team_state} -> team_state
+  def team(state, team_id) do
+    case Enum.find(state.teams, &find(&1, team_id)) do
       nil -> nil
+      team -> team
     end
   end
 
-  defp find(team, id), do: Kernel.elem(team, 0) == id
+  defp find(team, id), do: team.id == id
 end

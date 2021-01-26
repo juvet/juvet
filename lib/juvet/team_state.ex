@@ -1,5 +1,6 @@
 defmodule Juvet.TeamState do
-  defstruct users: []
+  @enforce_keys [:id]
+  defstruct [:id, users: []]
 
   def add_user(state, user, attributes \\ []) do
     case has_user?(state, user) do

@@ -2,21 +2,23 @@ defmodule Juvet.PlatformStateTest do
   use ExUnit.Case
 
   setup_all do
-    [state: %Juvet.PlatformState{}]
+    [state: %Juvet.PlatformState{name: :slack}]
   end
 
-  describe "Juvet.PlatformState.add_team/2" do
+  describe "Juvet.PlatformState.put_team/2" do
     test "adds the team to the list of teams", %{state: state} do
-      state = Juvet.PlatformState.add_team(state, "T1234")
+      {state, team} = Juvet.PlatformState.put_team(state, %{id: "T1234"})
 
-      assert state.teams == [{"T1234", %Juvet.TeamState{}}]
+      assert state.teams == [%Juvet.TeamState{id: "T1234"}]
+      assert team == %Juvet.TeamState{id: "T1234"}
     end
 
     test "does not duplicate the team if it already exists", %{state: state} do
-      state = Juvet.PlatformState.add_team(state, "T1234")
-      state = Juvet.PlatformState.add_team(state, "T1234")
+      {state, _team} = Juvet.PlatformState.put_team(state, %{id: "T1234"})
+      {state, team} = Juvet.PlatformState.put_team(state, %{id: "T1234"})
 
-      assert state.teams == [{"T1234", %Juvet.TeamState{}}]
+      assert state.teams == [%Juvet.TeamState{id: "T1234"}]
+      assert team == %Juvet.TeamState{id: "T1234"}
     end
   end
 
@@ -26,7 +28,7 @@ defmodule Juvet.PlatformStateTest do
     end
 
     test "returns true if the team does exist", %{state: state} do
-      state = Juvet.PlatformState.add_team(state, "T1234")
+      {state, _team} = Juvet.PlatformState.put_team(state, %{id: "T1234"})
 
       assert Juvet.PlatformState.has_team?(state, "T1234")
     end
@@ -34,7 +36,7 @@ defmodule Juvet.PlatformStateTest do
 
   describe "Juvet.PlatformState.team/2" do
     test "returns the state for the specified team", %{state: state} do
-      state = Juvet.PlatformState.add_team(state, "T1234")
+      {state, _team} = Juvet.PlatformState.put_team(state, %{id: "T1234"})
 
       assert %Juvet.TeamState{} = Juvet.PlatformState.team(state, "T1234")
     end
