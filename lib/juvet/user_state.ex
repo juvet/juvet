@@ -1,3 +1,4 @@
 defmodule Juvet.UserState do
-  defstruct first_name: ""
+  @enforce_keys [:id]
+  defstruct [:id, :name]
 end

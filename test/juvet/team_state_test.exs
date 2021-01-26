@@ -5,31 +5,31 @@ defmodule Juvet.TeamStateTest do
     [state: %Juvet.TeamState{id: "T1234"}]
   end
 
-  describe "Juvet.TeamState.add_user/2" do
+  describe "Juvet.TeamState.put_user/2" do
     test "adds the user to the list of users", %{state: state} do
-      state = Juvet.TeamState.add_user(state, "U1234")
+      {state, user} = Juvet.TeamState.put_user(state, %{id: "U1234"})
 
-      assert state.users == [{"U1234", %Juvet.UserState{}}]
-    end
-
-    test "adds the user's attributes to the user's state", %{state: state} do
-      state =
-        Juvet.TeamState.add_user(state, "U1234",
-          first_name: "Jimmy",
-          blah: "bleh"
-        )
-
-      assert state == %Juvet.TeamState{
-               id: "T1234",
-               users: [{"U1234", %Juvet.UserState{first_name: "Jimmy"}}]
-             }
+      assert state.users == [%Juvet.UserState{id: "U1234"}]
+      assert user == %Juvet.UserState{id: "U1234"}
     end
 
     test "does not duplicate the user if it already exists", %{state: state} do
-      state = Juvet.TeamState.add_user(state, "U1234")
-      state = Juvet.TeamState.add_user(state, "U1234")
+      {state, _user} = Juvet.TeamState.put_user(state, %{id: "U1234"})
+      {state, user} = Juvet.TeamState.put_user(state, %{id: "U1234"})
 
-      assert state.users == [{"U1234", %Juvet.UserState{}}]
+      assert state.users == [%Juvet.UserState{id: "U1234"}]
+      assert user == %Juvet.UserState{id: "U1234"}
+    end
+
+    test "updates the user values if it already exists", %{state: state} do
+      {state, _user} =
+        Juvet.TeamState.put_user(state, %{id: "U1234", name: "Jimmy Page"})
+
+      {state, user} =
+        Juvet.TeamState.put_user(state, %{id: "U1234", name: "Jimmy"})
+
+      assert state.users == [%Juvet.UserState{id: "U1234", name: "Jimmy"}]
+      assert user == %Juvet.UserState{id: "U1234", name: "Jimmy"}
     end
   end
 
@@ -39,7 +39,7 @@ defmodule Juvet.TeamStateTest do
     end
 
     test "returns true if the user does exist", %{state: state} do
-      state = Juvet.TeamState.add_user(state, "U1234")
+      {state, _user} = Juvet.TeamState.put_user(state, %{id: "U1234"})
 
       assert Juvet.TeamState.has_user?(state, "U1234")
     end
@@ -47,7 +47,7 @@ defmodule Juvet.TeamStateTest do
 
   describe "Juvet.TeamState.user/2" do
     test "returns the state for the specified user", %{state: state} do
-      state = Juvet.TeamState.add_user(state, "U1234")
+      {state, _user} = Juvet.TeamState.put_user(state, %{id: "U1234"})
 
       assert %Juvet.UserState{} = Juvet.TeamState.user(state, "U1234")
     end
