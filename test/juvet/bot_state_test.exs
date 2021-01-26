@@ -5,20 +5,24 @@ defmodule Juvet.BotStateTest do
     [state: %Juvet.BotState{}]
   end
 
-  describe "Juvet.BotState.add_platform/2" do
-    test "adds the platform to the list of platforms", %{state: state} do
-      state = Juvet.BotState.add_platform(state, :slack)
+  describe "Juvet.BotState.put_platform/2" do
+    test "adds the platform to the list of platforms if it does not exist", %{
+      state: state
+    } do
+      {state, platform} = Juvet.BotState.put_platform(state, :slack)
 
-      assert state.platforms == [slack: %Juvet.PlatformState{}]
+      assert state.platforms == [%Juvet.PlatformState{name: :slack}]
+      assert platform == %Juvet.PlatformState{name: :slack}
     end
 
     test "does not duplicate the platform if it already exists in the list", %{
       state: state
     } do
-      state = Juvet.BotState.add_platform(state, :slack)
-      state = Juvet.BotState.add_platform(state, :slack)
+      {state, _platform} = Juvet.BotState.put_platform(state, :slack)
+      {state, platform} = Juvet.BotState.put_platform(state, :slack)
 
-      assert state.platforms == [slack: %Juvet.PlatformState{}]
+      assert state.platforms == [%Juvet.PlatformState{name: :slack}]
+      assert platform == %Juvet.PlatformState{name: :slack}
     end
   end
 
@@ -28,7 +32,7 @@ defmodule Juvet.BotStateTest do
     end
 
     test "returns true if the platform does exist", %{state: state} do
-      state = Juvet.BotState.add_platform(state, :slack)
+      {state, _platform} = Juvet.BotState.put_platform(state, :slack)
 
       assert Juvet.BotState.has_platform?(state, :slack)
     end
@@ -36,7 +40,7 @@ defmodule Juvet.BotStateTest do
 
   describe "Juvet.BotState.platform/2" do
     test "returns the state for the specified platform", %{state: state} do
-      state = Juvet.BotState.add_platform(state, :slack)
+      {state, _platform} = Juvet.BotState.put_platform(state, :slack)
 
       assert %Juvet.PlatformState{} = Juvet.BotState.platform(state, :slack)
     end

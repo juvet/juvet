@@ -1,5 +1,5 @@
 defmodule Juvet.PlatformState do
-  defstruct teams: []
+  defstruct name: nil, teams: []
 
   def add_team(state, team) do
     case has_team?(state, team) do

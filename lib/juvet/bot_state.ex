@@ -3,14 +3,16 @@ defmodule Juvet.BotState do
 
   alias Juvet.PlatformState
 
-  def add_platform(state, platform) do
-    case has_platform?(state, platform) do
-      false ->
+  def put_platform(state, platform) do
+    case platform(state, platform) do
+      nil ->
         platforms = state.platforms
-        %{state | platforms: platforms ++ [{platform, %PlatformState{}}]}
+        new_platform = %PlatformState{name: platform}
 
-      true ->
-        state
+        {%{state | platforms: platforms ++ [new_platform]}, new_platform}
+
+      existing_platform ->
+        {state, existing_platform}
     end
   end
 
@@ -20,10 +22,10 @@ defmodule Juvet.BotState do
 
   def platform(state, platform) do
     case Enum.find(state.platforms, &find(&1, platform)) do
-      {_platform, platform_state} -> platform_state
       nil -> nil
+      p -> p
     end
   end
 
-  defp find(platform, name), do: Kernel.elem(platform, 0) == name
+  defp find(platform, name), do: platform.name == name
 end
