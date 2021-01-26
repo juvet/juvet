@@ -2,7 +2,7 @@ defmodule Juvet.TeamStateTest do
   use ExUnit.Case
 
   setup_all do
-    [state: %Juvet.TeamState{}]
+    [state: %Juvet.TeamState{id: "T1234"}]
   end
 
   describe "Juvet.TeamState.add_user/2" do
@@ -20,6 +20,7 @@ defmodule Juvet.TeamStateTest do
         )
 
       assert state == %Juvet.TeamState{
+               id: "T1234",
                users: [{"U1234", %Juvet.UserState{first_name: "Jimmy"}}]
              }
     end

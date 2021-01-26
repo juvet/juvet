@@ -20,6 +20,17 @@ defmodule Juvet.PlatformStateTest do
       assert state.teams == [%Juvet.TeamState{id: "T1234"}]
       assert team == %Juvet.TeamState{id: "T1234"}
     end
+
+    test "updates the team values if it already exists", %{state: state} do
+      {state, _team} =
+        Juvet.PlatformState.put_team(state, %{id: "T1234", name: "Led Zeppelin"})
+
+      {state, team} =
+        Juvet.PlatformState.put_team(state, %{id: "T1234", name: "Zeppelin"})
+
+      assert state.teams == [%Juvet.TeamState{id: "T1234", name: "Zeppelin"}]
+      assert team == %Juvet.TeamState{id: "T1234", name: "Zeppelin"}
+    end
   end
 
   describe "Juvet.PlatformState.has_team?/2" do

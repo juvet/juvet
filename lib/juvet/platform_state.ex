@@ -8,13 +8,17 @@ defmodule Juvet.PlatformState do
     # TODO: Call new_team_callback \\ nil if it is a new team and the callback is specified
     case team(state, team_id) do
       nil ->
-        teams = state.teams
         new_team = struct(TeamState, team)
+        teams = state.teams
 
         {%{state | teams: teams ++ [new_team]}, new_team}
 
       existing_team ->
-        {state, existing_team}
+        new_team = Map.merge(existing_team, team)
+        teams = state.teams
+        index = Enum.find_index(teams, &find(&1, existing_team.id))
+
+        {%{state | teams: List.replace_at(teams, index, new_team)}, new_team}
     end
   end
 
