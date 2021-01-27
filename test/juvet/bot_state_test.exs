@@ -82,7 +82,7 @@ defmodule Juvet.BotStateTest do
                    teams: [
                      %Juvet.BotState.Team{
                        id: "T1234",
-                       users: [%Juvet.UserState{id: "U1234"}]
+                       users: [%Juvet.BotState.User{id: "U1234"}]
                      }
                    ]
                  }
@@ -94,17 +94,17 @@ defmodule Juvet.BotStateTest do
                teams: [
                  %Juvet.BotState.Team{
                    id: "T1234",
-                   users: [%Juvet.UserState{id: "U1234"}]
+                   users: [%Juvet.BotState.User{id: "U1234"}]
                  }
                ]
              }
 
       assert team == %Juvet.BotState.Team{
                id: "T1234",
-               users: [%Juvet.UserState{id: "U1234"}]
+               users: [%Juvet.BotState.User{id: "U1234"}]
              }
 
-      assert user == %Juvet.UserState{id: "U1234"}
+      assert user == %Juvet.BotState.User{id: "U1234"}
     end
 
     test "does not change the state if the platform does not exist", %{

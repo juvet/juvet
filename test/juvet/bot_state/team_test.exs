@@ -9,16 +9,16 @@ defmodule Juvet.BotState.TeamTest do
     test "adds the user to the list of users", %{state: state} do
       {state, user} = Juvet.BotState.Team.put_user(state, %{id: "U1234"})
 
-      assert state.users == [%Juvet.UserState{id: "U1234"}]
-      assert user == %Juvet.UserState{id: "U1234"}
+      assert state.users == [%Juvet.BotState.User{id: "U1234"}]
+      assert user == %Juvet.BotState.User{id: "U1234"}
     end
 
     test "does not duplicate the user if it already exists", %{state: state} do
       {state, _user} = Juvet.BotState.Team.put_user(state, %{id: "U1234"})
       {state, user} = Juvet.BotState.Team.put_user(state, %{id: "U1234"})
 
-      assert state.users == [%Juvet.UserState{id: "U1234"}]
-      assert user == %Juvet.UserState{id: "U1234"}
+      assert state.users == [%Juvet.BotState.User{id: "U1234"}]
+      assert user == %Juvet.BotState.User{id: "U1234"}
     end
 
     test "updates the user values if it already exists", %{state: state} do
@@ -28,8 +28,8 @@ defmodule Juvet.BotState.TeamTest do
       {state, user} =
         Juvet.BotState.Team.put_user(state, %{id: "U1234", name: "Jimmy"})
 
-      assert state.users == [%Juvet.UserState{id: "U1234", name: "Jimmy"}]
-      assert user == %Juvet.UserState{id: "U1234", name: "Jimmy"}
+      assert state.users == [%Juvet.BotState.User{id: "U1234", name: "Jimmy"}]
+      assert user == %Juvet.BotState.User{id: "U1234", name: "Jimmy"}
     end
   end
 
@@ -49,7 +49,7 @@ defmodule Juvet.BotState.TeamTest do
     test "returns the state for the specified user", %{state: state} do
       {state, _user} = Juvet.BotState.Team.put_user(state, %{id: "U1234"})
 
-      assert %Juvet.UserState{} = Juvet.BotState.Team.user(state, "U1234")
+      assert %Juvet.BotState.User{} = Juvet.BotState.Team.user(state, "U1234")
     end
 
     test "returns nil if the user does not exist", %{state: state} do

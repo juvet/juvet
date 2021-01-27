@@ -2,13 +2,13 @@ defmodule Juvet.BotState.Team do
   @enforce_keys [:id]
   defstruct [:id, :name, users: []]
 
-  alias Juvet.UserState
+  alias Juvet.BotState.User
 
   def put_user(state, %{id: user_id} = user) do
     # TODO: Call new_user_callback \\ nil if it is a new user callback is specified
     case user(state, user_id) do
       nil ->
-        new_user = struct(UserState, user)
+        new_user = struct(User, user)
         users = state.users
 
         {%{state | users: users ++ [new_user]}, new_user}
