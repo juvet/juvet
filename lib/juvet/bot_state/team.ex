@@ -1,4 +1,4 @@
-defmodule Juvet.TeamState do
+defmodule Juvet.BotState.Team do
   @enforce_keys [:id]
   defstruct [:id, :name, users: []]
 

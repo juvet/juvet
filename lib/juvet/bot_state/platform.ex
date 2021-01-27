@@ -2,13 +2,13 @@ defmodule Juvet.BotState.Platform do
   @enforce_keys [:name]
   defstruct [:name, teams: []]
 
-  alias Juvet.TeamState
+  alias Juvet.BotState.Team
 
   def put_team(state, %{id: team_id} = team) do
     # TODO: Call new_team_callback \\ nil if it is a new team and the callback is specified
     case team(state, team_id) do
       nil ->
-        new_team = struct(TeamState, team)
+        new_team = struct(Team, team)
         teams = state.teams
 
         {%{state | teams: teams ++ [new_team]}, new_team}

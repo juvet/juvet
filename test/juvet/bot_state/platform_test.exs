@@ -9,16 +9,16 @@ defmodule Juvet.BotState.PlatformTest do
     test "adds the team to the list of teams", %{state: state} do
       {state, team} = Juvet.BotState.Platform.put_team(state, %{id: "T1234"})
 
-      assert state.teams == [%Juvet.TeamState{id: "T1234"}]
-      assert team == %Juvet.TeamState{id: "T1234"}
+      assert state.teams == [%Juvet.BotState.Team{id: "T1234"}]
+      assert team == %Juvet.BotState.Team{id: "T1234"}
     end
 
     test "does not duplicate the team if it already exists", %{state: state} do
       {state, _team} = Juvet.BotState.Platform.put_team(state, %{id: "T1234"})
       {state, team} = Juvet.BotState.Platform.put_team(state, %{id: "T1234"})
 
-      assert state.teams == [%Juvet.TeamState{id: "T1234"}]
-      assert team == %Juvet.TeamState{id: "T1234"}
+      assert state.teams == [%Juvet.BotState.Team{id: "T1234"}]
+      assert team == %Juvet.BotState.Team{id: "T1234"}
     end
 
     test "updates the team values if it already exists", %{state: state} do
@@ -31,8 +31,11 @@ defmodule Juvet.BotState.PlatformTest do
       {state, team} =
         Juvet.BotState.Platform.put_team(state, %{id: "T1234", name: "Zeppelin"})
 
-      assert state.teams == [%Juvet.TeamState{id: "T1234", name: "Zeppelin"}]
-      assert team == %Juvet.TeamState{id: "T1234", name: "Zeppelin"}
+      assert state.teams == [
+               %Juvet.BotState.Team{id: "T1234", name: "Zeppelin"}
+             ]
+
+      assert team == %Juvet.BotState.Team{id: "T1234", name: "Zeppelin"}
     end
   end
 
@@ -52,7 +55,8 @@ defmodule Juvet.BotState.PlatformTest do
     test "returns the state for the specified team", %{state: state} do
       {state, _team} = Juvet.BotState.Platform.put_team(state, %{id: "T1234"})
 
-      assert %Juvet.TeamState{} = Juvet.BotState.Platform.team(state, "T1234")
+      assert %Juvet.BotState.Team{} =
+               Juvet.BotState.Platform.team(state, "T1234")
     end
 
     test "returns nil if the team does not exist", %{state: state} do

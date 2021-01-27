@@ -1,8 +1,7 @@
 defmodule Juvet.BotState do
   defstruct bot_supervisor: nil, platforms: []
 
-  alias Juvet.BotState.Platform
-  alias Juvet.TeamState
+  alias Juvet.BotState.{Platform, Team}
 
   def put_platform(state, platform_name) do
     case platform(state, platform_name) do
@@ -44,10 +43,10 @@ defmodule Juvet.BotState do
         {state, nil, nil, nil}
 
       {state, platform, team} ->
-        case TeamState.put_user(team, user) do
+        case Team.put_user(team, user) do
           {team, user} ->
             # TODO: This really sucks. Maybe implement Access behavior for
-            # TeamState and use put_in
+            # Team and use put_in
             teams = platform.teams
             index = Enum.find_index(teams, fn t -> t.id == team.id end)
 
