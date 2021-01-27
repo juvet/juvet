@@ -26,6 +26,44 @@ defmodule Juvet.BotStateTest do
     end
   end
 
+  describe "Juvet.BotState.put_team/2" do
+    test "adds the team to the specified platform if it does not exist", %{
+      state: state
+    } do
+      {state, platform} = Juvet.BotState.put_platform(state, :slack)
+
+      {state, platform, team} =
+        Juvet.BotState.put_team({state, platform}, %{id: "T1234"})
+
+      assert state == %Juvet.BotState{
+               platforms: [
+                 %Juvet.PlatformState{
+                   name: :slack,
+                   teams: [%Juvet.TeamState{id: "T1234"}]
+                 }
+               ]
+             }
+
+      assert platform == %Juvet.PlatformState{
+               name: :slack,
+               teams: [%Juvet.TeamState{id: "T1234"}]
+             }
+
+      assert team == %Juvet.TeamState{id: "T1234"}
+    end
+
+    test "does not change the state if the platform does not exist", %{
+      state: state
+    } do
+      {new_state, platform, team} =
+        Juvet.BotState.put_team({state, %{name: :slack}}, %{id: "T1234"})
+
+      assert new_state == state
+      assert platform == nil
+      assert team == nil
+    end
+  end
+
   describe "Juvet.BotState.has_platform?/2" do
     test "returns false if the platform does not exist", %{state: state} do
       refute Juvet.BotState.has_platform?(state, :slack)
