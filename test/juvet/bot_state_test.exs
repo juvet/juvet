@@ -11,8 +11,8 @@ defmodule Juvet.BotStateTest do
     } do
       {state, platform} = Juvet.BotState.put_platform(state, :slack)
 
-      assert state.platforms == [%Juvet.PlatformState{name: :slack}]
-      assert platform == %Juvet.PlatformState{name: :slack}
+      assert state.platforms == [%Juvet.BotState.Platform{name: :slack}]
+      assert platform == %Juvet.BotState.Platform{name: :slack}
     end
 
     test "does not duplicate the platform if it already exists in the list", %{
@@ -21,8 +21,8 @@ defmodule Juvet.BotStateTest do
       {state, _platform} = Juvet.BotState.put_platform(state, :slack)
       {state, platform} = Juvet.BotState.put_platform(state, :slack)
 
-      assert state.platforms == [%Juvet.PlatformState{name: :slack}]
-      assert platform == %Juvet.PlatformState{name: :slack}
+      assert state.platforms == [%Juvet.BotState.Platform{name: :slack}]
+      assert platform == %Juvet.BotState.Platform{name: :slack}
     end
   end
 
@@ -37,14 +37,14 @@ defmodule Juvet.BotStateTest do
 
       assert state == %Juvet.BotState{
                platforms: [
-                 %Juvet.PlatformState{
+                 %Juvet.BotState.Platform{
                    name: :slack,
                    teams: [%Juvet.TeamState{id: "T1234"}]
                  }
                ]
              }
 
-      assert platform == %Juvet.PlatformState{
+      assert platform == %Juvet.BotState.Platform{
                name: :slack,
                teams: [%Juvet.TeamState{id: "T1234"}]
              }
@@ -77,7 +77,7 @@ defmodule Juvet.BotStateTest do
 
       assert state == %Juvet.BotState{
                platforms: [
-                 %Juvet.PlatformState{
+                 %Juvet.BotState.Platform{
                    name: :slack,
                    teams: [
                      %Juvet.TeamState{
@@ -89,7 +89,7 @@ defmodule Juvet.BotStateTest do
                ]
              }
 
-      assert platform == %Juvet.PlatformState{
+      assert platform == %Juvet.BotState.Platform{
                name: :slack,
                teams: [
                  %Juvet.TeamState{
@@ -138,7 +138,7 @@ defmodule Juvet.BotStateTest do
     test "returns the state for the specified platform", %{state: state} do
       {state, _platform} = Juvet.BotState.put_platform(state, :slack)
 
-      assert %Juvet.PlatformState{} = Juvet.BotState.platform(state, :slack)
+      assert %Juvet.BotState.Platform{} = Juvet.BotState.platform(state, :slack)
     end
 
     test "returns nil if the platform does not exist", %{state: state} do

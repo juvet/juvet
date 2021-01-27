@@ -1,4 +1,4 @@
-defmodule Juvet.PlatformState do
+defmodule Juvet.BotState.Platform do
   @enforce_keys [:name]
   defstruct [:name, teams: []]
 
