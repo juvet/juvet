@@ -1,8 +1,14 @@
 defmodule Juvet.BotState.Platform do
   @enforce_keys [:name]
-  defstruct [:name, teams: []]
+  defstruct [:name, messages: [], teams: []]
 
   alias Juvet.BotState.Team
+
+  def put_message(state, message) do
+    messages = state.messages
+
+    {%{state | messages: messages ++ [message]}, message}
+  end
 
   def put_team(state, %{id: team_id} = team) do
     # TODO: Call new_team_callback \\ nil if it is a new team and the callback is specified

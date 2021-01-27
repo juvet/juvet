@@ -5,6 +5,16 @@ defmodule Juvet.BotState.PlatformTest do
     [state: %Juvet.BotState.Platform{name: :slack}]
   end
 
+  describe "Juvet.BotState.Platform.put_message/2" do
+    test "adds the message to the list of messages", %{state: state} do
+      {state, message} =
+        Juvet.BotState.Platform.put_message(state, %{text: "Hello World"})
+
+      assert state.messages == [%{text: "Hello World"}]
+      assert message == %{text: "Hello World"}
+    end
+  end
+
   describe "Juvet.BotState.Platform.put_team/2" do
     test "adds the team to the list of teams", %{state: state} do
       {state, team} = Juvet.BotState.Platform.put_team(state, %{id: "T1234"})
