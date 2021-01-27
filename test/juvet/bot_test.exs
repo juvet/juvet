@@ -74,4 +74,106 @@ defmodule Juvet.Bot.BotTest do
     test "without a token parameter returns an error" do
     end
   end
+
+  describe "Juvet.Bot.user_install/3" do
+    setup do
+      bot = Juvet.create_bot!("Jimmy")
+
+      auth = %{
+        credentials: %{
+          other: %{
+            team_id: "T1234",
+            team: "Zeppelin",
+            team_url: "https://zeppelin.slack.com"
+          },
+          token: "SLACK_TOKEN",
+          scopes: ["identify"]
+        },
+        extra: %{
+          raw_info: %{
+            user: %{
+              id: "U12345"
+            }
+          }
+        },
+        info: %{
+          name: "Jimmy Page",
+          nickname: "jimmy"
+        }
+      }
+
+      {:ok, bot: bot, auth: auth}
+    end
+
+    test "returns the user if successful", %{
+      bot: bot,
+      auth: auth
+    } do
+      {:ok, user} = MyBot.user_install(bot, :slack, auth)
+
+      assert user.id == "U12345"
+      assert user.name == "Jimmy Page"
+    end
+
+    test "adds the platform to the bot's state", %{bot: bot, auth: auth} do
+      MyBot.user_install(bot, :slack, auth)
+
+      assert %Juvet.BotState{
+               platforms: [%Juvet.BotState.Platform{name: :slack}]
+             } = MyBot.get_state(bot)
+    end
+
+    test "adds the team to the bot's state if it's not yet there", %{
+      bot: bot,
+      auth: auth
+    } do
+      MyBot.user_install(bot, :slack, auth)
+
+      assert %Juvet.BotState{
+               platforms: [
+                 %Juvet.BotState.Platform{
+                   name: :slack,
+                   teams: [
+                     %Juvet.BotState.Team{
+                       id: "T1234",
+                       name: "Zeppelin",
+                       url: "https://zeppelin.slack.com",
+                       token: "SLACK_TOKEN",
+                       scopes: ["identify"]
+                     }
+                   ]
+                 }
+               ]
+             } = MyBot.get_state(bot)
+    end
+
+    test "adds the user to the bot's state if it's not yet there", %{
+      bot: bot,
+      auth: auth
+    } do
+      MyBot.user_install(bot, :slack, auth)
+
+      assert %Juvet.BotState{
+               platforms: [
+                 %Juvet.BotState.Platform{
+                   name: :slack,
+                   teams: [
+                     %Juvet.BotState.Team{
+                       id: "T1234",
+                       users: [
+                         %Juvet.BotState.User{
+                           id: "U12345",
+                           username: "jimmy",
+                           name: "Jimmy Page",
+                           token: "SLACK_TOKEN",
+                           scopes: ["identify"]
+                         }
+                       ]
+                     }
+                   ]
+                 }
+               ]
+             } = MyBot.get_state(bot)
+    end
+  end
 end

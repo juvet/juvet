@@ -82,6 +82,10 @@ defmodule Juvet.Bot do
       """
       def get_state(pid), do: GenServer.call(pid, :get_state)
 
+      def user_install(pid, platform, parameters) do
+        GenServer.call(pid, {:user_install, platform, parameters})
+      end
+
       # Server Callbacks
 
       @doc false
@@ -109,6 +113,38 @@ defmodule Juvet.Bot do
       @doc false
       def handle_call(:get_state, _from, state) do
         {:reply, state, state}
+      end
+
+      @doc false
+      def handle_call({:user_install, platform, parameters}, _from, state) do
+        # TODO: Juvet.BotState.Team.from_ueberauth(parameters)
+        team = %{
+          id: parameters.credentials.other.team_id,
+          name: parameters.credentials.other.team,
+          url: parameters.credentials.other.team_url,
+          # TODO: is this supposed to be the team token?
+          token: parameters.credentials.token,
+          # TODO: are these the team or user scopes?
+          scopes: parameters.credentials.scopes
+        }
+
+        # TODO: Juvet.BotState.User.from_ueberauth(parameters)
+        user = %{
+          id: parameters.extra.raw_info.user.id,
+          username: parameters.info.nickname,
+          name: parameters.info.name,
+          # TODO: is this supposed to be the user token?
+          token: parameters.credentials.token,
+          # TODO: are these the team or user scopes?
+          scopes: parameters.credentials.scopes
+        }
+
+        {state, _platform, _team, user} =
+          Juvet.BotState.put_platform(state, platform)
+          |> Juvet.BotState.put_team(team)
+          |> Juvet.BotState.put_user(user)
+
+        {:reply, {:ok, user}, state}
       end
 
       @doc false

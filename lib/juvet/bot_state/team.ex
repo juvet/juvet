@@ -1,6 +1,6 @@
 defmodule Juvet.BotState.Team do
   @enforce_keys [:id]
-  defstruct [:id, :name, users: []]
+  defstruct [:id, :name, :scopes, :token, :url, users: []]
 
   alias Juvet.BotState.User
 
