@@ -5,6 +5,34 @@ defmodule Juvet.BotState.TeamTest do
     [state: %Juvet.BotState.Team{id: "T1234"}]
   end
 
+  describe "Juvet.BotState.Team.from_ueberauth/1" do
+    setup do
+      auth = %{
+        credentials: %{
+          other: %{
+            team_id: "T1234",
+            team: "Zeppelin",
+            team_url: "https://zeppelin.slack.com"
+          },
+          token: "SLACK_TOKEN",
+          scopes: ["identify"]
+        }
+      }
+
+      {:ok, auth: auth}
+    end
+
+    test "returns a struct based on the ueberauth data", %{auth: auth} do
+      team = Juvet.BotState.Team.from_ueberauth(auth)
+
+      assert team.id == "T1234"
+      assert team.name == "Zeppelin"
+      assert team.url == "https://zeppelin.slack.com"
+      assert team.token == "SLACK_TOKEN"
+      assert team.scopes == ["identify"]
+    end
+  end
+
   describe "Juvet.BotState.Team.put_user/2" do
     test "adds the user to the list of users", %{state: state} do
       {state, user} = Juvet.BotState.Team.put_user(state, %{id: "U1234"})

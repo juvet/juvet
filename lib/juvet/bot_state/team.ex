@@ -4,6 +4,16 @@ defmodule Juvet.BotState.Team do
 
   alias Juvet.BotState.User
 
+  def from_ueberauth(auth) do
+    %Juvet.BotState.Team{
+      id: get_in(auth, [:credentials, :other, :team_id]),
+      name: get_in(auth, [:credentials, :other, :team]),
+      url: get_in(auth, [:credentials, :other, :team_url]),
+      token: get_in(auth, [:credentials, :token]),
+      scopes: get_in(auth, [:credentials, :scopes])
+    }
+  end
+
   def put_user(state, %{id: user_id} = user) do
     # TODO: Call new_user_callback \\ nil if it is a new user callback is specified
     case user(state, user_id) do
