@@ -117,27 +117,8 @@ defmodule Juvet.Bot do
 
       @doc false
       def handle_call({:user_install, platform, parameters}, _from, state) do
-        # TODO: Juvet.BotState.Team.from_ueberauth(parameters)
-        team = %{
-          id: parameters.credentials.other.team_id,
-          name: parameters.credentials.other.team,
-          url: parameters.credentials.other.team_url,
-          # TODO: is this supposed to be the team token?
-          token: parameters.credentials.token,
-          # TODO: are these the team or user scopes?
-          scopes: parameters.credentials.scopes
-        }
-
-        # TODO: Juvet.BotState.User.from_ueberauth(parameters)
-        user = %{
-          id: parameters.extra.raw_info.user.id,
-          username: parameters.info.nickname,
-          name: parameters.info.name,
-          # TODO: is this supposed to be the user token?
-          token: parameters.credentials.token,
-          # TODO: are these the team or user scopes?
-          scopes: parameters.credentials.scopes
-        }
+        team = Map.from_struct(Juvet.BotState.Team.from_ueberauth(parameters))
+        user = Map.from_struct(Juvet.BotState.User.from_ueberauth(parameters))
 
         {state, _platform, _team, user} =
           Juvet.BotState.put_platform(state, platform)
