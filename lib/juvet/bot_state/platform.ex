@@ -4,6 +4,10 @@ defmodule Juvet.BotState.Platform do
 
   alias Juvet.BotState.Team
 
+  def get_messages(state) do
+    state.messages
+  end
+
   def put_message(state, message) do
     messages = state.messages
 

@@ -5,6 +5,63 @@ defmodule Juvet.BotStateTest do
     [state: %Juvet.BotState{}]
   end
 
+  describe "Juvet.BotState.get_messages/1" do
+    test "retrieves all messages from all platforms", %{state: state} do
+      message1 = %{text: "Message #1"}
+      message2 = %{text: "Message #2"}
+
+      {state, platform} = Juvet.BotState.put_platform(state, :slack)
+
+      {state, _platform, _message} =
+        Juvet.BotState.put_message({state, platform}, message1)
+
+      {state, platform} = Juvet.BotState.put_platform(state, :teams)
+
+      {state, _platform, _message} =
+        Juvet.BotState.put_message({state, platform}, message2)
+
+      assert Juvet.BotState.get_messages(state) == [message1, message2]
+    end
+  end
+
+  describe "Juvet.BotState.put_message/2" do
+    test "adds the message to the specified platform if it does not exist", %{
+      state: state
+    } do
+      {state, platform} = Juvet.BotState.put_platform(state, :slack)
+
+      {state, platform, message} =
+        Juvet.BotState.put_message({state, platform}, %{text: "Hello"})
+
+      assert state == %Juvet.BotState{
+               platforms: [
+                 %Juvet.BotState.Platform{
+                   name: :slack,
+                   messages: [%{text: "Hello"}]
+                 }
+               ]
+             }
+
+      assert platform == %Juvet.BotState.Platform{
+               name: :slack,
+               messages: [%{text: "Hello"}]
+             }
+
+      assert message == %{text: "Hello"}
+    end
+
+    test "does not change the state if the platform does not exist", %{
+      state: state
+    } do
+      {new_state, platform, message} =
+        Juvet.BotState.put_message({state, %{name: :slack}}, %{text: "Hello"})
+
+      assert new_state == state
+      assert platform == nil
+      assert message == nil
+    end
+  end
+
   describe "Juvet.BotState.put_platform/2" do
     test "adds the platform to the list of platforms if it does not exist", %{
       state: state

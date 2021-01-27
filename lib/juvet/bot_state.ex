@@ -3,6 +3,30 @@ defmodule Juvet.BotState do
 
   alias Juvet.BotState.{Platform, Team}
 
+  def get_messages(state) do
+    Enum.flat_map(state.platforms, &Platform.get_messages(&1))
+  end
+
+  def put_message({state, %{name: platform_name}}, message) do
+    case platform(state, platform_name) do
+      nil ->
+        {state, nil, nil}
+
+      platform ->
+        {platform, message} = Platform.put_message(platform, message)
+
+        # TODO: This sucks. Maybe implement Access behavior for Platform
+        # and use put_in
+        platforms = state.platforms
+        index = Enum.find_index(platforms, &find(&1, platform_name))
+
+        {%{
+           state
+           | platforms: List.replace_at(platforms, index, platform)
+         }, platform, message}
+    end
+  end
+
   def put_platform(state, platform_name) do
     case platform(state, platform_name) do
       nil ->

@@ -5,6 +5,18 @@ defmodule Juvet.BotState.PlatformTest do
     [state: %Juvet.BotState.Platform{name: :slack}]
   end
 
+  describe "Juvet.BotState.Platform.get_messages/1" do
+    test "returns all the messages for a platform", %{state: state} do
+      message1 = %{text: "Message #1"}
+      message2 = %{text: "Message #2"}
+
+      {state, _message} = Juvet.BotState.Platform.put_message(state, message1)
+      {state, _message} = Juvet.BotState.Platform.put_message(state, message2)
+
+      assert Juvet.BotState.Platform.get_messages(state) == [message1, message2]
+    end
+  end
+
   describe "Juvet.BotState.Platform.put_message/2" do
     test "adds the message to the list of messages", %{state: state} do
       {state, message} =
