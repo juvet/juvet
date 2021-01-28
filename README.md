@@ -125,7 +125,7 @@ You need to tell Juvet what bot module should be created when a new connection i
 config :juvet,
   bot: MyBot,
   endpoint: [
-    http: [port: {system: "PORT"}]
+    http: [port: {:system, "PORT"}]
   ],
   slack: [
     actions_endpoint: "/slack/actions",
