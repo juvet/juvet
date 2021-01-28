@@ -48,8 +48,8 @@ defmodule Juvet.JuvetTest do
 
       %{platforms: platforms} = MyBot.get_state(bot)
 
-      assert List.first(platforms).platform == :slack
-      assert List.first(platforms).id == "T12345"
+      assert List.first(platforms).name == :slack
+      assert List.first(List.first(platforms).messages) == %{team_id: "T12345"}
     end
   end
 end
