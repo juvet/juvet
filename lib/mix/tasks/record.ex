@@ -4,7 +4,6 @@ defmodule Mix.Tasks.Record do
 
   alias Juvet.SlackAPI
 
-  @preferred_cli_env :dev
   @shortdoc "Re-record ExVCR cassettes for the Slack endpoints"
   def run(args) do
     params =
