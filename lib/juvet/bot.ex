@@ -120,12 +120,12 @@ defmodule Juvet.Bot do
         team = Map.from_struct(Juvet.BotState.Team.from_ueberauth(parameters))
         user = Map.from_struct(Juvet.BotState.User.from_ueberauth(parameters))
 
-        {state, _platform, _team, user} =
+        {state, _platform, team, user} =
           Juvet.BotState.put_platform(state, platform)
           |> Juvet.BotState.put_team(team)
           |> Juvet.BotState.put_user(user)
 
-        {:reply, {:ok, user}, state}
+        {:reply, {:ok, user, team}, state}
       end
 
       @doc false

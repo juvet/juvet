@@ -109,10 +109,20 @@ defmodule Juvet.Bot.BotTest do
       bot: bot,
       auth: auth
     } do
-      {:ok, user} = MyBot.user_install(bot, :slack, auth)
+      {:ok, user, _team} = MyBot.user_install(bot, :slack, auth)
 
       assert user.id == "U12345"
       assert user.name == "Jimmy Page"
+    end
+
+    test "returns the team if successful", %{
+      bot: bot,
+      auth: auth
+    } do
+      {:ok, _user, team} = MyBot.user_install(bot, :slack, auth)
+
+      assert team.id == "T1234"
+      assert team.name == "Zeppelin"
     end
 
     test "adds the platform to the bot's state", %{bot: bot, auth: auth} do
