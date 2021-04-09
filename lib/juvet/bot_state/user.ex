@@ -2,13 +2,11 @@ defmodule Juvet.BotState.User do
   @enforce_keys [:id]
   defstruct [:id, :name, :scopes, :token, :username]
 
-  def from_ueberauth(auth) do
+  def from_auth(auth) do
     %Juvet.BotState.User{
-      id: get_in(auth, [:extra, :raw_info, :user, :id]),
-      name: get_in(auth, [:info, :name]),
-      username: get_in(auth, [:info, :nickname]),
-      token: get_in(auth, [:credentials, :token]),
-      scopes: get_in(auth, [:credentials, :scopes])
+      id: get_in(auth, [:authed_user, :id]),
+      token: get_in(auth, [:authed_user, :access_token]),
+      scopes: get_in(auth, [:authed_user, :scope])
     }
   end
 end

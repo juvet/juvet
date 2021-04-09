@@ -1,37 +1,30 @@
 defmodule Juvet.BotState.UserTest do
   use ExUnit.Case
 
-  describe "Juvet.BotState.User.from_ueberauth/1" do
+  describe "Juvet.BotState.User.from_auth/1" do
     setup do
       auth = %{
-        credentials: %{
-          token: "SLACK_TOKEN",
-          scopes: ["identify"]
+        access_token: "SLACK_TOKEN",
+        authed_user: %{
+          id: "U12345",
+          access_token: "USER_TOKEN",
+          scope: "identify"
         },
-        extra: %{
-          raw_info: %{
-            user: %{
-              id: "U12345"
-            }
-          }
-        },
-        info: %{
-          name: "Jimmy Page",
-          nickname: "jimmy"
-        }
+        bot_user_id: "UBOT",
+        scope: "users:read",
+        team: %{id: "T1234", name: "Zeppelin"},
+        token_type: "bot"
       }
 
       {:ok, auth: auth}
     end
 
-    test "returns a struct based on the ueberauth data", %{auth: auth} do
-      user = Juvet.BotState.User.from_ueberauth(auth)
+    test "returns a struct based on the auth response data", %{auth: auth} do
+      user = Juvet.BotState.User.from_auth(auth)
 
       assert user.id == "U12345"
-      assert user.name == "Jimmy Page"
-      assert user.username == "jimmy"
-      assert user.token == "SLACK_TOKEN"
-      assert user.scopes == ["identify"]
+      assert user.token == "USER_TOKEN"
+      assert user.scopes == "identify"
     end
   end
 end

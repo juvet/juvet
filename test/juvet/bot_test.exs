@@ -80,26 +80,16 @@ defmodule Juvet.Bot.BotTest do
       bot = Juvet.create_bot!("Jimmy")
 
       auth = %{
-        credentials: %{
-          other: %{
-            team_id: "T1234",
-            team: "Zeppelin",
-            team_url: "https://zeppelin.slack.com"
-          },
-          token: "SLACK_TOKEN",
-          scopes: ["identify"]
+        access_token: "BOT_TOKEN",
+        authed_user: %{
+          id: "U12345",
+          access_token: "USER_TOKEN",
+          scope: "identify"
         },
-        extra: %{
-          raw_info: %{
-            user: %{
-              id: "U12345"
-            }
-          }
-        },
-        info: %{
-          name: "Jimmy Page",
-          nickname: "jimmy"
-        }
+        bot_user_id: "UBOT",
+        scope: "users:read,team:read",
+        team: %{id: "T1234", name: "Zeppelin"},
+        token_type: "bot"
       }
 
       {:ok, bot: bot, auth: auth}
@@ -112,7 +102,8 @@ defmodule Juvet.Bot.BotTest do
       {:ok, user, _team} = MyBot.user_install(bot, :slack, auth)
 
       assert user.id == "U12345"
-      assert user.name == "Jimmy Page"
+      assert user.token == "USER_TOKEN"
+      assert user.scopes == "identify"
     end
 
     test "returns the team if successful", %{
@@ -123,6 +114,7 @@ defmodule Juvet.Bot.BotTest do
 
       assert team.id == "T1234"
       assert team.name == "Zeppelin"
+      assert team.scopes == "users:read,team:read"
     end
 
     test "adds the platform to the bot's state", %{bot: bot, auth: auth} do
@@ -147,9 +139,8 @@ defmodule Juvet.Bot.BotTest do
                      %Juvet.BotState.Team{
                        id: "T1234",
                        name: "Zeppelin",
-                       url: "https://zeppelin.slack.com",
-                       token: "SLACK_TOKEN",
-                       scopes: ["identify"]
+                       token: "BOT_TOKEN",
+                       scopes: "users:read,team:read"
                      }
                    ]
                  }
@@ -173,10 +164,8 @@ defmodule Juvet.Bot.BotTest do
                        users: [
                          %Juvet.BotState.User{
                            id: "U12345",
-                           username: "jimmy",
-                           name: "Jimmy Page",
-                           token: "SLACK_TOKEN",
-                           scopes: ["identify"]
+                           token: "USER_TOKEN",
+                           scopes: "identify"
                          }
                        ]
                      }

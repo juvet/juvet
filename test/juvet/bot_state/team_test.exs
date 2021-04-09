@@ -8,28 +8,26 @@ defmodule Juvet.BotState.TeamTest do
   describe "Juvet.BotState.Team.from_ueberauth/1" do
     setup do
       auth = %{
-        credentials: %{
-          other: %{
-            team_id: "T1234",
-            team: "Zeppelin",
-            team_url: "https://zeppelin.slack.com"
-          },
-          token: "SLACK_TOKEN",
-          scopes: ["identify"]
-        }
+        access_token: "BOT_TOKEN",
+        authed_user: %{
+          id: "U12345"
+        },
+        bot_user_id: "UBOT",
+        scope: "users:read,team:read",
+        team: %{id: "T1234", name: "Zeppelin"},
+        token_type: "bot"
       }
 
       {:ok, auth: auth}
     end
 
-    test "returns a struct based on the ueberauth data", %{auth: auth} do
-      team = Juvet.BotState.Team.from_ueberauth(auth)
+    test "returns a struct based on the auth data", %{auth: auth} do
+      team = Juvet.BotState.Team.from_auth(auth)
 
       assert team.id == "T1234"
       assert team.name == "Zeppelin"
-      assert team.url == "https://zeppelin.slack.com"
-      assert team.token == "SLACK_TOKEN"
-      assert team.scopes == ["identify"]
+      assert team.token == "BOT_TOKEN"
+      assert team.scopes == "users:read,team:read"
     end
   end
 

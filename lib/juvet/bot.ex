@@ -117,8 +117,8 @@ defmodule Juvet.Bot do
 
       @doc false
       def handle_call({:user_install, platform, parameters}, _from, state) do
-        team = Map.from_struct(Juvet.BotState.Team.from_ueberauth(parameters))
-        user = Map.from_struct(Juvet.BotState.User.from_ueberauth(parameters))
+        team = Map.from_struct(Juvet.BotState.Team.from_auth(parameters))
+        user = Map.from_struct(Juvet.BotState.User.from_auth(parameters))
 
         {state, _platform, team, user} =
           Juvet.BotState.put_platform(state, platform)

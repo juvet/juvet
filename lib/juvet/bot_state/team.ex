@@ -4,13 +4,12 @@ defmodule Juvet.BotState.Team do
 
   alias Juvet.BotState.User
 
-  def from_ueberauth(auth) do
+  def from_auth(auth) do
     %Juvet.BotState.Team{
-      id: get_in(auth, [:credentials, :other, :team_id]),
-      name: get_in(auth, [:credentials, :other, :team]),
-      url: get_in(auth, [:credentials, :other, :team_url]),
-      token: get_in(auth, [:credentials, :token]),
-      scopes: get_in(auth, [:credentials, :scopes])
+      id: get_in(auth, [:team, :id]),
+      name: get_in(auth, [:team, :name]),
+      token: get_in(auth, [:access_token]),
+      scopes: get_in(auth, [:scope])
     }
   end
 
