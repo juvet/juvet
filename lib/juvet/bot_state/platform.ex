@@ -15,7 +15,6 @@ defmodule Juvet.BotState.Platform do
   end
 
   def put_team(state, %{id: team_id} = team) do
-    # TODO: Call new_team_callback \\ nil if it is a new team and the callback is specified
     case team(state, team_id) do
       nil ->
         new_team = struct(Team, team)
