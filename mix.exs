@@ -41,8 +41,7 @@ defmodule Juvet.Mixfile do
       {:plug_cowboy, "~> 2.0"},
       {:poison, "~> 3.1"},
       {:websockex, "~> 0.4.0"},
-      # TODO: {:exvcr, "~> 0.10", only: [:dev, :test]} but need this now because of Mix task `record`
-      {:exvcr, "~> 0.10"}
+      {:exvcr, "~> 0.10", only: [:dev, :test]}
     ]
   end
 
