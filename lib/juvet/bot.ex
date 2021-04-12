@@ -15,39 +15,6 @@ defmodule Juvet.Bot do
       use GenServer
       use Juvet.ReceiverTarget
 
-      @moduledoc false
-      defmodule Platform do
-        defstruct platform: nil, id: nil, messages: []
-
-        def add_message(platform, message) do
-          messages = platform.messages
-
-          %{platform | messages: messages ++ [message]}
-        end
-      end
-
-      @moduledoc false
-      defmodule State do
-        defstruct bot_supervisor: nil, platforms: []
-
-        def add_platform_message(state, platform, message) do
-          platforms =
-            Enum.map(state.platforms, fn
-              %Platform{platform: platform} = p ->
-                Platform.add_message(p, message)
-
-              p ->
-                p
-            end)
-
-          %{state | platforms: platforms}
-        end
-
-        def get_platform_messages(state) do
-          Enum.flat_map(state.platforms, fn platform -> platform.messages end)
-        end
-      end
-
       # Client API
 
       @doc """
@@ -115,11 +82,15 @@ defmodule Juvet.Bot do
       """
       def get_state(pid), do: GenServer.call(pid, :get_state)
 
+      def user_install(pid, platform, parameters) do
+        GenServer.call(pid, {:user_install, platform, parameters})
+      end
+
       # Server Callbacks
 
       @doc false
       def init(state) do
-        {:ok, struct(State, state)}
+        {:ok, struct(Juvet.BotState, state)}
       end
 
       @doc false
@@ -136,7 +107,7 @@ defmodule Juvet.Bot do
 
       @doc false
       def handle_call(:get_messages, _from, state) do
-        {:reply, State.get_platform_messages(state), state}
+        {:reply, Juvet.BotState.get_messages(state), state}
       end
 
       @doc false
@@ -145,26 +116,45 @@ defmodule Juvet.Bot do
       end
 
       @doc false
-      def handle_cast(
-            {:connect, :slack, %{team_id: team_id}},
-            %{platforms: platforms} = state
-          ) do
-        state = %{
-          state
-          | platforms: [%Platform{platform: :slack, id: team_id} | platforms]
-        }
+      def handle_call({:user_install, platform, parameters}, _from, state) do
+        team = Map.from_struct(Juvet.BotState.Team.from_auth(parameters))
+        user = Map.from_struct(Juvet.BotState.User.from_auth(parameters))
+
+        {state, _platform, team, user} =
+          Juvet.BotState.put_platform(state, platform)
+          |> Juvet.BotState.put_team(team)
+          |> Juvet.BotState.put_user(user)
+
+        {:reply, {:ok, user, team}, state}
+      end
+
+      @doc false
+      def handle_cast({:connect, :slack, parameters}, state) do
+        {state, _platform, _message} =
+          Juvet.BotState.put_platform(state, :slack)
+          |> Juvet.BotState.put_message(parameters)
 
         {:noreply, state}
       end
 
       @doc false
       def handle_info({:connected, platform, message}, state) do
-        {:noreply, State.add_platform_message(state, platform, message)}
+        {:noreply, put_message(state, platform, message)}
       end
 
       @doc false
       def handle_info({:new_message, platform, message}, state) do
-        {:noreply, State.add_platform_message(state, platform, message)}
+        {:noreply, put_message(state, platform, message)}
+      end
+
+      @doc false
+      defp put_message(state, platform_name, message) do
+        platform = %Juvet.BotState.Platform{name: platform_name}
+
+        {state, _platform, _message} =
+          Juvet.BotState.put_message({state, platform}, message)
+
+        state
       end
     end
   end

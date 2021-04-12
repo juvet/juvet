@@ -56,6 +56,86 @@ defmodule Juvet.BotFactory do
     end
   end
 
+  @doc """
+  Finds a `Juvet.Bot` process with the specified `name`.
+
+  * `:name` - The name of the bot to find
+
+  ## Example
+
+  ```
+  {:ok, bot} = Juvet.BotFactory.find("MyBot")
+  {:error, reason} = Juvet.BotFactory.find("Some bot that does not exist")
+  ```
+  """
+  def find(name) do
+    Juvet.Superintendent.find_bot(name)
+  end
+
+  @doc """
+  Finds a `Juvet.Bot` process with the specified `name`.
+
+  This will return a `pid` of the bot if successful, otherwise a `RuntimeError` is raised.
+
+  * `:name` - The name of the bot to find
+
+  ## Example
+
+  ```
+  pid = Juvet.BotFactory.find!("MyBot")
+  ```
+  """
+  def find!(name) do
+    case Juvet.Superintendent.find_bot(name) do
+      {:ok, bot} ->
+        bot
+
+      {:error, error} ->
+        raise RuntimeError, message: error
+    end
+  end
+
+  @doc """
+  Finds or creates a `Juvet.Bot` process with the specified `name`.
+
+  * `:name` - The name of the bot to find or create
+
+  ## Example
+
+  ```
+  {:ok, bot} = Juvet.BotFactory.find_or_create("MyBot")
+  ```
+  """
+  def find_or_create(name) do
+    case Juvet.Superintendent.find_bot(name) do
+      {:ok, bot} -> {:ok, bot}
+      {:error, _} -> Juvet.Superintendent.create_bot(name)
+    end
+  end
+
+  @doc """
+  Finds or creates a `Juvet.Bot` process with the specified `name`.
+
+  This will return a `pid` of the bot if successful, otherwise a `RuntimeError` is raised.
+
+  * `:name` - The name of the bot to find or create
+
+  ## Example
+
+  ```
+  pid = Juvet.BotFactory.find_or_create!("MyBot")
+  ```
+  """
+  def find_or_create!(name) do
+    case find_or_create(name) do
+      {:ok, bot} ->
+        bot
+
+      {:error, error} ->
+        raise RuntimeError, message: error
+    end
+  end
+
   # Callbacks
 
   @doc false

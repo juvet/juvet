@@ -125,7 +125,7 @@ You need to tell Juvet what bot module should be created when a new connection i
 config :juvet,
   bot: MyBot,
   endpoint: [
-    http: [port: {system: "PORT"}]
+    http: [port: {:system, "PORT"}]
   ],
   slack: [
     actions_endpoint: "/slack/actions",
@@ -208,7 +208,7 @@ mix test
 You can re-record the responses from Slack with the following mix command:
 
 ```
-mix record token: <slack token here> user: <slack user id here>
+MIX_ENV=test mix record token: <slack token here> user: <slack user id here>
 ```
 
 You can create a Slack token for any of your teams [here](https://api.slack.com/custom-integrations/legacy-tokens)/.

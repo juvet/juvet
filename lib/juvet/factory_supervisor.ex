@@ -15,28 +15,19 @@ defmodule Juvet.FactorySupervisor do
   end
 
   @doc """
-  Creates a `Juvet.Bot` process with the specified `module` and binary `name`
-  underneath the `pid` `FactorySupervisor` process.
+  Creates a `Juvet.Bot` process with the specified `module` and binary or atom
+  based `name` underneath the `pid` `FactorySupervisor` process.
 
   ## Example
 
   ```
   {:ok, bot} = Juvet.FactorySupervisor.add_bot(factory_supervisor, MyBot, "MyBot")
+  {:ok, bot} = Juvet.FactorySupervisor.add_bot(factory_supervisor, MyBot, :my_bot)
   ```
   """
   def add_bot(pid, module, name) when is_binary(name),
     do: add_bot(pid, module, String.to_atom(name))
 
-  @doc """
-  Creates a `Juvet.Bot` process with the specified `module` and atom `name`
-  underneath the `pid` `FactorySupervisor` process.
-
-  ## Example
-
-  ```
-  {:ok, bot} = Juvet.FactorySupervisor.add_bot(factory_supervisor, MyBot, :my_bot)
-  ```
-  """
   def add_bot(pid, module, name) do
     case DynamicSupervisor.start_child(
            pid,

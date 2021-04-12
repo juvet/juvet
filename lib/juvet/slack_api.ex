@@ -8,15 +8,13 @@ defmodule Juvet.SlackAPI do
   alias Juvet.SlackAPI
 
   @doc """
-  Returns an error tuple if the body contains an `ok: false` node.
+  Returns an error tuple if the body contains an `ok: false` node, else
+  returns an ok tuple and the body.
   """
   def handle_response({:ok, %{ok: false} = body}) do
     {:error, body}
   end
 
-  @doc """
-  Returns an ok tuple if the body contains an `ok: true` node.
-  """
   def handle_response({:ok, %{ok: true} = body}) do
     {:ok, body}
   end
