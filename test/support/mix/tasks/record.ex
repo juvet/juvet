@@ -8,10 +8,10 @@ defmodule Mix.Tasks.Record do
   def run(args) do
     params =
       args
-      |> Enum.chunk_every(2)
+      |> Enum.map(fn arg -> String.split(arg, ":") end)
       |> Enum.into(%{}, fn [a, b] -> {String.trim_trailing(a, ":"), b} end)
 
-    methods = ["im.open", "rtm.connect"]
+    methods = ["im.open", "rtm.connect", "users.info"]
 
     Enum.each(methods, fn method_name ->
       delete_cassettes(method_name)
