@@ -1,0 +1,48 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/users.info?token=***&user=U04ASG29K"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":true,\"user\":{\"id\":\"U04ASG29K\",\"team_id\":\"T04ASG29D\",\"name\":\"jwright\",\"deleted\":false,\"color\":\"9f69e7\",\"real_name\":\"Jamie Wright\",\"tz\":\"America\\/New_York\",\"tz_label\":\"Eastern Daylight Time\",\"tz_offset\":-14400,\"profile\":{\"title\":\"\",\"phone\":\"\",\"skype\":\"\",\"real_name\":\"Jamie Wright\",\"real_name_normalized\":\"Jamie Wright\",\"display_name\":\"jwright\",\"display_name_normalized\":\"jwright\",\"fields\":null,\"status_text\":\"\",\"status_emoji\":\"\",\"status_expiration\":0,\"avatar_hash\":\"dbcda4ccefb5\",\"image_original\":\"https:\\/\\/avatars.slack-edge.com\\/2015-05-09\\/4828227837_dbcda4ccefb5f20b1dfa_original.jpg\",\"is_custom_image\":true,\"first_name\":\"Jamie\",\"last_name\":\"Wright\",\"image_24\":\"https:\\/\\/avatars.slack-edge.com\\/2015-05-09\\/4828227837_dbcda4ccefb5f20b1dfa_24.jpg\",\"image_32\":\"https:\\/\\/avatars.slack-edge.com\\/2015-05-09\\/4828227837_dbcda4ccefb5f20b1dfa_32.jpg\",\"image_48\":\"https:\\/\\/avatars.slack-edge.com\\/2015-05-09\\/4828227837_dbcda4ccefb5f20b1dfa_48.jpg\",\"image_72\":\"https:\\/\\/avatars.slack-edge.com\\/2015-05-09\\/4828227837_dbcda4ccefb5f20b1dfa_72.jpg\",\"image_192\":\"https:\\/\\/avatars.slack-edge.com\\/2015-05-09\\/4828227837_dbcda4ccefb5f20b1dfa_192.jpg\",\"image_512\":\"\",\"status_text_canonical\":\"\",\"team\":\"T04ASG29D\"},\"is_admin\":true,\"is_owner\":true,\"is_primary_owner\":true,\"is_restricted\":false,\"is_ultra_restricted\":false,\"is_bot\":false,\"is_app_user\":false,\"updated\":1613740133,\"is_email_confirmed\":true}}",
+      "headers": {
+        "date": "Tue, 13 Apr 2021 00:57:10 GMT",
+        "server": "Apache",
+        "x-xss-protection": "0",
+        "pragma": "no-cache",
+        "cache-control": "private, no-cache, no-store, must-revalidate",
+        "access-control-allow-origin": "*",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "x-slack-req-id": "a6bb39e63cc7287209002cce96dd943a",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "access-control-expose-headers": "x-slack-req-id, retry-after",
+        "x-slack-backend": "r",
+        "x-oauth-scopes": "users:read,team:read",
+        "x-accepted-oauth-scopes": "users:read",
+        "expires": "Mon, 26 Jul 1997 05:00:00 GMT",
+        "vary": "Accept-Encoding",
+        "access-control-allow-headers": "slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags",
+        "content-type": "application/json; charset=utf-8",
+        "x-envoy-upstream-service-time": "9",
+        "x-backend": "main_normal main_bedrock_normal_with_overflow main_canary_with_overflow main_bedrock_canary_with_overflow main_control_with_overflow main_bedrock_control_with_overflow",
+        "x-server": "slack-www-hhvm-main-iad-4umj",
+        "x-via": "envoy-www-iad-3tew, haproxy-edge-iad-su7n",
+        "x-slack-shared-secret-outcome": "shared-secret",
+        "via": "envoy-www-iad-3tew",
+        "transfer-encoding": "chunked"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

@@ -45,18 +45,34 @@ defmodule Juvet.SlackAPI do
   Make the request to the endpoint and returns that response.
   """
   def request(endpoint, body) do
+    {access_token, params} = extract_access_token(body)
+
     SlackAPI.get(
       endpoint,
-      headers(),
-      params: body
+      headers(access_token),
+      params: params
     )
   end
 
   @doc false
-  defp headers do
+  defp append_authorization_header(headers, nil), do: headers
+
+  @doc false
+  defp append_authorization_header(headers, access_token) do
+    Map.merge(headers, %{"Authorization" => "Bearer #{access_token}"})
+  end
+
+  @doc false
+  defp extract_access_token(params) do
+    Map.pop(params, :token)
+  end
+
+  @doc false
+  defp headers(access_token) do
     %{
       "Content-Type" => "application/json",
       "Accept" => "application/json"
     }
+    |> append_authorization_header(access_token)
   end
 end
