@@ -21,5 +21,17 @@ defmodule Juvet.SlackAPI.UsersTest do
         assert response[:user][:id]
       end
     end
+
+    test "returns an error from an unsuccessful API call", %{
+      user: user,
+      token: token
+    } do
+      use_cassette "users/info/invalid_auth" do
+        assert {:error, %{} = response} =
+                 SlackAPI.Users.info(%{user: user, token: token})
+
+        assert response[:error] == "invalid_auth"
+      end
+    end
   end
 end
