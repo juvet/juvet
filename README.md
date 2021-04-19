@@ -1,4 +1,4 @@
-![juvet logo](https://github.com/juvet/juvet-sponsored/blob/main/logo.svg)
+![juvet logo](https://github.com/juvet/juvet/blob/main/logo.svg)
 
 > The MVC framework for chat apps built on a platform designed for communication systems.
 
@@ -215,12 +215,12 @@ You can create a Slack token for any of your teams [here](https://api.slack.com/
 
 ### Contributing
 
-1. Clone the repository `git clone https://github.com/juvet/juvet-sponsored`
+1. Clone the repository `git clone https://github.com/juvet/juvet`
 1. Create a feature branch `git checkout -b my-awesome-feature`
 1. Codez!
 1. Commit your changes (small commits please)
 1. Push your new branch `git push origin my-awesome-feature`
-1. Create a pull request `hub pull-request -b juvet-sponsored:main -h juvet-sponsored:my-awesome-feature`
+1. Create a pull request `hub pull-request -b juvet:main -h juvet:my-awesome-feature`
 
 ## Copyright and License
 
