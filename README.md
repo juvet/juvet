@@ -29,13 +29,11 @@ Juvet offers all the features you need to build a scalable and maintainable chat
 
 The [ROADMAP](./ROADMAP.md) describes major upcoming features within each release.
 
-## THIS FRAMEWORK IS SPONSORWARE :open_hands:
+## THIS FRAMEWORK IS AVAILABLE FOR SPONSORSHIP :open_hands:
 
-This repository supports sustainable open source work via [Sponsorware](https://github.com/sponsorware/docs).
+This repository is available for sponsorship via [GitHub Sponsors](https://github.com/sponsors) at https://github.com/sponsors/jwright.
 
-It will be fully open sourced but it is currently only available to people who [sponsor me on GitHub](https://github.com/sponsors/jwright).
-
-I want this framework to be supported for the community with a high-degree of quality for a long time and in order to make that happen at a sustainable pace, I need to have the time and availability to support it appropriately. Sponsorware helps achieve that mission.
+If you or your company will benefit from a well-maintained and easy to use chat application framework, please consider a [sponsorship](https://github.com/sponsors/jwright). Your sponsorship will help with this development.
 
 Thank you for the support! :heartbeat:
 
@@ -63,7 +61,7 @@ mix deps.get
 # mix.exs
 
 def application do
-  [application: [:juvet]]
+  [extra_applications: [:juvet]]
 end
 ```
 
