@@ -8,9 +8,6 @@ defmodule Juvet do
 
   ## Features
 
-  * Webhook endpoint: Juvet can be configured for chat providers to send their webhook events to Juvet so Juvet bots
-    can injest the messages and respond.
-
   * A *lot* more to come...
 
   ## Usage
@@ -60,11 +57,6 @@ defmodule Juvet do
   Once Juvet starts up it's application successfully, several processes are started:
 
   ```asciidoc
-                                            +----------+
-                                            |          |
-                                         +--| Endpoint |
-                                         |  |          |
-                                         |  +----------+
   +---------------+    +--------------+--+  +----------------+
   |               |    |              |     |                |
   |     Juvet     |----|  BotFactory  |-----| Superintendent |
@@ -92,9 +84,7 @@ defmodule Juvet do
 
   * **Juvet** - Application that starts the `Juvet.BotFactory` supervisor
   * **BotFactory** - Supervisor that starts the `Juvet.Superintendent` process
-  * **Superintdendent** - The brains of the operation. Process checks the validity of the configuration and if
-                          it is configured correctly, it starts the `Juvet.Endpoint` process and the `Juvet.FactorySupervisor`
-  * **Endpoint** - Process that receives all webhook events
+  * **Superintdendent** - The brains of the operation. Process checks the validity of the configuration and if it is configured correctly, it starts the `Juvet.FactorySupervisor` process
   * **FactorySupervisor** - Supervisor for the whole factory
   * **BotSupervisor** - Supervisor over one or many bot processes
   * **Bot** - Receives messages from the chat providers. It is responsible for processing messages and generating responses

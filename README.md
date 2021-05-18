@@ -107,7 +107,6 @@ When Juvet starts, the following is what that process tree should look like.
   * **Superintdendent** - The brains of the operation. Process checks the validity of the
                           configuration and if it is configured correctly, it starts
                           the `Juvet.Endpoint` process and the `Juvet.FactorySupervisor`
-  * **Endpoint** - Process that receives all webhook events
   * **FactorySupervisor** - Supervisor over all of the `Juvet.BotSupervisor` processes.
   * **BotSupervisor** - Supervisor over one `Juvet.Bot` process as well as any additional
                         supporting processes (like `Juvet.Receivers.SlackRTMReceiver`)
@@ -122,13 +121,35 @@ You need to tell Juvet what bot module should be created when a new connection i
 
 config :juvet,
   bot: MyBot,
-  endpoint: [
-    http: [port: {:system, "PORT"}]
-  ],
   slack: [
     actions_endpoint: "/slack/actions",
     events_endpoint: "/slack/events"
   ]
+```
+
+### Mount Router
+
+The client application that is using Juvet can use the router from your client application. You just need to mount the `Juvet.EndpointRouter`.
+
+#### Mounting in Phoenix
+
+The router can be mounted inside the Phoenix router with `[Phoenix.Router.forward/4](https://hexdocs.pm/phoenix/Phoenix.Router.html#forward/4)`.
+
+```
+defmodule MyPhoenixAppWeb.Router do
+  use MyPhoenixAppWeb, :router
+
+  pipeline :mounted_apps do
+    plug :accepts, ["html"]
+    plug :put_secure_browser_headers
+  end
+
+  scope path: "/slack" do
+    pipe_through :mounted_apps
+
+    forward "/", Juvet.EndpointRouter
+  end
+end
 ```
 
 ### Slack
