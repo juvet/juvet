@@ -2,8 +2,8 @@ defmodule Juvet.Superintendent do
   @moduledoc """
   Process that acts as the brains around processes within Juvet.
 
-  It starts the `Juvet.Endpoint` and `Juvet.BotFactory` processes only
-  if the configuration is valid.
+  It starts the `Juvet.BotFactory` process only if the configuration
+  is valid.
 
   It delegates calls around the bot processes to the bot factory supervisor.
   """
@@ -65,7 +65,6 @@ defmodule Juvet.Superintendent do
   @doc false
   def init(config) do
     if Juvet.Config.valid?(config) do
-      send(self(), :start_endpoint)
       send(self(), :start_factory_supervisor)
     end
 
@@ -127,18 +126,5 @@ defmodule Juvet.Superintendent do
       )
 
     {:noreply, %{state | factory_supervisor: factory_supervisor}}
-  end
-
-  @doc false
-  def handle_info(:start_endpoint, state = %{config: config}) do
-    {:ok, _endpoint} =
-      Supervisor.start_child(
-        Juvet.BotFactory,
-        Supervisor.child_spec({Juvet.Endpoint, [config]},
-          restart: :permanent
-        )
-      )
-
-    {:noreply, state}
   end
 end
