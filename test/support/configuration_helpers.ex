@@ -8,7 +8,6 @@ defmodule Juvet.ConfigurationHelpers do
   def default_config do
     [
       bot: MyBot,
-      endpoint: [http: [port: 8080]],
       slack: [
         events_endpoint: "/slack/events",
         actions_endpoint: "/slack/actions"
