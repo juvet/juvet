@@ -1,0 +1,44 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer blah",
+        "Content-Type": "application/json"
+      },
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/chat.postMessage"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":false,\"error\":\"invalid_auth\"}",
+      "headers": {
+        "date": "Fri, 28 May 2021 19:24:12 GMT",
+        "server": "Apache",
+        "access-control-expose-headers": "x-slack-req-id, retry-after",
+        "access-control-allow-headers": "slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "access-control-allow-origin": "*",
+        "x-slack-backend": "r",
+        "x-xss-protection": "0",
+        "x-slack-req-id": "444b4f98cb88e09a924db74570871f77",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "content-type": "application/json; charset=utf-8",
+        "x-envoy-upstream-service-time": "3",
+        "x-backend": "main_normal main_canary_with_overflow main_control_with_overflow",
+        "x-server": "slack-www-hhvm-main-iad-pwog",
+        "x-via": "envoy-www-iad-nzda, haproxy-edge-iad-8o74",
+        "x-slack-shared-secret-outcome": "shared-secret",
+        "via": "envoy-www-iad-nzda",
+        "transfer-encoding": "chunked"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

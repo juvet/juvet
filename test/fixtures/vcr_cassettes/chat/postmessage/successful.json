@@ -1,0 +1,48 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/chat.postMessage?channel=C04ASG29V&text=Hello+from+Juvet&token=***&user=U052YB8KQ&users=U052YB8KQ"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":true,\"channel\":\"C04ASG29V\",\"ts\":\"1622229848.000100\",\"message\":{\"bot_id\":\"B01MZ3JQYP4\",\"type\":\"message\",\"text\":\"Hello from Juvet\",\"user\":\"U01MSA502JJ\",\"ts\":\"1622229848.000100\",\"team\":\"T04ASG29D\",\"bot_profile\":{\"id\":\"B01MZ3JQYP4\",\"deleted\":false,\"name\":\"Tatsu Next\",\"updated\":1613150623,\"app_id\":\"A01JVR00QJX\",\"icons\":{\"image_36\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_36.png\",\"image_48\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_48.png\",\"image_72\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/service_72.png\"},\"team_id\":\"T04ASG29D\"}}}",
+      "headers": {
+        "date": "Fri, 28 May 2021 19:24:08 GMT",
+        "server": "Apache",
+        "x-xss-protection": "0",
+        "pragma": "no-cache",
+        "cache-control": "private, no-cache, no-store, must-revalidate",
+        "access-control-allow-origin": "*",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "x-slack-req-id": "337eebf87a9a9184e59d683c518ac0a3",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "access-control-expose-headers": "x-slack-req-id, retry-after",
+        "x-slack-backend": "r",
+        "x-oauth-scopes": "users:read,team:read,channels:manage,im:write,chat:write,chat:write.public",
+        "x-accepted-oauth-scopes": "chat:write",
+        "expires": "Mon, 26 Jul 1997 05:00:00 GMT",
+        "vary": "Accept-Encoding",
+        "access-control-allow-headers": "slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags",
+        "content-type": "application/json; charset=utf-8",
+        "x-envoy-upstream-service-time": "66",
+        "x-backend": "main_normal main_canary_with_overflow main_control_with_overflow",
+        "x-server": "slack-www-hhvm-main-iad-xii8",
+        "x-via": "envoy-www-iad-rgup, haproxy-edge-iad-8o74",
+        "x-slack-shared-secret-outcome": "shared-secret",
+        "via": "envoy-www-iad-rgup",
+        "transfer-encoding": "chunked"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

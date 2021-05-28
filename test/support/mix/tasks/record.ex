@@ -12,6 +12,7 @@ defmodule Mix.Tasks.Record do
       |> Enum.into(%{}, fn [a, b] -> {String.trim_trailing(a, ":"), b} end)
 
     methods = [
+      "chat.postMessage",
       "conversations.open",
       "im.open",
       "rtm.connect",
