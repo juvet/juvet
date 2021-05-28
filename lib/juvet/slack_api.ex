@@ -84,7 +84,6 @@ defmodule Juvet.SlackAPI do
   @doc false
   defp headers(access_token) do
     %{
-      "Content-Type" => "application/json",
       "Accept" => "application/json"
     }
     |> append_authorization_header(access_token)
