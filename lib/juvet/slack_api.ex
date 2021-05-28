@@ -50,8 +50,22 @@ defmodule Juvet.SlackAPI do
     SlackAPI.get(
       endpoint,
       headers(access_token),
-      params: params
+      params: request_params(params)
     )
+  end
+
+  @doc false
+  defp request_param({key, value}) when is_list(value),
+    do: {key, Enum.join(value, ",")}
+
+  @doc false
+  defp request_param(param), do: param
+
+  @doc false
+  defp request_params(params) do
+    params
+    |> Enum.map(&request_param/1)
+    |> Enum.into(%{})
   end
 
   @doc false

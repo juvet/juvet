@@ -227,7 +227,7 @@ mix test
 You can re-record the responses from Slack with the following mix command:
 
 ```
-MIX_ENV=test mix record token: <slack token here> user: <slack user id here>
+MIX_ENV=test mix record token:<slack token here> user:<slack user id here> users:<slack user id here>,<another slack user id here>
 ```
 
 You can create a Slack token for any of your teams [here](https://api.slack.com/custom-integrations/legacy-tokens)/.
