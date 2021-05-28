@@ -1,0 +1,48 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/conversations.open?token=***&user=U052YB8KQ&users=U052YB8KQ"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":true,\"no_op\":true,\"already_open\":true,\"channel\":{\"id\":\"D01NBN0GSQZ\"}}",
+      "headers": {
+        "date": "Fri, 28 May 2021 16:31:43 GMT",
+        "server": "Apache",
+        "x-xss-protection": "0",
+        "pragma": "no-cache",
+        "cache-control": "private, no-cache, no-store, must-revalidate",
+        "access-control-allow-origin": "*",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "x-slack-req-id": "8b34acc90d9df941eb3dc84b86f1e3f8",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "access-control-expose-headers": "x-slack-req-id, retry-after",
+        "x-slack-backend": "r",
+        "x-oauth-scopes": "users:read,team:read,channels:manage,im:write",
+        "x-accepted-oauth-scopes": "channels:write,groups:write,mpim:write,im:write,post",
+        "expires": "Mon, 26 Jul 1997 05:00:00 GMT",
+        "vary": "Accept-Encoding",
+        "access-control-allow-headers": "slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags",
+        "content-type": "application/json; charset=utf-8",
+        "x-envoy-upstream-service-time": "22",
+        "x-backend": "main_normal main_canary_with_overflow main_control_with_overflow",
+        "x-server": "slack-www-hhvm-main-iad-rcjv",
+        "x-via": "envoy-www-iad-nzqs, haproxy-edge-iad-3wy0",
+        "x-slack-shared-secret-outcome": "shared-secret",
+        "via": "envoy-www-iad-nzqs",
+        "transfer-encoding": "chunked"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
