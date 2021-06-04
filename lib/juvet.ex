@@ -94,7 +94,14 @@ defmodule Juvet do
 
   @doc false
   def start(_types, _args) do
-    Juvet.BotFactory.start_link(Application.get_all_env(:juvet))
+    Juvet.BotFactory.start_link(configuration())
+  end
+
+  @doc """
+  Returns the configuration configured for Juvet within the `Application`
+  """
+  def configuration do
+    Application.get_all_env(:juvet)
   end
 
   @doc """

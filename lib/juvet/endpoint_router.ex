@@ -7,7 +7,7 @@ defmodule Juvet.EndpointRouter do
   """
 
   use Plug.Router
-  use Juvet.SlackEndpointRouter, config: Application.get_all_env(:juvet)
+  use Juvet.SlackEndpointRouter, config: Juvet.configuration()
 
   plug(Plug.Logger)
   plug(:match)

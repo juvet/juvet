@@ -48,4 +48,10 @@ defmodule Juvet.JuvetTest do
       assert List.first(List.first(platforms).messages) == %{team_id: "T12345"}
     end
   end
+
+  describe "Juvet.configuration/0" do
+    test "returns the configuration specified in the application" do
+      assert Juvet.configuration() == Application.get_all_env(:juvet)
+    end
+  end
 end
