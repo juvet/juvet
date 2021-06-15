@@ -197,6 +197,22 @@ defmodule Juvet do
   end
 
   @doc """
+  Routes a call to a path through middleware and returns a `RunContext` result
+
+  * `:path` - A `String` that represents a path with the pattern of `controller#action` (e.g. `"users#edit"`)
+  * `:context` - A `Map` of values that should be passed to the middleware
+
+  ## Example
+
+  ```
+  Juvet.route("home#index", %{team: team, user: user})
+  ```
+  """
+  def route(path, context \\ %{}) do
+    Juvet.Runner.route(path, context)
+  end
+
+  @doc """
   A shortcut function that creates a bot process (using `create_bot!/1`) and documents (using `connect_bot`)
   that the bot is connected to the specified platform.
 
