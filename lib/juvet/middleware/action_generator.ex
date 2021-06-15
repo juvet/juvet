@@ -14,6 +14,6 @@ defmodule Juvet.Middleware.ActionGenerator do
       |> Macro.camelize()
       |> String.to_atom()
 
-    {controller, action_name}
+    {controller, String.to_atom(action_name)}
   end
 end
