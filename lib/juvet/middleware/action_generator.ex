@@ -9,11 +9,9 @@ defmodule Juvet.Middleware.ActionGenerator do
     [controller_prefix, action_name] =
       String.split(path, "#", parts: 2, trim: true)
 
-    controller =
-      "#{controller_prefix}_controller"
-      |> Macro.camelize()
-      |> String.to_atom()
+    controller_name =
+      "Elixir.#{Macro.camelize("#{controller_prefix}_controller")}"
 
-    {controller, String.to_atom(action_name)}
+    {String.to_atom(controller_name), String.to_atom(action_name)}
   end
 end

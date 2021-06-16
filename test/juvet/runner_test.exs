@@ -32,7 +32,8 @@ defmodule Juvet.RunnerTest do
     test "adds the route to the context based on the path", %{path: path} do
       {:ok, context} = Juvet.Runner.route(path)
 
-      assert Map.fetch!(context, :action) == {:ControllerController, :action}
+      assert Map.fetch!(context, :action) ==
+               {:"Elixir.ControllerController", :action}
     end
   end
 end

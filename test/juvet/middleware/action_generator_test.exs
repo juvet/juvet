@@ -17,7 +17,7 @@ defmodule Juvet.Middleware.ActionGeneratorTest do
            context: context
          } do
       assert {:ok, ctx} = Juvet.Middleware.ActionGenerator.call(context)
-      assert ctx[:action] == {:TestController, :action}
+      assert ctx[:action] == {:"Elixir.TestController", :action}
     end
   end
 end
