@@ -16,7 +16,7 @@ defmodule Juvet.ConfigurationHelpers do
   end
 
   def setup_reset_config_on_exit(_context) do
-    config = Application.get_all_env(:juvet)
+    config = Juvet.configuration()
 
     on_exit(fn ->
       reset_config(config)

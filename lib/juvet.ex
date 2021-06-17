@@ -94,7 +94,14 @@ defmodule Juvet do
 
   @doc false
   def start(_types, _args) do
-    Juvet.BotFactory.start_link(Application.get_all_env(:juvet))
+    Juvet.BotFactory.start_link(configuration())
+  end
+
+  @doc """
+  Returns the configuration configured for Juvet within the `Application`
+  """
+  def configuration do
+    Application.get_all_env(:juvet)
   end
 
   @doc """
@@ -187,6 +194,22 @@ defmodule Juvet do
   """
   def find_or_create_bot!(name) do
     Juvet.BotFactory.find_or_create!(name)
+  end
+
+  @doc """
+  Routes a call to a path through middleware and returns a `RunContext` result
+
+  * `:path` - A `String` that represents a path with the pattern of `controller#action` (e.g. `"users#edit"`)
+  * `:context` - A `Map` of values that should be passed to the middleware
+
+  ## Example
+
+  ```
+  Juvet.route("home#index", %{team: team, user: user})
+  ```
+  """
+  def route(path, context \\ %{}) do
+    Juvet.Runner.route(path, context)
   end
 
   @doc """
