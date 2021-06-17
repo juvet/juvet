@@ -19,5 +19,14 @@ defmodule Juvet.Middleware.ActionGeneratorTest do
       assert {:ok, ctx} = Juvet.Middleware.ActionGenerator.call(context)
       assert ctx[:action] == {:"Elixir.TestController", :action}
     end
+
+    test "handle namespacing in the controller path" do
+      assert {:ok, context} =
+               Juvet.Middleware.ActionGenerator.call(%{
+                 path: "namespace.test#action"
+               })
+
+      assert context[:action] == {:"Elixir.Namespace.TestController", :action}
+    end
   end
 end
