@@ -5,7 +5,7 @@ defmodule Juvet.RouterTest do
     use Juvet.Router
 
     platform :slack do
-      # command("/test", to: "controller#action")
+      command("/test", to: "controller#action")
     end
   end
 
@@ -13,12 +13,8 @@ defmodule Juvet.RouterTest do
     test "accumulates the platforms within the router" do
       platforms = Juvet.Router.platforms(MyRouter)
 
-      IO.puts("******************")
-      IO.inspect(platforms)
-      IO.puts("******************")
-
       assert Enum.count(platforms) == 1
-      assert Enum.first(platforms).platform == :slack
+      assert List.first(platforms).platform == :slack
     end
   end
 end

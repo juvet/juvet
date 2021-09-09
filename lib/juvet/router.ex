@@ -1,4 +1,6 @@
 defmodule Juvet.Router do
+  alias Juvet.Router.Platform
+
   defmacro __using__(_opts) do
     quote do
       unquote(prelude())
@@ -24,6 +26,16 @@ defmodule Juvet.Router do
     end
   end
 
+  defmacro command(command, options \\ []) do
+    IO.puts("******************")
+    IO.puts("ADDING A COMMAND")
+    IO.inspect(command)
+    IO.puts("******************")
+
+    quote do
+    end
+  end
+
   defmacro platform(platform, do: block) do
     add_platform(platform, block)
   end
@@ -34,9 +46,8 @@ defmodule Juvet.Router do
 
   defp add_platform(platform, block) do
     quote do
-      # TODO: I believe this is running the block right now. Do we want that?
-      # Platform.new(unquote(platform), unquote(block))?
-      @juvet_platforms {unquote(platform), unquote(block)}
+      @juvet_platforms Platform.new(unquote(platform))
+      # @juvet_platforms {unquote(platform), unquote(block)}
     end
   end
 end
