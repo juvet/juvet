@@ -16,5 +16,12 @@ defmodule Juvet.RouterTest do
       assert Enum.count(platforms) == 1
       assert List.first(platforms).platform == :slack
     end
+
+    test "accumulates the routes within the router" do
+      platforms = Juvet.Router.platforms(MyRouter)
+
+      assert Enum.count(List.first(platforms).routes) == 1
+      assert List.first(List.first(platforms).routes).command == "/test"
+    end
   end
 end

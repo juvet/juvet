@@ -1,5 +1,5 @@
 defmodule Juvet.Router do
-  alias Juvet.Router.Platform
+  alias Juvet.Router.{Platform, Route}
 
   defmacro __using__(_opts) do
     quote do
@@ -27,12 +27,8 @@ defmodule Juvet.Router do
   end
 
   defmacro command(command, options \\ []) do
-    IO.puts("******************")
-    IO.puts("ADDING A COMMAND")
-    IO.inspect(command)
-    IO.puts("******************")
-
     quote do
+      Route.new(:command, unquote(command), unquote(options))
     end
   end
 
@@ -46,8 +42,13 @@ defmodule Juvet.Router do
 
   defp add_platform(platform, block) do
     quote do
-      @juvet_platforms Platform.new(unquote(platform))
-      # @juvet_platforms {unquote(platform), unquote(block)}
+      platform = Platform.new(unquote(platform))
+
+      # TODO
+      route = unquote(block)
+      # Platform.put_route(platform, route)
+
+      @juvet_platforms platform
     end
   end
 end
