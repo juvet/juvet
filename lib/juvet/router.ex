@@ -44,9 +44,9 @@ defmodule Juvet.Router do
     quote do
       platform = Platform.new(unquote(platform))
 
-      # TODO
       route = unquote(block)
-      # Platform.put_route(platform, route)
+      # TODO: Handle invalid route (raise routing error)
+      {:ok, platform} = Platform.put_route(platform, route)
 
       @juvet_platforms platform
     end

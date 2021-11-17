@@ -21,7 +21,7 @@ defmodule Juvet.RouterTest do
       platforms = Juvet.Router.platforms(MyRouter)
 
       assert Enum.count(List.first(platforms).routes) == 1
-      assert List.first(List.first(platforms).routes).command == "/test"
+      assert List.first(List.first(platforms).routes).route == "/test"
     end
   end
 end
