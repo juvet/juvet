@@ -1,4 +1,6 @@
 defmodule Juvet.Router.PlatformFactory do
+  def new(:unknown), do: Juvet.Router.UnknownPlatform
+
   def new(platform) do
     try do
       String.to_existing_atom(
