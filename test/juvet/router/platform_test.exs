@@ -16,5 +16,14 @@ defmodule Juvet.Router.PlatformTest do
       assert {:ok, route} =
                Juvet.Router.Platform.validate_route(platform, route)
     end
+
+    test "returns an error tuple with the route when the route is not valid", %{
+      platform: platform
+    } do
+      error_route = %Juvet.Router.Route{type: :blah}
+
+      assert {:error, {:routing_error, [route: error_route, options: %{}]}} ==
+               Juvet.Router.Platform.validate_route(platform, error_route)
+    end
   end
 end
