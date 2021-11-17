@@ -34,5 +34,15 @@ defmodule Juvet.Router.PlatformFactoryTest do
                  error_route
                )
     end
+
+    test "returns an error if the platform is not valid", %{route: route} do
+      unknown_platform = Juvet.Router.UnknownPlatform
+
+      assert {:error, {:routing_error, _}} =
+               Juvet.Router.PlatformFactory.validate_route(
+                 unknown_platform,
+                 route
+               )
+    end
   end
 end
