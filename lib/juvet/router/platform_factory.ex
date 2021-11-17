@@ -8,4 +8,8 @@ defmodule Juvet.Router.PlatformFactory do
       _ in ArgumentError -> new(:unknown)
     end
   end
+
+  def validate_route(platform, route, options \\ %{}) do
+    platform.validate_route(route, options)
+  end
 end
