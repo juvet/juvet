@@ -9,6 +9,20 @@ defmodule Juvet.RouterTest do
     end
   end
 
+  describe "compile time validations" do
+    test "invalid platform raises RouteError" do
+      assert_raise Juvet.Router.RouteError,
+                   "Platform `blah` is not valid.",
+                   fn ->
+                     defmodule MyBadRouter do
+                       use Juvet.Router
+
+                       platform(:blah, do: nil)
+                     end
+                   end
+    end
+  end
+
   describe "Juvet.Router.platform/2" do
     test "accumulates the platforms within the router" do
       platforms = Juvet.Router.platforms(MyRouter)

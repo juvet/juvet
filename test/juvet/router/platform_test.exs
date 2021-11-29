@@ -24,7 +24,7 @@ defmodule Juvet.Router.PlatformTest do
       assert {:error, error} =
                Juvet.Router.Platform.put_route(platform, error_route)
 
-      assert error == {:routing_error, [route: error_route, options: %{}]}
+      assert error == {:unknown_route, [route: error_route, options: %{}]}
     end
   end
 
@@ -49,7 +49,7 @@ defmodule Juvet.Router.PlatformTest do
     } do
       error_route = %Juvet.Router.Route{type: :blah}
 
-      assert {:error, {:routing_error, [route: error_route, options: %{}]}} ==
+      assert {:error, {:unknown_route, [route: error_route, options: %{}]}} ==
                Juvet.Router.Platform.validate_route(platform, error_route)
     end
   end

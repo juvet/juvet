@@ -1,6 +1,25 @@
 defmodule Juvet.Router do
   alias Juvet.Router.{Platform, Route}
 
+  defmodule RouteError do
+    @moduledoc """
+    Exception raised when an exception is found within a route..
+    """
+    defexception status: 404,
+                 message: "invalid route",
+                 router: nil
+
+    def exception(opts) do
+      message = Keyword.fetch!(opts, :message)
+      router = Keyword.fetch!(opts, :router)
+
+      %RouteError{
+        message: message,
+        router: router
+      }
+    end
+  end
+
   defmacro __using__(_opts) do
     quote do
       unquote(prelude())
@@ -45,8 +64,19 @@ defmodule Juvet.Router do
       platform = Platform.new(unquote(platform))
 
       route = unquote(block)
-      # TODO: Handle invalid route (raise routing error)
-      {:ok, platform} = Platform.put_route(platform, route)
+
+      platform =
+        case Platform.put_route(platform, route) do
+          {:ok, platform} ->
+            platform
+
+          {:error, {:unknown_platform, route_info}} ->
+            platform = Keyword.fetch!(route_info, :platform)
+
+            raise RouteError,
+              message: "Platform `#{platform.platform}` is not valid.",
+              router: __MODULE__
+        end
 
       @juvet_platforms platform
     end
