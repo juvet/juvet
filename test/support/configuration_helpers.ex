@@ -9,8 +9,9 @@ defmodule Juvet.ConfigurationHelpers do
     [
       bot: MyBot,
       slack: [
-        events_endpoint: "/slack/events",
-        actions_endpoint: "/slack/actions"
+        actions_endpoint: "/slack/actions",
+        commands_endpoint: "/slack/commands",
+        events_endpoint: "/slack/events"
       ]
     ]
   end
