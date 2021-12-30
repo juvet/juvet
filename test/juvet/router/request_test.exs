@@ -1,4 +1,4 @@
-defmodule Juvet.Middleware.RequestTest do
+defmodule Juvet.Router.RequestTest do
   use ExUnit.Case, async: true
   use Juvet.PlugHelpers
 
@@ -10,7 +10,7 @@ defmodule Juvet.Middleware.RequestTest do
     end
 
     test "returns a structure from the conn", %{conn: conn} do
-      request = Juvet.Middleware.Request.new(conn)
+      request = Juvet.Router.Request.new(conn)
 
       assert request.headers == [
                {"content-type", "multipart/mixed; boundary=plug_conn_test"}

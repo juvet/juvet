@@ -1,4 +1,4 @@
-defmodule Juvet.Middleware.Request do
+defmodule Juvet.Router.Request do
   defstruct headers: [],
             host: nil,
             method: nil,
