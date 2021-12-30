@@ -1,7 +1,7 @@
 defmodule Juvet.Middleware.ActionGeneratorTest do
   use ExUnit.Case, async: true
 
-  describe "Juvet.Middleware.ActionGenerator.call/1" do
+  describe "call/1" do
     setup do
       [context: %{path: "test#action"}]
     end
