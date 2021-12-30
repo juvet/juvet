@@ -7,9 +7,20 @@ defmodule Juvet.PlugHelpers do
     quote do
       use Plug.Test
 
-      defp request!(method, path, params_or_body \\ nil) do
+      defp request!(method, path, params_or_body \\ nil, headers \\ nil) do
         conn(method, path, params_or_body)
+        |> put_request_headers(headers)
         |> Juvet.EndpointRouter.call(Juvet.EndpointRouter.init([]))
+      end
+
+      defp put_request_headers(conn, nil), do: conn
+
+      defp put_request_headers(conn, headers) do
+        Enum.each(headers, fn {key, value} ->
+          conn = conn |> put_req_header(to_string(key), value)
+        end)
+
+        conn
       end
     end
   end
