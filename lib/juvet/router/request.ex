@@ -22,4 +22,8 @@ defmodule Juvet.Router.Request do
       status: conn.status
     }
   end
+
+  def get_header(%__MODULE__{headers: headers}, header) do
+    for {^header, value} <- headers, do: value
+  end
 end
