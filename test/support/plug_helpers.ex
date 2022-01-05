@@ -10,7 +10,7 @@ defmodule Juvet.PlugHelpers do
       defp request!(method, path, params_or_body \\ nil, headers \\ nil) do
         conn(method, path, params_or_body)
         |> put_request_headers(headers)
-        |> Juvet.EndpointRouter.call(Juvet.EndpointRouter.init([]))
+        |> Juvet.Plug.call(Juvet.Plug.init([]))
       end
 
       defp put_request_headers(conn, nil), do: conn

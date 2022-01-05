@@ -1,4 +1,4 @@
-defmodule Juvet.EndpointTest do
+defmodule Juvet.PlugTest do
   use ExUnit.Case, async: true
   use Juvet.PlugHelpers
 
