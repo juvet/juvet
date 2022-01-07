@@ -25,6 +25,7 @@ defmodule Juvet.Router.RequestTest do
       assert request.query_string == ""
       assert request.scheme == :http
       assert request.status == 200
+      refute request.verified?
     end
   end
 

@@ -9,7 +9,8 @@ defmodule Juvet.Router.Request do
     :query_string,
     :scheme,
     :status,
-    headers: []
+    headers: [],
+    verified?: false
   ]
 
   def new(conn) do
