@@ -15,16 +15,16 @@ defmodule Juvet.Router.Request do
 
   def new(conn) do
     %__MODULE__{
-      headers: conn.req_headers,
-      host: conn.host,
-      method: conn.method,
-      params: conn.params,
-      path: conn.request_path,
-      port: conn.port,
-      private: conn.private,
-      query_string: conn.query_string,
-      scheme: conn.scheme,
-      status: conn.status
+      headers: Map.get(conn, :req_headers),
+      host: Map.get(conn, :host),
+      method: Map.get(conn, :method),
+      params: Map.get(conn, :params),
+      path: Map.get(conn, :request_path),
+      port: Map.get(conn, :port),
+      private: Map.get(conn, :private),
+      query_string: Map.get(conn, :query_string),
+      scheme: Map.get(conn, :scheme),
+      status: Map.get(conn, :status)
     }
   end
 
