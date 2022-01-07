@@ -21,6 +21,7 @@ defmodule Juvet.Router.RequestTest do
       assert request.params == %{"foo" => :bar}
       assert request.path == "/slack/commands"
       assert request.port == 80
+      assert request.private
       assert request.query_string == ""
       assert request.scheme == :http
       assert request.status == 200

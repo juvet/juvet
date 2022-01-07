@@ -1,13 +1,16 @@
 defmodule Juvet.Router.Request do
-  defstruct headers: [],
-            host: nil,
-            method: nil,
-            params: nil,
-            path: nil,
-            port: nil,
-            query_string: nil,
-            scheme: nil,
-            status: nil
+  defstruct [
+    :host,
+    :method,
+    :params,
+    :path,
+    :port,
+    :private,
+    :query_string,
+    :scheme,
+    :status,
+    headers: []
+  ]
 
   def new(conn) do
     %__MODULE__{
@@ -17,6 +20,7 @@ defmodule Juvet.Router.Request do
       params: conn.params,
       path: conn.request_path,
       port: conn.port,
+      private: conn.private,
       query_string: conn.query_string,
       scheme: conn.scheme,
       status: conn.status
