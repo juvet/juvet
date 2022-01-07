@@ -10,6 +10,7 @@ defmodule Juvet.Router.Request do
     :scheme,
     :status,
     headers: [],
+    platform: :unknown,
     verified?: false
   ]
 
