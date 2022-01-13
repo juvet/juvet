@@ -9,7 +9,8 @@ defmodule Juvet.Middleware do
   def group(:all) do
     [
       {Juvet.Middleware.ParseRequest},
-      {Juvet.Middleware.IdentifyRequest}
+      {Juvet.Middleware.IdentifyRequest},
+      {Juvet.Middleware.Slack.VerifyRequest}
     ]
   end
 end
