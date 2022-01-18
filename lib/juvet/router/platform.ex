@@ -1,7 +1,7 @@
 defmodule Juvet.Router.Platform do
-  alias Juvet.Router.PlatformFactory
-
   defstruct platform: nil, routes: []
+
+  alias Juvet.Router.PlatformFactory
 
   def new(platform) do
     %__MODULE__{platform: platform}
@@ -18,7 +18,11 @@ defmodule Juvet.Router.Platform do
     end
   end
 
-  def validate_route(%__MODULE__{platform: platform}, route, options \\ %{}) do
+  def find_route(platform, request) do
+    PlatformFactory.new(platform) |> PlatformFactory.find_route(request)
+  end
+
+  def validate_route(platform, route, options \\ %{}) do
     PlatformFactory.new(platform)
     |> PlatformFactory.validate_route(route, options)
   end

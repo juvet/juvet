@@ -3,12 +3,25 @@ defmodule Juvet.Router.PlatformFactory do
 
   def new(platform) do
     try do
-      String.to_existing_atom(
-        "Elixir.Juvet.Router.#{Macro.camelize(to_string(platform))}Platform"
-      )
+      mod =
+        String.to_existing_atom(
+          "Elixir.Juvet.Router.#{Macro.camelize(to_string(platform.platform))}Platform"
+        )
+
+      apply(mod, :new, [platform])
     rescue
       _ in ArgumentError -> new(:unknown, platform)
     end
+  end
+
+  def find_route(platform, request)
+
+  def find_route(%{__struct__: struct} = platform, request) do
+    platform |> struct.find_route(request)
+  end
+
+  def find_route(platform, request) do
+    platform |> platform.find_route(request)
   end
 
   def validate_route(platform, route, options \\ %{})
