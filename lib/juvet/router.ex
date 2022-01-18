@@ -1,5 +1,5 @@
 defmodule Juvet.Router do
-  alias Juvet.Router.{Platform, Route}
+  alias Juvet.Router.{Platform, Route, RouteFinder}
 
   defmodule RouteError do
     @moduledoc """
@@ -55,6 +55,10 @@ defmodule Juvet.Router do
     add_platform(platform, block)
   end
 
+  def find_route(router, request) do
+    RouteFinder.find(platforms(router), request)
+  end
+
   def platforms(router) do
     router.__platforms__()
   end
@@ -74,7 +78,7 @@ defmodule Juvet.Router do
             platform = Keyword.fetch!(route_info, :platform)
 
             raise RouteError,
-              message: "Platform `#{platform.platform}` is not valid.",
+              message: "Platform `#{platform.platform.platform}` is not valid.",
               router: __MODULE__
         end
 
