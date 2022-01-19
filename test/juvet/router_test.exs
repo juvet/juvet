@@ -23,6 +23,16 @@ defmodule Juvet.RouterTest do
     end
   end
 
+  describe "exists?/1" do
+    test "returns true if the router is defined" do
+      assert Juvet.Router.exists?(MyRouter)
+    end
+
+    test "returns false if the router is defined" do
+      refute Juvet.Router.exists?(Blah)
+    end
+  end
+
   describe "platform/2" do
     test "accumulates the platforms within the router" do
       platforms = Juvet.Router.platforms(MyRouter)

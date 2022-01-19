@@ -55,6 +55,14 @@ defmodule Juvet.Router do
     add_platform(platform, block)
   end
 
+  def exists?(mod) do
+    try do
+      Keyword.has_key?(mod.__info__(:functions), :__platforms__)
+    rescue
+      UndefinedFunctionError -> false
+    end
+  end
+
   def find_route(router, request) do
     RouteFinder.find(platforms(router), request)
   end
