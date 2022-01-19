@@ -4,4 +4,8 @@ defmodule Juvet.Router.Route do
   def new(type, route, options \\ []) do
     %__MODULE__{type: type, route: route, options: options}
   end
+
+  def path(%{options: options}) do
+    Keyword.get(options, :to)
+  end
 end
