@@ -43,6 +43,19 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
       assert ctx[:request].verified?
     end
 
+    test "returns the context for a valid request when verifying is turned off",
+         %{context: %{configuration: configuration} = context} do
+      config = Keyword.merge(configuration, slack: [verify_requests: false])
+
+      assert {:ok, ctx} =
+               Juvet.Middleware.Slack.VerifyRequest.call(%{
+                 context
+                 | configuration: config
+               })
+
+      assert ctx[:request].verified?
+    end
+
     test "returns an error if the Slack timestamp header is not available", %{
       context: %{request: request} = context,
       signature: signature

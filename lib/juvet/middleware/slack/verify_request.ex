@@ -1,14 +1,22 @@
 defmodule Juvet.Middleware.Slack.VerifyRequest do
   alias Juvet.GregorianDateTime
 
-  def call(%{request: %{platform: :unknown}} = context), do: {:ok, context}
-
   def call(
-        %{configuration: configuration, request: %{platform: :slack} = request} =
-          context
-      ) do
-    # Check timestamp staleness, if stale set InvalidRequestError with approriate message
-    # Compare signature, if not valid, set error
+        %{
+          configuration: [slack: [verify_requests: false]],
+          request: %{platform: :slack}
+        } = context
+      ),
+      do: request_verified!(context)
+
+  def call(%{request: %{platform: :slack}} = context),
+    do: verify_request(context)
+
+  def call(context), do: {:ok, context}
+
+  defp verify_request(
+         %{configuration: configuration, request: request} = context
+       ) do
     with {:ok, slack_timestamp} <-
            get_request_header(request, "x-slack-request-timestamp"),
          {:ok, slack_signature} <-
@@ -45,8 +53,6 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
     end
   end
 
-  def call(context), do: {:ok, context}
-
   defp create_signature(timestamp, raw_body, signing_secret) do
     "v0=#{
       :crypto.mac(
@@ -74,10 +80,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
          message: "Invalid Slack request. Signature mismatch."
        }}
 
-  defp compare_signature(true, %{request: request} = context) do
-    request = %{request | verified?: true}
-    {:ok, %{context | request: request}}
-  end
+  defp compare_signature(true, context), do: request_verified!(context)
 
   defp get_request_raw_body(request) do
     case get_in(request.private, [:juvet, :raw_body]) do
@@ -98,6 +101,11 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
       %{signing_secret: signing_secret} -> {:ok, signing_secret}
       _ -> {:error, :missing_signing_secret}
     end
+  end
+
+  defp request_verified!(%{request: request} = context) do
+    request = %{request | verified?: true}
+    {:ok, %{context | request: request}}
   end
 
   defp missing_header_message(header),
