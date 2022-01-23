@@ -8,7 +8,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
       params = %{"token" => "TOKEN", "team_id" => "T12345"}
       body = params |> URI.encode_query()
 
-      signing_secret = "646ed265b0d3bec1cf8e6bb03dbf5086"
+      signing_secret = generate_slack_signing_secret()
       config = [slack: [signing_secret: signing_secret]]
 
       timestamp = generate_slack_timestamp()
