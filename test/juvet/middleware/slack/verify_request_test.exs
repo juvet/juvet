@@ -1,6 +1,7 @@
 defmodule Juvet.Middleware.Slack.VerifyRequestTest do
   use ExUnit.Case, async: true
   use Juvet.PlugHelpers
+  use Juvet.SlackRequestHelpers
 
   describe "call/1" do
     setup do
@@ -9,15 +10,9 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
 
       signing_secret = "646ed265b0d3bec1cf8e6bb03dbf5086"
       config = [slack: [signing_secret: signing_secret]]
-      timestamp = Juvet.GregorianDateTime.to_seconds() |> to_string
-      signature = "v0:#{timestamp}:#{body}"
 
-      signature =
-        "v0=#{
-          :crypto.mac(:hmac, :sha256, signing_secret, signature)
-          |> Base.encode16()
-        }"
-        |> String.downcase()
+      timestamp = generate_slack_timestamp()
+      signature = generate_slack_signature(params, signing_secret, timestamp)
 
       request =
         Juvet.Router.Request.new(%{

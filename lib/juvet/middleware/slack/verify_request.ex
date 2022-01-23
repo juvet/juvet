@@ -54,16 +54,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   end
 
   defp create_signature(timestamp, raw_body, signing_secret) do
-    "v0=#{
-      :crypto.mac(
-        :hmac,
-        :sha256,
-        signing_secret,
-        "v0:#{timestamp}:#{raw_body}"
-      )
-      |> Base.encode16()
-    }"
-    |> String.downcase()
+    Juvet.SlackSigningSecret.generate(raw_body, signing_secret, timestamp)
   end
 
   defp compare_signature(signature, slack_signature, context) do
