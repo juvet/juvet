@@ -14,6 +14,19 @@ defmodule Juvet.Middleware.IdentifyRequestTest do
       assert ctx[:request].platform == :slack
     end
 
+    test "identifies slack request no matter where the header is" do
+      request =
+        Juvet.Router.Request.new(%{
+          req_headers: [
+            {"x-something-else", "bleh"},
+            {"x-slack-signature", "blah"}
+          ]
+        })
+
+      assert {:ok, %{request: %{platform: :slack}}} =
+               Juvet.Middleware.IdentifyRequest.call(%{request: request})
+    end
+
     test "returns unknown if there is no request" do
       assert {:ok, ctx} = Juvet.Middleware.IdentifyRequest.call(%{})
 

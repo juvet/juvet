@@ -1,11 +1,15 @@
 defmodule Juvet.Middleware.IdentifyRequest do
-  def call(
-        %{request: %{headers: [{"x-slack-signature", _} | _]} = request} =
-          context
-      ) do
-    request = %{request | platform: :slack}
+  alias Juvet.Router.Request
 
-    {:ok, %{context | request: request}}
+  def call(%{request: request} = context) do
+    case Request.get_header(request, "x-slack-signature") do
+      [] ->
+        {:ok, context}
+
+      [_] ->
+        request = %{request | platform: :slack}
+        {:ok, %{context | request: request}}
+    end
   end
 
   def call(context), do: {:ok, context}

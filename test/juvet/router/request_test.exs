@@ -3,7 +3,14 @@ defmodule Juvet.Router.RequestTest do
   use Juvet.PlugHelpers
 
   setup_all do
-    conn = request!(:post, "/slack/commands", %{foo: :bar})
+    conn = %Plug.Conn{
+      req_headers: [{"content-type", "multipart/mixed"}],
+      method: "POST",
+      params: %{foo: :bar},
+      port: 80,
+      request_path: "/slack/commands",
+      status: 200
+    }
 
     [conn: conn]
   end
@@ -13,12 +20,12 @@ defmodule Juvet.Router.RequestTest do
       request = Juvet.Router.Request.new(conn)
 
       assert request.headers == [
-               {"content-type", "multipart/mixed; boundary=plug_conn_test"}
+               {"content-type", "multipart/mixed"}
              ]
 
       assert request.host == "www.example.com"
       assert request.method == "POST"
-      assert request.params == %{"foo" => :bar}
+      assert request.params == %{foo: :bar}
       assert request.path == "/slack/commands"
       assert request.port == 80
       assert request.private
@@ -36,8 +43,15 @@ defmodule Juvet.Router.RequestTest do
     end
 
     test "returns the header values if found", %{request: request} do
-      assert Juvet.Router.Request.get_header(request, "content-type") ==
-               ["multipart/mixed; boundary=plug_conn_test"]
+      assert Juvet.Router.Request.get_header(request, "content-type") == [
+               "multipart/mixed"
+             ]
+    end
+
+    test "returns an empty list if there were no headers" do
+      request = Juvet.Router.Request.new(%{})
+
+      assert Juvet.Router.Request.get_header(request, "blah") == []
     end
 
     test "returns an empty list of none found", %{request: request} do
