@@ -9,6 +9,12 @@ defmodule Juvet.PlugHelpers do
 
       alias Plug.Conn
 
+      def put_raw_body(%{params: params} = conn) do
+        Plug.Conn.put_private(conn, :juvet, %{
+          raw_body: params |> URI.encode_query()
+        })
+      end
+
       defp request!(method, path, params_or_body \\ nil, headers \\ nil) do
         build_conn(method, path, params_or_body, headers)
         |> Juvet.Plug.call(Juvet.Plug.init([]))
