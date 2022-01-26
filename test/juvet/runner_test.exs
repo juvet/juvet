@@ -7,7 +7,7 @@ defmodule Juvet.RunnerTest do
     use Juvet.Router
 
     platform :slack do
-      command("/test", to: "test_controller#action")
+      command("/test", to: "juvet.runner_test.test#action")
     end
   end
 
@@ -122,7 +122,7 @@ defmodule Juvet.RunnerTest do
     } do
       {:ok, context} = Juvet.Runner.run(conn, %{configuration: config})
 
-      assert Map.fetch!(context, :path) == "test_controller#action"
+      assert Map.fetch!(context, :path) == "juvet.runner_test.test#action"
     end
   end
 end

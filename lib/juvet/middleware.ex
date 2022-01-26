@@ -12,6 +12,6 @@ defmodule Juvet.Middleware do
       {Juvet.Middleware.IdentifyRequest},
       {Juvet.Middleware.Slack.VerifyRequest},
       {Juvet.Middleware.RouteRequest}
-    ]
+    ] ++ group(:partial)
   end
 end
