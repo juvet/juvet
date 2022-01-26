@@ -2,6 +2,14 @@ defmodule Juvet.Middleware.RouteRequest do
   alias Juvet.Router
   alias Juvet.Router.{Request, Route}
 
+  def call(%{request: %Request{verified?: false} = request}),
+    do:
+      {:error,
+       %Juvet.RoutingError{
+         message: "Request was not verified.",
+         request: request
+       }}
+
   def call(
         %{
           configuration: configuration,

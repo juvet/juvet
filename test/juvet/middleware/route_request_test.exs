@@ -66,5 +66,15 @@ defmodule Juvet.Middleware.RouteRequestTest do
                   "Router Blah configured in Juvet configuration is not found."
               }} = Juvet.Middleware.RouteRequest.call(context)
     end
+
+    test "returns an error if the request was not verified", %{
+      context: %{request: request} = context
+    } do
+      request = %{request | verified?: false}
+      context = %{context | request: request}
+
+      assert {:error, %Juvet.RoutingError{message: "Request was not verified."}} =
+               Juvet.Middleware.RouteRequest.call(context)
+    end
   end
 end
