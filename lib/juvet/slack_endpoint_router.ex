@@ -24,22 +24,19 @@ defmodule Juvet.SlackEndpointRouter do
         if events_endpoint,
           do:
             post(events_endpoint,
-              to: Juvet.SlackEventsEndpointRouter,
-              init_opts: config
+              to: Juvet.SlackEventsEndpointRouter
             )
 
         if commands_endpoint,
           do:
             post(commands_endpoint,
-              to: Juvet.SlackCommandsEndpointRouter,
-              init_opts: config
+              to: Juvet.SlackCommandsEndpointRouter
             )
 
         if actions_endpoint,
           do:
             post(actions_endpoint,
-              to: Juvet.SlackActionsEndpointRouter,
-              init_opts: config
+              to: Juvet.SlackActionsEndpointRouter
             )
       end
     end
