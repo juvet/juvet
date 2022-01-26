@@ -2,6 +2,16 @@ defmodule Juvet.PlugTest do
   use ExUnit.Case, async: true
   use Juvet.PlugHelpers
 
+  describe "init/1" do
+    test "puts the options passed in private connection" do
+      conn = build_conn(:post, "/slack/commands")
+
+      conn = Juvet.Plug.call(conn, Juvet.Plug.init(foo: :bar))
+
+      assert conn.private[:juvet][:options][:foo] == :bar
+    end
+  end
+
   describe "POST /slack/commands" do
     test "responds with a 200 status" do
       conn = request!(:post, "/slack/commands")
