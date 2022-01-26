@@ -1,3 +1,4 @@
+# TODO: Rename to Juvet.SlackRoutes? Rename plus below
 defmodule Juvet.SlackEndpointRouter do
   @moduledoc """
   Creates routes necessary for incoming Slack messages from configuration.
@@ -5,10 +6,6 @@ defmodule Juvet.SlackEndpointRouter do
 
   defmacro __using__(opts) do
     config = Keyword.get(opts, :config)
-
-    # TODO: This is garbage. Would rather allow for any module to be
-    # defined and act as an endpoint router for the endpoint. Not
-    # quite sure how to do that yet,
 
     quote bind_quoted: [config: config] do
       if Juvet.Config.slack_configured?(config) do
@@ -34,7 +31,7 @@ defmodule Juvet.SlackEndpointRouter do
         if commands_endpoint,
           do:
             post(commands_endpoint,
-              to: Juvet.SlackActionsEndpointRouter,
+              to: Juvet.SlackCommandsEndpointRouter,
               init_opts: config
             )
 
