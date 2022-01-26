@@ -1,6 +1,6 @@
-defmodule Juvet.SlackCommandsEndpointRouter do
+defmodule Juvet.SlackCommandRoute do
   @moduledoc """
-  Endpoint router to handle all messages for Slack commands.
+  Plug to handle any command from Slack.
   """
 
   import Plug.Conn

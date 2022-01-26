@@ -21,22 +21,13 @@ defmodule Juvet.SlackRoutes do
         } = Map.merge(defaults, Juvet.Config.slack(config))
 
         if events_endpoint,
-          do:
-            post(events_endpoint,
-              to: Juvet.SlackEventsEndpointRouter
-            )
+          do: post(events_endpoint, to: Juvet.SlackEventRoute)
 
         if commands_endpoint,
-          do:
-            post(commands_endpoint,
-              to: Juvet.SlackCommandsEndpointRouter
-            )
+          do: post(commands_endpoint, to: Juvet.SlackCommandRoute)
 
         if actions_endpoint,
-          do:
-            post(actions_endpoint,
-              to: Juvet.SlackActionsEndpointRouter
-            )
+          do: post(actions_endpoint, to: Juvet.SlackActionRoute)
       end
     end
   end
