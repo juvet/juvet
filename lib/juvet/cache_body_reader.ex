@@ -5,14 +5,9 @@ defmodule Juvet.CacheBodyReader do
     {:ok, body, conn}
   end
 
-  defp put_raw_body(%Plug.Conn{private: %{juvet: juvet}} = conn, body) do
-    juvet = Map.merge(juvet, raw_body_map(body))
-
-    Plug.Conn.put_private(conn, :juvet, juvet)
+  defp put_raw_body(%Plug.Conn{} = conn, body) do
+    Juvet.Conn.put_private(conn, raw_body_map(body))
   end
-
-  defp put_raw_body(conn, body),
-    do: Plug.Conn.put_private(conn, :juvet, raw_body_map(body))
 
   defp raw_body_map(body) do
     opts = %{raw_body: nil}
