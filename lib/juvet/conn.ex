@@ -13,4 +13,6 @@ defmodule Juvet.Conn do
   def get_private(%Plug.Conn{private: private}, default \\ nil) do
     private[@private_key] || default
   end
+
+  def private_key, do: @private_key
 end
