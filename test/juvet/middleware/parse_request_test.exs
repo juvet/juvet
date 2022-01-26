@@ -1,10 +1,14 @@
 defmodule Juvet.Middleware.ParseRequestTest do
   use ExUnit.Case, async: true
-  use Juvet.PlugHelpers
 
   describe "call/1" do
     setup do
-      conn = request!(:post, "/slack/commands")
+      conn = %Plug.Conn{
+        method: "POST",
+        params: %{foo: :bar},
+        request_path: "/slack/commands",
+        status: 200
+      }
 
       [context: %{conn: conn}]
     end
