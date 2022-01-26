@@ -7,7 +7,7 @@ defmodule Juvet.Plug do
   """
 
   use Plug.Router
-  use Juvet.SlackEndpointRouter, config: Juvet.configuration()
+  use Juvet.SlackRoutes, config: Juvet.configuration()
 
   def init(opts) do
     config = Keyword.get(opts, :configuration, Juvet.configuration())

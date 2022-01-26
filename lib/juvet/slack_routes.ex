@@ -1,5 +1,4 @@
-# TODO: Rename to Juvet.SlackRoutes? Rename plus below
-defmodule Juvet.SlackEndpointRouter do
+defmodule Juvet.SlackRoutes do
   @moduledoc """
   Creates routes necessary for incoming Slack messages from configuration.
   """
