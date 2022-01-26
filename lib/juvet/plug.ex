@@ -15,7 +15,7 @@ defmodule Juvet.Plug do
     Keyword.merge(opts, configuration: config)
   end
 
-  plug(Plug.Logger)
+  unless Mix.env() == :test, do: plug(Plug.Logger)
   plug(:insert_juvet_options, builder_opts())
   plug(:match)
 
