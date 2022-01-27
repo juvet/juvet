@@ -21,7 +21,7 @@ defmodule Juvet.Integration.SlackCommandTest do
     [
       {"token", "SLACK_TOKEN"},
       {"team_id", "T1234"},
-      {"command", "test"},
+      {"command", "/test"},
       {"text", ""}
     ]
     |> Enum.into(%{})

@@ -51,7 +51,7 @@ defmodule Juvet.RouterTest do
 
   describe "find_route/2" do
     test "returns an ok tuple with the route if it was found" do
-      request = Juvet.Router.Request.new(%{params: %{"command" => "test"}})
+      request = Juvet.Router.Request.new(%{params: %{"command" => "/test"}})
       request = %{request | platform: :slack, verified?: true}
 
       assert {:ok, route} = Juvet.Router.find_route(MyRouter, request)
@@ -59,7 +59,7 @@ defmodule Juvet.RouterTest do
     end
 
     test "returns an error tuple if it was not found" do
-      request = Juvet.Router.Request.new(%{params: %{"command" => "blah"}})
+      request = Juvet.Router.Request.new(%{params: %{"command" => "/blah"}})
       request = %{request | platform: :slack, verified?: true}
 
       assert {:error, :not_found} = Juvet.Router.find_route(MyRouter, request)

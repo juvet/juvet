@@ -46,6 +46,6 @@ defmodule Juvet.Router.SlackPlatform do
   defp normalized_command(nil), do: nil
 
   defp normalized_command(command) do
-    command |> String.trim() |> String.downcase()
+    command |> String.trim() |> String.downcase() |> command_without_slash()
   end
 end

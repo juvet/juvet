@@ -67,7 +67,7 @@ defmodule Juvet.RunnerTest do
 
   describe "run/2" do
     setup do
-      params = %{"command" => "test", "team_id" => "T12345"}
+      params = %{"command" => "/test", "team_id" => "T12345"}
       signing_secret = generate_slack_signing_secret()
       config = [router: MyRouter, slack: [signing_secret: signing_secret]]
 
@@ -111,7 +111,7 @@ defmodule Juvet.RunnerTest do
       {:ok, context} = Juvet.Runner.run(conn, %{configuration: config})
 
       assert Map.fetch!(context, :request).params == %{
-               "command" => "test",
+               "command" => "/test",
                "team_id" => "T12345"
              }
     end
