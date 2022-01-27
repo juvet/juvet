@@ -1,6 +1,6 @@
-defmodule Juvet.SlackEventsEndpointRouter do
+defmodule Juvet.SlackEventRoute do
   @moduledoc """
-  Endpoint router to handle all messages for Slack events.
+  Plug to handle any event from Slack.
   """
 
   import Plug.Conn
@@ -11,7 +11,7 @@ defmodule Juvet.SlackEventsEndpointRouter do
   @doc """
   Handles web requests targeted for the Slack events API endpoint.
   """
-  def call(conn, _config) do
+  def call(conn, _opts) do
     send_resp(conn, 200, "")
   end
 end

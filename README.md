@@ -123,32 +123,28 @@ config :juvet,
   bot: MyBot,
   slack: [
     actions_endpoint: "/slack/actions",
+    commands_endpoint: "/slack/commands",
     events_endpoint: "/slack/events"
   ]
 ```
 
 ### Mount Router
 
-The client application that is using Juvet can use the router from your client application. You just need to mount the `Juvet.EndpointRouter`.
+The client application that is using Juvet can use the router from your client application. You just need to mount the `Juvet.Plug`.
 
 #### Mounting in Phoenix
 
-The router can be mounted inside the Phoenix router with `[Phoenix.Router.forward/4](https://hexdocs.pm/phoenix/Phoenix.Router.html#forward/4)`.
+The router can be mounted inside the Phoenix endpoint by just adding:
 
 ```
-defmodule MyPhoenixAppWeb.Router do
-  use MyPhoenixAppWeb, :router
+# lib/my_phoenix_app_web/endpoint.ex
 
-  pipeline :mounted_apps do
-    plug :accepts, ["html"]
-    plug :put_secure_browser_headers
-  end
+defmodule MyPhoenixAppWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :my_phoenix_app
 
-  scope path: "/slack" do
-    pipe_through :mounted_apps
+  # ...
 
-    forward "/", Juvet.EndpointRouter
-  end
+  plug Juvet.Plug
 end
 ```
 

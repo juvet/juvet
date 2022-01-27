@@ -31,6 +31,7 @@ defmodule Juvet do
     bot: MyBot,
     slack: [
       actions_endpoint: "/slack/actions",
+      commands_endpoint: "/slack/commands",
       events_endpoint: "/slack/events"
     ]
   ```

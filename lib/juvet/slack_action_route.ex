@@ -1,6 +1,6 @@
-defmodule Juvet.SlackActionsEndpointRouter do
+defmodule Juvet.SlackActionRoute do
   @moduledoc """
-  Endpoint router to handle all messages for Slack actions.
+  Plug to handle any action from Slack.
   """
 
   import Plug.Conn
@@ -11,7 +11,7 @@ defmodule Juvet.SlackActionsEndpointRouter do
   @doc """
   Handles web requests targeted for the Slack actions API endpoint.
   """
-  def call(conn, _config) do
+  def call(conn, _opts) do
     send_resp(conn, 200, "")
   end
 end
