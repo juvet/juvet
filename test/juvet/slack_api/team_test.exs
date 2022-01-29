@@ -15,8 +15,7 @@ defmodule Juvet.SlackAPI.TeamTest do
   describe "SlackAPI.Team.info/1" do
     test "returns infomation about the team", %{team: team, token: token} do
       use_cassette "team/info/successful" do
-        assert {:ok, %{} = response} =
-                 SlackAPI.Team.info(%{team: team, token: token})
+        assert {:ok, %{} = response} = SlackAPI.Team.info(%{team: team, token: token})
 
         assert response[:team][:id]
       end
@@ -27,8 +26,7 @@ defmodule Juvet.SlackAPI.TeamTest do
       token: token
     } do
       use_cassette "team/info/invalid_auth" do
-        assert {:error, %{} = response} =
-                 SlackAPI.Team.info(%{team: team, token: token})
+        assert {:error, %{} = response} = SlackAPI.Team.info(%{team: team, token: token})
 
         assert response[:error] == "invalid_auth"
       end

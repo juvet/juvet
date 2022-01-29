@@ -33,8 +33,7 @@ defmodule Juvet.Router.SlackPlatformTest do
     } do
       request = %{request | verified?: false}
 
-      assert {:error,
-              {:unverified_route, [platform: platform, request: request]}} =
+      assert {:error, {:unverified_route, [platform: platform, request: request]}} =
                SlackPlatform.find_route(platform, request)
     end
 

@@ -12,13 +12,11 @@ defmodule Juvet.BotStateTest do
 
       {state, platform} = Juvet.BotState.put_platform(state, :slack)
 
-      {state, _platform, _message} =
-        Juvet.BotState.put_message({state, platform}, message1)
+      {state, _platform, _message} = Juvet.BotState.put_message({state, platform}, message1)
 
       {state, platform} = Juvet.BotState.put_platform(state, :teams)
 
-      {state, _platform, _message} =
-        Juvet.BotState.put_message({state, platform}, message2)
+      {state, _platform, _message} = Juvet.BotState.put_message({state, platform}, message2)
 
       assert Juvet.BotState.get_messages(state) == [message1, message2]
     end
@@ -30,8 +28,7 @@ defmodule Juvet.BotStateTest do
     } do
       {state, platform} = Juvet.BotState.put_platform(state, :slack)
 
-      {state, platform, message} =
-        Juvet.BotState.put_message({state, platform}, %{text: "Hello"})
+      {state, platform, message} = Juvet.BotState.put_message({state, platform}, %{text: "Hello"})
 
       assert state == %Juvet.BotState{
                platforms: [
@@ -89,8 +86,7 @@ defmodule Juvet.BotStateTest do
     } do
       {state, platform} = Juvet.BotState.put_platform(state, :slack)
 
-      {state, platform, team} =
-        Juvet.BotState.put_team({state, platform}, %{id: "T1234"})
+      {state, platform, team} = Juvet.BotState.put_team({state, platform}, %{id: "T1234"})
 
       assert state == %Juvet.BotState{
                platforms: [

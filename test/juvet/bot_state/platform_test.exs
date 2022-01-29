@@ -19,8 +19,7 @@ defmodule Juvet.BotState.PlatformTest do
 
   describe "Juvet.BotState.Platform.put_message/2" do
     test "adds the message to the list of messages", %{state: state} do
-      {state, message} =
-        Juvet.BotState.Platform.put_message(state, %{text: "Hello World"})
+      {state, message} = Juvet.BotState.Platform.put_message(state, %{text: "Hello World"})
 
       assert state.messages == [%{text: "Hello World"}]
       assert message == %{text: "Hello World"}
@@ -50,8 +49,7 @@ defmodule Juvet.BotState.PlatformTest do
           name: "Led Zeppelin"
         })
 
-      {state, team} =
-        Juvet.BotState.Platform.put_team(state, %{id: "T1234", name: "Zeppelin"})
+      {state, team} = Juvet.BotState.Platform.put_team(state, %{id: "T1234", name: "Zeppelin"})
 
       assert state.teams == [
                %Juvet.BotState.Team{id: "T1234", name: "Zeppelin"}
@@ -77,8 +75,7 @@ defmodule Juvet.BotState.PlatformTest do
     test "returns the state for the specified team", %{state: state} do
       {state, _team} = Juvet.BotState.Platform.put_team(state, %{id: "T1234"})
 
-      assert %Juvet.BotState.Team{} =
-               Juvet.BotState.Platform.team(state, "T1234")
+      assert %Juvet.BotState.Team{} = Juvet.BotState.Platform.team(state, "T1234")
     end
 
     test "returns nil if the team does not exist", %{state: state} do

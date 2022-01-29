@@ -6,7 +6,6 @@ defmodule Juvet.Router.UnknownPlatform do
   end
 
   def validate_route(platform, route, options \\ %{}) do
-    {:error,
-     {:unknown_platform, [platform: platform, route: route, options: options]}}
+    {:error, {:unknown_platform, [platform: platform, route: route, options: options]}}
   end
 end

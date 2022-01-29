@@ -77,8 +77,7 @@ defmodule Juvet.Superintendent do
         _from,
         state = %{factory_supervisor: factory_supervisor, config: config}
       ) do
-    reply =
-      Juvet.FactorySupervisor.add_bot(factory_supervisor, config[:bot], name)
+    reply = Juvet.FactorySupervisor.add_bot(factory_supervisor, config[:bot], name)
 
     {:reply, reply, state}
   end

@@ -11,9 +11,7 @@ defmodule Juvet.Middleware.ActionRunnerTest do
     setup do
       [
         context: %{
-          action:
-            {:"Elixir.Juvet.Middleware.ActionRunnerTest.TestController",
-             :action}
+          action: {:"Elixir.Juvet.Middleware.ActionRunnerTest.TestController", :action}
         }
       ]
     end
@@ -25,8 +23,7 @@ defmodule Juvet.Middleware.ActionRunnerTest do
     end
 
     test "returns an error if the controller action could not be called" do
-      result =
-        Juvet.Middleware.ActionRunner.call(%{action: {:TestController, :action}})
+      result = Juvet.Middleware.ActionRunner.call(%{action: {:TestController, :action}})
 
       assert result == {:error, "`TestController.action/1` is not defined"}
     end
@@ -34,10 +31,7 @@ defmodule Juvet.Middleware.ActionRunnerTest do
     test "calls the controller module and action with the context", %{
       context: context
     } do
-      assert {:ok, ctx} =
-               Juvet.Middleware.ActionRunner.call(
-                 Map.merge(context, %{pid: self()})
-               )
+      assert {:ok, ctx} = Juvet.Middleware.ActionRunner.call(Map.merge(context, %{pid: self()}))
 
       assert_received :called_controller
     end

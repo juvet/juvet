@@ -151,8 +151,7 @@ defmodule Juvet.Bot do
       defp put_message(state, platform_name, message) do
         platform = %Juvet.BotState.Platform{name: platform_name}
 
-        {state, _platform, _message} =
-          Juvet.BotState.put_message({state, platform}, message)
+        {state, _platform, _message} = Juvet.BotState.put_message({state, platform}, message)
 
         state
       end

@@ -8,8 +8,7 @@ defmodule Juvet.Middleware.IdentifyRequestTest do
           req_headers: [{"x-slack-signature", "blah"}]
         })
 
-      assert {:ok, ctx} =
-               Juvet.Middleware.IdentifyRequest.call(%{request: request})
+      assert {:ok, ctx} = Juvet.Middleware.IdentifyRequest.call(%{request: request})
 
       assert ctx[:request].platform == :slack
     end
@@ -36,8 +35,7 @@ defmodule Juvet.Middleware.IdentifyRequestTest do
     test "returns unknown if there are no headers in the request" do
       request = Juvet.Router.Request.new(%{})
 
-      assert {:ok, ctx} =
-               Juvet.Middleware.IdentifyRequest.call(%{request: request})
+      assert {:ok, ctx} = Juvet.Middleware.IdentifyRequest.call(%{request: request})
 
       assert ctx[:request].platform == :unknown
     end
@@ -48,8 +46,7 @@ defmodule Juvet.Middleware.IdentifyRequestTest do
           req_headers: [{"blah", "blah"}]
         })
 
-      assert {:ok, ctx} =
-               Juvet.Middleware.IdentifyRequest.call(%{request: request})
+      assert {:ok, ctx} = Juvet.Middleware.IdentifyRequest.call(%{request: request})
 
       assert ctx[:request].platform == :unknown
     end

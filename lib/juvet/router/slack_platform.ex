@@ -33,9 +33,7 @@ defmodule Juvet.Router.SlackPlatform do
       do: {:ok, route}
 
   def validate_route(platform, %Juvet.Router.Route{} = route, options),
-    do:
-      {:error,
-       {:unknown_route, [platform: platform, route: route, options: options]}}
+    do: {:error, {:unknown_route, [platform: platform, route: route, options: options]}}
 
   defp command_request?(%{params: params}, command) do
     normalized_command(params["command"]) == normalized_command(command)

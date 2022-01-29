@@ -6,8 +6,7 @@ defmodule Juvet.Middleware.ActionGenerator do
   def call(_context), do: {:error, "`path` missing in the `context`"}
 
   defp generate_action(path) do
-    [controller_prefix, action_name] =
-      String.split(path, "#", parts: 2, trim: true)
+    [controller_prefix, action_name] = String.split(path, "#", parts: 2, trim: true)
 
     controller_name =
       String.split("elixir.#{controller_prefix}_controller", ".")

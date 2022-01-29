@@ -38,8 +38,7 @@ defmodule Juvet.Middleware.RouteRequest do
 
         {:error,
          %Juvet.ConfigurationError{
-           message:
-             "Router #{router_name} configured in Juvet configuration is not found."
+           message: "Router #{router_name} configured in Juvet configuration is not found."
          }}
 
       {:error, :missing_router} ->

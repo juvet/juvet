@@ -48,11 +48,9 @@ defmodule Juvet.BotState.TeamTest do
     end
 
     test "updates the user values if it already exists", %{state: state} do
-      {state, _user} =
-        Juvet.BotState.Team.put_user(state, %{id: "U1234", name: "Jimmy Page"})
+      {state, _user} = Juvet.BotState.Team.put_user(state, %{id: "U1234", name: "Jimmy Page"})
 
-      {state, user} =
-        Juvet.BotState.Team.put_user(state, %{id: "U1234", name: "Jimmy"})
+      {state, user} = Juvet.BotState.Team.put_user(state, %{id: "U1234", name: "Jimmy"})
 
       assert state.users == [%Juvet.BotState.User{id: "U1234", name: "Jimmy"}]
       assert user == %Juvet.BotState.User{id: "U1234", name: "Jimmy"}

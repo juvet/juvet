@@ -82,8 +82,8 @@ defmodule Juvet.BotState do
             platforms = state.platforms
             index = Enum.find_index(platforms, &find(&1, platform.name))
 
-            {%{state | platforms: List.replace_at(platforms, index, platform)},
-             platform, team, user}
+            {%{state | platforms: List.replace_at(platforms, index, platform)}, platform, team,
+             user}
         end
     end
   end

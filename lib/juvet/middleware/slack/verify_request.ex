@@ -14,9 +14,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
 
   def call(context), do: {:ok, context}
 
-  defp verify_request(
-         %{configuration: configuration, request: request} = context
-       ) do
+  defp verify_request(%{configuration: configuration, request: request} = context) do
     with {:ok, slack_timestamp} <-
            get_request_header(request, "x-slack-request-timestamp"),
          {:ok, slack_signature} <-
@@ -28,12 +26,10 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
       |> compare_signature(slack_signature, context)
     else
       {:error, "x-slack-request-timestamp" = header} ->
-        {:error,
-         %Juvet.InvalidRequestError{message: missing_header_message(header)}}
+        {:error, %Juvet.InvalidRequestError{message: missing_header_message(header)}}
 
       {:error, "x-slack-signature" = header} ->
-        {:error,
-         %Juvet.InvalidRequestError{message: missing_header_message(header)}}
+        {:error, %Juvet.InvalidRequestError{message: missing_header_message(header)}}
 
       {:error, :stale_timestamp} ->
         {:error, %Juvet.InvalidRequestError{message: "Stale Slack request."}}

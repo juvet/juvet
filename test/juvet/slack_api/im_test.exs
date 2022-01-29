@@ -15,8 +15,7 @@ defmodule Juvet.SlackAPI.IM.IMtest do
   describe "SlackAPI.IM.open/1" do
     test "returns the channel id", %{user: user, token: token} do
       use_cassette "im/open/successful" do
-        assert {:ok, %{} = response} =
-                 SlackAPI.IM.open(%{user: user, token: token})
+        assert {:ok, %{} = response} = SlackAPI.IM.open(%{user: user, token: token})
 
         assert response[:channel][:id]
       end
@@ -27,8 +26,7 @@ defmodule Juvet.SlackAPI.IM.IMtest do
       token: token
     } do
       use_cassette "im/open/invalid_auth" do
-        assert {:error, %{} = response} =
-                 SlackAPI.IM.open(%{user: user, token: token})
+        assert {:error, %{} = response} = SlackAPI.IM.open(%{user: user, token: token})
 
         assert response[:error] == "invalid_auth"
       end

@@ -57,8 +57,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
     } do
       request = %{request | headers: [{"x-slack-signature", signature}]}
 
-      message =
-        "Request missing x-slack-request-timestamp header and could not be verified"
+      message = "Request missing x-slack-request-timestamp header and could not be verified"
 
       assert {:error, %Juvet.InvalidRequestError{message: ^message}} =
                Juvet.Middleware.Slack.VerifyRequest.call(%{

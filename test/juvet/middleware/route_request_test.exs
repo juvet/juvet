@@ -62,8 +62,7 @@ defmodule Juvet.Middleware.RouteRequestTest do
 
       assert {:error,
               %Juvet.ConfigurationError{
-                message:
-                  "Router Blah configured in Juvet configuration is not found."
+                message: "Router Blah configured in Juvet configuration is not found."
               }} = Juvet.Middleware.RouteRequest.call(context)
     end
 
