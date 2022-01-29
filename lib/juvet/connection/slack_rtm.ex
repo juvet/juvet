@@ -5,7 +5,7 @@ defmodule Juvet.Connection.SlackRTM do
 
   use WebSockex
 
-  alias Juvet.{SlackAPI}
+  alias Juvet.SlackAPI
 
   defmodule State do
     defstruct receiver: nil, message: nil

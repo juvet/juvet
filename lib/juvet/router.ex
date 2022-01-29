@@ -56,11 +56,9 @@ defmodule Juvet.Router do
   end
 
   def exists?(mod) do
-    try do
-      Keyword.has_key?(mod.__info__(:functions), :__platforms__)
-    rescue
-      UndefinedFunctionError -> false
-    end
+    Keyword.has_key?(mod.__info__(:functions), :__platforms__)
+  rescue
+    UndefinedFunctionError -> false
   end
 
   def find_route(router, request) do
