@@ -8,7 +8,7 @@ defmodule Juvet.Router.PlatformFactory do
           "Elixir.Juvet.Router.#{Macro.camelize(to_string(platform.platform))}Platform"
         )
 
-      apply(mod, :new, [platform])
+      mod.new(platform)
     rescue
       _ in ArgumentError -> new(:unknown, platform)
     end

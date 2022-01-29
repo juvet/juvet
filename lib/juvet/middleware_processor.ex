@@ -9,6 +9,7 @@ defmodule Juvet.MiddlewareProcessor do
   end
 
   def process(middleware, context) do
-    apply(elem(middleware, 0), :call, [context])
+    mod = elem(middleware, 0)
+    mod.call(context)
   end
 end
