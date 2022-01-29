@@ -50,8 +50,6 @@ defmodule Juvet.BotState do
       platform ->
         {platform, team} = Platform.put_team(platform, team)
 
-        # TODO: This sucks. Maybe implement Access behavior for Platform
-        # and use put_in
         platforms = state.platforms
         index = Enum.find_index(platforms, &find(&1, platform_name))
 
@@ -63,7 +61,6 @@ defmodule Juvet.BotState do
   end
 
   def put_user({state, platform, team}, user) do
-    # TODO: Not sure if this should add the team automatically?
     case put_team({state, platform}, team) do
       {state, nil, nil} ->
         {state, nil, nil, nil}
@@ -71,8 +68,6 @@ defmodule Juvet.BotState do
       {state, platform, team} ->
         case Team.put_user(team, user) do
           {team, user} ->
-            # TODO: This really sucks. Maybe implement Access behavior for
-            # Team and use put_in
             teams = platform.teams
             index = Enum.find_index(teams, fn t -> t.id == team.id end)
 

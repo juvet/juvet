@@ -57,11 +57,12 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
         :connect_slack_rtm,
         %{bot: bot, parameters: parameters} = state
       ) do
-    # TODO: Call either connect or start based on the `via` parameter in state
-    # TODO: Handle an error here
+    case SlackRTM.connect(bot, parameters) do
+      {:ok, pid} ->
+        {:noreply, %{state | connection: pid}}
 
-    {:ok, pid} = SlackRTM.connect(bot, parameters)
-
-    {:noreply, %{state | connection: pid}}
+      {:error, _} ->
+        raise "Not Implemented"
+    end
   end
 end

@@ -108,7 +108,6 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
     timestamp = String.to_integer(slack_timestamp)
     local_timestamp = GregorianDateTime.to_seconds()
 
-    # TODO: 300 is 5 minutes (60 * 5). Make this configurable
     if abs(local_timestamp - timestamp) < 300,
       do: {:ok, timestamp},
       else: {:error, :stale_timestamp}
