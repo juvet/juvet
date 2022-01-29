@@ -1,4 +1,7 @@
 defmodule Juvet.Middleware.ActionGenerator do
+  @moduledoc """
+  Middleware to convert a path (e.g. `"test#action"`) to a controller module and function (e.g. `TestController.action()`).
+  """
   def call(%{path: path} = context) do
     {:ok, Map.put_new(context, :action, generate_action(path))}
   end

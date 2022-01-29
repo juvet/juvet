@@ -11,6 +11,10 @@ defmodule Juvet.Superintendent do
   use GenServer
 
   defmodule State do
+    @moduledoc """
+      Represents the state that is held within this process.
+    """
+
     defstruct factory_supervisor: nil, config: %{}
   end
 

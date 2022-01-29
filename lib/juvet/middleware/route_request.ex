@@ -1,4 +1,9 @@
 defmodule Juvet.Middleware.RouteRequest do
+  @moduledoc """
+  Middleware that finds the `Juvet.Router.Route` from the `Juevt.Router` so
+  the route can be called later in the middleware chain.
+  """
+
   alias Juvet.Router
   alias Juvet.Router.{Request, Route}
 

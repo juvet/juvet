@@ -8,6 +8,10 @@ defmodule Juvet.Connection.SlackRTM do
   alias Juvet.SlackAPI
 
   defmodule State do
+    @moduledoc """
+    A struct that represents the state stored for the connection.
+    """
+
     defstruct receiver: nil, message: nil
   end
 

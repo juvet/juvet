@@ -1,4 +1,8 @@
 defmodule Mix.Tasks.Record do
+  @moduledoc """
+  Mix task to record VCR cassettes from Slack API requests.
+  """
+
   use Mix.Task
   use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 

@@ -1,4 +1,8 @@
 defmodule Juvet.Router.UnknownPlatform do
+  @moduledoc """
+  Represents a `Juvet.Router.Platform` that could not be idenfied.
+  """
+
   defstruct platform: nil
 
   def new(platform) do

@@ -1,4 +1,8 @@
 defmodule Juvet.Router.Platform do
+  @moduledoc """
+  Represents a list of routes for a specific platform (e.g. `Slack`).
+  """
+
   defstruct platform: nil, routes: []
 
   alias Juvet.Router.PlatformFactory

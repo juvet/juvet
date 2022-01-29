@@ -1,6 +1,7 @@
 defmodule Juvet.Middleware do
-  # TODO: Eventually the middleware grouping will be retrieved from the Router and filtered by the group_name
-  # For now, we hardcode
+  @moduledoc """
+  Middleware groups to define what middleware is run during the request flow.
+  """
 
   def group(:partial) do
     [{Juvet.Middleware.ActionGenerator}, {Juvet.Middleware.ActionRunner}]

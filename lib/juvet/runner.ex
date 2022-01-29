@@ -1,4 +1,9 @@
 defmodule Juvet.Runner do
+  @moduledoc """
+  A module that takes in a map of variables as a context and runs the request through a
+  collection of middleware.
+  """
+
   alias Juvet.{Middleware, MiddlewareProcessor}
 
   def route(path, context \\ %{}) do

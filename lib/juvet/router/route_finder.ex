@@ -1,4 +1,8 @@
 defmodule Juvet.Router.RouteFinder do
+  @moduledoc """
+  Finds a specific `Juvet.Router.Route` based on a `Juvet.Router.Request`.
+  """
+
   alias Juvet.Router.Platform
 
   def find(platforms, request) do

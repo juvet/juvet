@@ -1,4 +1,9 @@
 defmodule Juvet.FakeSlack do
+  @moduledoc """
+  Process to start a websocket at a specified url and receives amd dispatches
+  requests from the websocket.
+  """
+
   alias Juvet.FakeSlack
 
   def start_link(url \\ "http://localhost:51345") do

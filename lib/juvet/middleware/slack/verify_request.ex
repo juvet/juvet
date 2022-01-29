@@ -1,4 +1,9 @@
 defmodule Juvet.Middleware.Slack.VerifyRequest do
+  @moduledoc """
+  Middleware that verifies a `Juvet.Router.Request` is coming from Slack
+  by verifying it's header with a signing secret.
+  """
+
   alias Juvet.GregorianDateTime
 
   def call(

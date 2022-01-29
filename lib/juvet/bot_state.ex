@@ -1,4 +1,8 @@
 defmodule Juvet.BotState do
+  @moduledoc """
+  A structre that represents what is stored for a given `Juvet.Bot` within the process.
+  """
+
   defstruct bot_supervisor: nil, platforms: []
 
   alias Juvet.BotState.{Platform, Team}

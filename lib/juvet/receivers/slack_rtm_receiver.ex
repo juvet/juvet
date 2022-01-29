@@ -6,6 +6,10 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
   use GenServer
 
   defmodule State do
+    @moduledoc """
+    A struct that represents the state that is stored in each connection.
+    """
+
     defstruct bot: nil, connection: nil, parameters: %{}
   end
 

@@ -1,4 +1,8 @@
 defmodule Juvet.BotState.Team do
+  @moduledoc """
+  Represents a team that is stored in the state for a `Juvet.Bot`.
+  """
+
   @enforce_keys [:id]
   defstruct [:id, :name, :scopes, :token, :url, users: []]
 
