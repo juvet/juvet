@@ -27,7 +27,7 @@ defmodule Juvet.Superintendent do
   @doc """
   Connects a `Juvet.Bot` process with the Slack platform and the given parameters.
   """
-  def connect_bot(bot, :slack, parameters = %{team_id: _team_id}) do
+  def connect_bot(bot, :slack, %{team_id: _team_id} = parameters) do
     GenServer.cast(__MODULE__, {:connect_bot, bot, :slack, parameters})
   end
 
@@ -75,7 +75,7 @@ defmodule Juvet.Superintendent do
   def handle_call(
         {:create_bot, name},
         _from,
-        state = %{factory_supervisor: factory_supervisor, config: config}
+        %{factory_supervisor: factory_supervisor, config: config} = state
       ) do
     reply = Juvet.FactorySupervisor.add_bot(factory_supervisor, config[:bot], name)
 
@@ -105,7 +105,7 @@ defmodule Juvet.Superintendent do
   @doc false
   def handle_cast(
         {:connect_bot, bot, platform, parameters},
-        state = %{config: config}
+        %{config: config} = state
       ) do
     bot_module = Juvet.Config.bot(config)
 

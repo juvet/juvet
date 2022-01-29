@@ -56,7 +56,7 @@ defmodule Juvet.Bot do
       MyBot.connect(bot, :slack, %{token: "MY_TOKEN"})
       ```
       """
-      def connect(pid, :slack, parameters = %{team_id: _team_id}) do
+      def connect(pid, :slack, %{team_id: _team_id} = parameters) do
         GenServer.cast(pid, {:connect, :slack, parameters})
       end
 

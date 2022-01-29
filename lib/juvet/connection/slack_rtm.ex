@@ -41,28 +41,28 @@ defmodule Juvet.Connection.SlackRTM do
   end
 
   @doc false
-  def handle_connect(_conn, state = %{receiver: receiver, message: {_, body}}) do
+  def handle_connect(_conn, %{receiver: receiver, message: {_, body}} = state) do
     send(receiver, {:connected, :slack, body})
 
     {:ok, state}
   end
 
   @doc false
-  def handle_disconnect(_, state = %{receiver: receiver, message: {_, body}}) do
+  def handle_disconnect(_, %{receiver: receiver, message: {_, body}} = state) do
     send(receiver, {:disconnected, :slack, body})
 
     {:ok, state}
   end
 
   @doc false
-  def handle_frame({_type, message}, state = %{receiver: receiver}) do
+  def handle_frame({_type, message}, %{receiver: receiver} = state) do
     send(receiver, {:new_message, :slack, message})
 
     {:ok, %{state | message: {:ok, message}}}
   end
 
   @doc false
-  defp start_link(state = %State{message: {:ok, %{url: url}}}) do
+  defp start_link(%State{message: {:ok, %{url: url}}} = state) do
     WebSockex.start_link(url, __MODULE__, state)
   end
 

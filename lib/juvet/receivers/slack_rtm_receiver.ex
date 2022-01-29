@@ -13,7 +13,7 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
   Starts a child process under the `bot_supervisor` for the specified
   bot `pid` using the specified `parameters`.
   """
-  def start(bot_supervisor, bot, parameters = %{token: _token}) do
+  def start(bot_supervisor, bot, %{token: _token} = parameters) do
     Supervisor.start_child(
       bot_supervisor,
       {__MODULE__, [bot, parameters]}
@@ -23,7 +23,7 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
   # Client API
 
   @doc false
-  def start_link(init_arg = [_bot, _parameters], options \\ []) do
+  def start_link([_bot, _parameters] = init_arg, options \\ []) do
     GenServer.start_link(__MODULE__, init_arg, options)
   end
 
@@ -49,7 +49,7 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
   @doc false
   def handle_info(
         :connect_slack_rtm,
-        state = %{bot: bot, parameters: parameters}
+        %{bot: bot, parameters: parameters} = state
       ) do
     # TODO: Call either connect or start based on the `via` parameter in state
     # TODO: Handle an error here
