@@ -1,7 +1,9 @@
 defmodule Juvet.BotState.UserTest do
   use ExUnit.Case
 
-  describe "Juvet.BotState.User.from_auth/1" do
+  alias Juvet.BotState.User
+
+  describe "from_auth/1" do
     setup do
       auth = %{
         access_token: "SLACK_TOKEN",
@@ -20,7 +22,7 @@ defmodule Juvet.BotState.UserTest do
     end
 
     test "returns a struct based on the auth response data", %{auth: auth} do
-      user = Juvet.BotState.User.from_auth(auth)
+      user = User.from_auth(auth)
 
       assert user.id == "U12345"
       assert user.token == "USER_TOKEN"

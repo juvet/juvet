@@ -19,8 +19,6 @@ defmodule Juvet.BotState do
       platform ->
         {platform, message} = Platform.put_message(platform, message)
 
-        # TODO: This sucks. Maybe implement Access behavior for Platform
-        # and use put_in
         platforms = state.platforms
         index = Enum.find_index(platforms, &find(&1, platform_name))
 

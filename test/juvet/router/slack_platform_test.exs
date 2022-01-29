@@ -1,19 +1,19 @@
 defmodule Juvet.Router.SlackPlatformTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Router.SlackPlatform
+  alias Juvet.Router.{Platform, Request, Route, SlackPlatform}
 
   describe "find_route/2" do
     setup do
-      route = Juvet.Router.Route.new(:command, "/test", to: "controller#action")
+      route = Route.new(:command, "/test", to: "controller#action")
 
       {:ok, platform} =
-        Juvet.Router.Platform.new(:slack)
-        |> Juvet.Router.Platform.put_route(route)
+        Platform.new(:slack)
+        |> Platform.put_route(route)
 
-      platform = Juvet.Router.SlackPlatform.new(platform)
+      platform = SlackPlatform.new(platform)
 
-      request = Juvet.Router.Request.new(%{params: %{"command" => "test"}})
+      request = Request.new(%{params: %{"command" => "test"}})
       request = %{request | platform: :slack, verified?: true}
 
       [platform: platform, request: request]

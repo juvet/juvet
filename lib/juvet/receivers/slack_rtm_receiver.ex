@@ -5,6 +5,8 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
 
   use GenServer
 
+  alias Juvet.Connection.SlackRTM
+
   defmodule State do
     @moduledoc """
     A struct that represents the state that is stored in each connection.
@@ -58,7 +60,7 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
     # TODO: Call either connect or start based on the `via` parameter in state
     # TODO: Handle an error here
 
-    {:ok, pid} = Juvet.Connection.SlackRTM.connect(bot, parameters)
+    {:ok, pid} = SlackRTM.connect(bot, parameters)
 
     {:noreply, %{state | connection: pid}}
   end

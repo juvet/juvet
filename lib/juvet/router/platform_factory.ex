@@ -3,7 +3,9 @@ defmodule Juvet.Router.PlatformFactory do
   Module to create a `Juvet.Router.Platform` based on the Atom that is passed in.
   """
 
-  def new(:unknown, platform), do: Juvet.Router.UnknownPlatform.new(platform)
+  alias Juvet.Router.UnknownPlatform
+
+  def new(:unknown, platform), do: UnknownPlatform.new(platform)
 
   def new(platform) do
     mod =

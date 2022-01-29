@@ -1,12 +1,12 @@
 defmodule Juvet.Router.PlatformTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Router.Platform
+  alias Juvet.Router.{Platform, Request, Route, SlackPlatform}
 
   describe "put_route/3" do
     setup do
       platform = Platform.new(:slack)
-      route = Juvet.Router.Route.new(:command, "/test", to: "controller#action")
+      route = Route.new(:command, "/test", to: "controller#action")
 
       [platform: platform, route: route]
     end
@@ -21,14 +21,14 @@ defmodule Juvet.Router.PlatformTest do
     test "returns an error tuple with the error from the returning platform", %{
       platform: platform
     } do
-      error_route = %Juvet.Router.Route{type: :blah}
+      error_route = %Route{type: :blah}
 
       assert {:error, error} = Platform.put_route(platform, error_route)
 
       assert error ==
                {:unknown_route,
                 [
-                  platform: %Juvet.Router.SlackPlatform{platform: platform},
+                  platform: %SlackPlatform{platform: platform},
                   route: error_route,
                   options: %{}
                 ]}
@@ -38,10 +38,10 @@ defmodule Juvet.Router.PlatformTest do
   describe "find_route/2" do
     setup do
       platform = Platform.new(:slack)
-      route = Juvet.Router.Route.new(:command, "/test", to: "controller#action")
+      route = Route.new(:command, "/test", to: "controller#action")
       {:ok, platform} = Platform.put_route(platform, route)
 
-      request = Juvet.Router.Request.new(%{params: %{"command" => "test"}})
+      request = Request.new(%{params: %{"command" => "test"}})
       request = %{request | platform: :slack, verified?: true}
 
       [platform: platform, request: request]
@@ -71,7 +71,7 @@ defmodule Juvet.Router.PlatformTest do
       assert error ==
                {:unknown_route,
                 [
-                  platform: %Juvet.Router.SlackPlatform{platform: platform},
+                  platform: %SlackPlatform{platform: platform},
                   request: request
                 ]}
     end
@@ -80,7 +80,7 @@ defmodule Juvet.Router.PlatformTest do
   describe "validate_route/3" do
     setup do
       platform = Platform.new(:slack)
-      route = Juvet.Router.Route.new(:command, "/test", to: "controller#action")
+      route = Route.new(:command, "/test", to: "controller#action")
 
       [platform: platform, route: route]
     end
@@ -95,12 +95,12 @@ defmodule Juvet.Router.PlatformTest do
     test "returns an error tuple with the route when the route is not valid", %{
       platform: platform
     } do
-      error_route = %Juvet.Router.Route{type: :blah}
+      error_route = %Route{type: :blah}
 
       assert {:error,
               {:unknown_route,
                [
-                 platform: %Juvet.Router.SlackPlatform{platform: platform},
+                 platform: %SlackPlatform{platform: platform},
                  route: error_route,
                  options: %{}
                ]}} ==

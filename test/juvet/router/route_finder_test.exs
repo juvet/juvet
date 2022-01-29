@@ -1,17 +1,17 @@
 defmodule Juvet.Router.RouteFinderTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Router.RouteFinder
+  alias Juvet.Router.{Platform, Request, Route, RouteFinder}
 
   describe "find/2" do
     setup do
-      route = Juvet.Router.Route.new(:command, "/test", to: "controller#action")
+      route = Route.new(:command, "/test", to: "controller#action")
 
       {:ok, platform} =
-        Juvet.Router.Platform.new(:slack)
-        |> Juvet.Router.Platform.put_route(route)
+        Platform.new(:slack)
+        |> Platform.put_route(route)
 
-      request = Juvet.Router.Request.new(%{params: %{"command" => "test"}})
+      request = Request.new(%{params: %{"command" => "test"}})
       request = %{request | platform: :slack, verified?: true}
 
       [platforms: [platform], request: request]

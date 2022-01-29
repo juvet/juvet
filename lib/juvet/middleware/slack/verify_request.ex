@@ -5,6 +5,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   """
 
   alias Juvet.GregorianDateTime
+  alias Juvet.Router.Request
 
   def call(
         %{
@@ -82,7 +83,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   end
 
   defp get_request_header(request, header) do
-    case Juvet.Router.Request.get_header(request, header) do
+    case Request.get_header(request, header) do
       [value | _] -> {:ok, value}
       [] -> {:error, header}
     end

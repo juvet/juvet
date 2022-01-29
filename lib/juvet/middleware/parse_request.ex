@@ -4,11 +4,13 @@ defmodule Juvet.Middleware.ParseRequest do
   can be used within the middleware chain.
   """
 
+  alias Juvet.Router.Request
+
   def call(%{conn: conn} = context) do
     {:ok, Map.put_new(context, :request, generate_request(conn))}
   end
 
   def call(context), do: {:ok, context}
 
-  defp generate_request(conn), do: Juvet.Router.Request.new(conn)
+  defp generate_request(conn), do: Request.new(conn)
 end
