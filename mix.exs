@@ -37,11 +37,12 @@ defmodule Juvet.Mixfile do
 
   defp deps do
     [
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:exvcr, "~> 0.10", only: [:dev, :test]},
       {:httpoison, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:poison, "~> 3.1"},
-      {:websockex, "~> 0.4.0"},
-      {:exvcr, "~> 0.10", only: [:dev, :test]}
+      {:websockex, "~> 0.4.0"}
     ]
   end
 
