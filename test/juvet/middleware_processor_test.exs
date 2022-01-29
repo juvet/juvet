@@ -27,9 +27,7 @@ defmodule Juvet.MiddlewareProcessorTest do
 
     test "returns an error if there was an error", %{context: context} do
       {:error, error} =
-        Juvet.MiddlewareProcessor.process(
-          Map.merge(context, %{middleware: [{ErrorMiddleware}]})
-        )
+        Juvet.MiddlewareProcessor.process(Map.merge(context, %{middleware: [{ErrorMiddleware}]}))
 
       assert error == "There was an error"
     end

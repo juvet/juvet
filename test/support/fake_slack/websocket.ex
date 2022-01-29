@@ -1,4 +1,6 @@
 defmodule Juvet.FakeSlack.Websocket do
+  @moduledoc false
+
   @behaviour :cowboy_websocket
 
   def init(request, state) do

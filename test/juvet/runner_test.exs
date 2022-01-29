@@ -27,8 +27,7 @@ defmodule Juvet.RunnerTest do
 
     test "can merge with the default configuration by adding a configuration option",
          %{path: path} do
-      {:ok, context} =
-        Juvet.Runner.route(path, %{configuration: [router: MyRouter]})
+      {:ok, context} = Juvet.Runner.route(path, %{configuration: [router: MyRouter]})
 
       assert Keyword.get(context[:configuration], :router) == MyRouter
     end
@@ -98,8 +97,7 @@ defmodule Juvet.RunnerTest do
     end
 
     test "adds the current values in the context", %{conn: conn, config: config} do
-      {:ok, context} =
-        Juvet.Runner.run(conn, %{blah: "bleh", configuration: config})
+      {:ok, context} = Juvet.Runner.run(conn, %{blah: "bleh", configuration: config})
 
       assert Map.fetch!(context, :blah) == "bleh"
     end

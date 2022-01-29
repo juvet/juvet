@@ -1,5 +1,11 @@
 defmodule Juvet.FakeSlack do
-  alias Juvet.FakeSlack
+  @moduledoc """
+  Process to start a websocket at a specified url and receives amd dispatches
+  requests from the websocket.
+  """
+
+  alias Juvet.FakeSlack.Websocket
+  alias Plug.Adapters.Cowboy
 
   def start_link(url \\ "http://localhost:51345") do
     # This is used by the application config so it can be pluggable
@@ -7,7 +13,7 @@ defmodule Juvet.FakeSlack do
 
     uri = URI.parse(url)
 
-    Plug.Adapters.Cowboy.http(
+    Cowboy.http(
       __MODULE__,
       [],
       port: uri.port,
@@ -16,11 +22,11 @@ defmodule Juvet.FakeSlack do
   end
 
   def set_client_pid(pid) do
-    FakeSlack.Websocket.set_client_pid(pid)
+    Websocket.set_client_pid(pid)
   end
 
   def stop do
-    Plug.Adapters.Cowboy.shutdown(FakeSlack.Websocket)
+    Cowboy.shutdown(Websocket)
   end
 
   defp dispatch do
@@ -28,7 +34,7 @@ defmodule Juvet.FakeSlack do
       {
         :_,
         [
-          {"/ws", FakeSlack.Websocket, []}
+          {"/ws", Websocket, []}
         ]
       }
     ]

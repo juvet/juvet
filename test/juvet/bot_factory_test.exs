@@ -69,8 +69,7 @@ defmodule Juvet.BotFactoryTest do
     end
 
     test "returns error if the bot does not exist" do
-      assert {:error, "Bot named 'blah' not found"} =
-               Juvet.BotFactory.find("blah")
+      assert {:error, "Bot named 'blah' not found"} = Juvet.BotFactory.find("blah")
     end
   end
 

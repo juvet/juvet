@@ -15,8 +15,7 @@ defmodule Juvet.SlackAPI.UsersTest do
   describe "SlackAPI.Users.info/1" do
     test "returns infomation about the user", %{user: user, token: token} do
       use_cassette "users/info/successful" do
-        assert {:ok, %{} = response} =
-                 SlackAPI.Users.info(%{user: user, token: token})
+        assert {:ok, %{} = response} = SlackAPI.Users.info(%{user: user, token: token})
 
         assert response[:user][:id]
       end
@@ -27,8 +26,7 @@ defmodule Juvet.SlackAPI.UsersTest do
       token: token
     } do
       use_cassette "users/info/invalid_auth" do
-        assert {:error, %{} = response} =
-                 SlackAPI.Users.info(%{user: user, token: token})
+        assert {:error, %{} = response} = SlackAPI.Users.info(%{user: user, token: token})
 
         assert response[:error] == "invalid_auth"
       end

@@ -1,4 +1,8 @@
 defmodule Juvet.BotState.Platform do
+  @moduledoc """
+  Represents a platform that is stored in the state for a `Juvet.Bot`.
+  """
+
   @enforce_keys [:name]
   defstruct [:name, messages: [], teams: []]
 

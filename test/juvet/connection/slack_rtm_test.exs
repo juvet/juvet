@@ -2,7 +2,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   use ExUnit.Case
   use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
-  alias Juvet.Connection.{SlackRTM}
+  alias Juvet.Connection.SlackRTM
 
   setup_all do
     Juvet.FakeSlack.start_link()

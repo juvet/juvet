@@ -1,4 +1,9 @@
 defmodule Juvet.Router.SlackPlatform do
+  @moduledoc """
+  Struct that represents the `Juvet.Router.Route`s that are available for the
+  Slack platform.
+  """
+
   defstruct platform: nil
 
   def new(platform) do
@@ -33,9 +38,7 @@ defmodule Juvet.Router.SlackPlatform do
       do: {:ok, route}
 
   def validate_route(platform, %Juvet.Router.Route{} = route, options),
-    do:
-      {:error,
-       {:unknown_route, [platform: platform, route: route, options: options]}}
+    do: {:error, {:unknown_route, [platform: platform, route: route, options: options]}}
 
   defp command_request?(%{params: params}, command) do
     normalized_command(params["command"]) == normalized_command(command)

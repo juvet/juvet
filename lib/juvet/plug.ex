@@ -27,8 +27,6 @@ defmodule Juvet.Plug do
 
   plug(:dispatch)
 
-  # TODO: Make this response configurable like in Phoenix
-  # See use Plug.ErrorHandler
   match(_, do: send_resp(conn, 404, "Oh no! This route is not handled in Juvet"))
 
   defp insert_juvet_options(conn, opts),

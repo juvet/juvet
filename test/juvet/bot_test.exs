@@ -4,6 +4,10 @@ defmodule Juvet.Bot.BotTest do
 
   import Juvet.ConfigurationHelpers
 
+  alias Juvet.BotState
+  alias Juvet.BotState.{Platform, Team, User}
+  alias Juvet.Receivers.SlackRTMReceiver
+
   setup_all do
     Juvet.FakeSlack.start_link()
 
@@ -57,7 +61,7 @@ defmodule Juvet.Bot.BotTest do
             mpim_aware: true
           })
 
-        client = Juvet.Receivers.SlackRTMReceiver.get_connection(pid)
+        client = SlackRTMReceiver.get_connection(pid)
 
         message = Poison.encode!(%{type: "hello"})
         WebSockex.send_frame(client, {:text, message})
@@ -120,8 +124,8 @@ defmodule Juvet.Bot.BotTest do
     test "adds the platform to the bot's state", %{bot: bot, auth: auth} do
       MyBot.user_install(bot, :slack, auth)
 
-      assert %Juvet.BotState{
-               platforms: [%Juvet.BotState.Platform{name: :slack}]
+      assert %BotState{
+               platforms: [%Platform{name: :slack}]
              } = MyBot.get_state(bot)
     end
 
@@ -131,12 +135,12 @@ defmodule Juvet.Bot.BotTest do
     } do
       MyBot.user_install(bot, :slack, auth)
 
-      assert %Juvet.BotState{
+      assert %BotState{
                platforms: [
-                 %Juvet.BotState.Platform{
+                 %Platform{
                    name: :slack,
                    teams: [
-                     %Juvet.BotState.Team{
+                     %Team{
                        id: "T1234",
                        name: "Zeppelin",
                        token: "BOT_TOKEN",
@@ -154,15 +158,15 @@ defmodule Juvet.Bot.BotTest do
     } do
       MyBot.user_install(bot, :slack, auth)
 
-      assert %Juvet.BotState{
+      assert %BotState{
                platforms: [
-                 %Juvet.BotState.Platform{
+                 %Platform{
                    name: :slack,
                    teams: [
-                     %Juvet.BotState.Team{
+                     %Team{
                        id: "T1234",
                        users: [
-                         %Juvet.BotState.User{
+                         %User{
                            id: "U12345",
                            token: "USER_TOKEN",
                            scopes: "identify"

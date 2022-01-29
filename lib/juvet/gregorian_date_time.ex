@@ -1,5 +1,8 @@
 defmodule Juvet.GregorianDateTime do
-  # TODO: Could use Elixir native methods if runtime is uopdated: https://hexdocs.pm/elixir/1.13.1/DateTime.html#from_gregorian_seconds/3
+  @moduledoc """
+  Module to work with `NaiveDateTime` and convert to a gregorian date.
+  """
+
   @unix_gregorian_offset 62_167_219_200
 
   def to_seconds(date_time \\ NaiveDateTime.utc_now()) do

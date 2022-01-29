@@ -1,4 +1,8 @@
 defmodule Juvet.BotState.User do
+  @moduledoc """
+  Represents a `User` that is stored in the state for a `Juvet.Bot`.
+  """
+
   @enforce_keys [:id]
   defstruct [:id, :name, :scopes, :token, :username]
 

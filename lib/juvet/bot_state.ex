@@ -1,4 +1,8 @@
 defmodule Juvet.BotState do
+  @moduledoc """
+  A structre that represents what is stored for a given `Juvet.Bot` within the process.
+  """
+
   defstruct bot_supervisor: nil, platforms: []
 
   alias Juvet.BotState.{Platform, Team}
@@ -15,8 +19,6 @@ defmodule Juvet.BotState do
       platform ->
         {platform, message} = Platform.put_message(platform, message)
 
-        # TODO: This sucks. Maybe implement Access behavior for Platform
-        # and use put_in
         platforms = state.platforms
         index = Enum.find_index(platforms, &find(&1, platform_name))
 
@@ -48,8 +50,6 @@ defmodule Juvet.BotState do
       platform ->
         {platform, team} = Platform.put_team(platform, team)
 
-        # TODO: This sucks. Maybe implement Access behavior for Platform
-        # and use put_in
         platforms = state.platforms
         index = Enum.find_index(platforms, &find(&1, platform_name))
 
@@ -61,7 +61,6 @@ defmodule Juvet.BotState do
   end
 
   def put_user({state, platform, team}, user) do
-    # TODO: Not sure if this should add the team automatically?
     case put_team({state, platform}, team) do
       {state, nil, nil} ->
         {state, nil, nil, nil}
@@ -69,8 +68,6 @@ defmodule Juvet.BotState do
       {state, platform, team} ->
         case Team.put_user(team, user) do
           {team, user} ->
-            # TODO: This really sucks. Maybe implement Access behavior for
-            # Team and use put_in
             teams = platform.teams
             index = Enum.find_index(teams, fn t -> t.id == team.id end)
 
@@ -82,8 +79,8 @@ defmodule Juvet.BotState do
             platforms = state.platforms
             index = Enum.find_index(platforms, &find(&1, platform.name))
 
-            {%{state | platforms: List.replace_at(platforms, index, platform)},
-             platform, team, user}
+            {%{state | platforms: List.replace_at(platforms, index, platform)}, platform, team,
+             user}
         end
     end
   end

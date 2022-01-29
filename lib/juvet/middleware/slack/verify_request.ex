@@ -1,5 +1,11 @@
 defmodule Juvet.Middleware.Slack.VerifyRequest do
+  @moduledoc """
+  Middleware that verifies a `Juvet.Router.Request` is coming from Slack
+  by verifying it's header with a signing secret.
+  """
+
   alias Juvet.GregorianDateTime
+  alias Juvet.Router.Request
 
   def call(
         %{
@@ -14,9 +20,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
 
   def call(context), do: {:ok, context}
 
-  defp verify_request(
-         %{configuration: configuration, request: request} = context
-       ) do
+  defp verify_request(%{configuration: configuration, request: request} = context) do
     with {:ok, slack_timestamp} <-
            get_request_header(request, "x-slack-request-timestamp"),
          {:ok, slack_signature} <-
@@ -28,12 +32,10 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
       |> compare_signature(slack_signature, context)
     else
       {:error, "x-slack-request-timestamp" = header} ->
-        {:error,
-         %Juvet.InvalidRequestError{message: missing_header_message(header)}}
+        {:error, %Juvet.InvalidRequestError{message: missing_header_message(header)}}
 
       {:error, "x-slack-signature" = header} ->
-        {:error,
-         %Juvet.InvalidRequestError{message: missing_header_message(header)}}
+        {:error, %Juvet.InvalidRequestError{message: missing_header_message(header)}}
 
       {:error, :stale_timestamp} ->
         {:error, %Juvet.InvalidRequestError{message: "Stale Slack request."}}
@@ -81,7 +83,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   end
 
   defp get_request_header(request, header) do
-    case Juvet.Router.Request.get_header(request, header) do
+    case Request.get_header(request, header) do
       [value | _] -> {:ok, value}
       [] -> {:error, header}
     end
@@ -106,7 +108,6 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
     timestamp = String.to_integer(slack_timestamp)
     local_timestamp = GregorianDateTime.to_seconds()
 
-    # TODO: 300 is 5 minutes (60 * 5). Make this configurable
     if abs(local_timestamp - timestamp) < 300,
       do: {:ok, timestamp},
       else: {:error, :stale_timestamp}

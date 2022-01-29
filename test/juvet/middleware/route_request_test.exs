@@ -1,6 +1,9 @@
 defmodule Juvet.Middleware.RouteRequestTest do
   use ExUnit.Case, async: true
 
+  alias Juvet.Middleware.RouteRequest
+  alias Juvet.Router.{Request, Route}
+
   defmodule MyRouter do
     use Juvet.Router
 
@@ -13,7 +16,7 @@ defmodule Juvet.Middleware.RouteRequestTest do
     setup do
       configuration = [router: MyRouter]
       params = %{"command" => "/test"}
-      request = Juvet.Router.Request.new(%{params: params})
+      request = Request.new(%{params: params})
       request = %{request | verified?: true, platform: :slack}
 
       [context: %{configuration: configuration, request: request}]
@@ -22,9 +25,9 @@ defmodule Juvet.Middleware.RouteRequestTest do
     test "adds a route and a path to the context if the route was found", %{
       context: context
     } do
-      assert {:ok, ctx} = Juvet.Middleware.RouteRequest.call(context)
+      assert {:ok, ctx} = RouteRequest.call(context)
 
-      assert ctx[:route] == %Juvet.Router.Route{
+      assert ctx[:route] == %Route{
                route: "/test",
                type: :command,
                options: [to: "controller#action"]
@@ -43,7 +46,7 @@ defmodule Juvet.Middleware.RouteRequestTest do
               %Juvet.RoutingError{
                 message: "No route found for the request.",
                 request: request
-              }} = Juvet.Middleware.RouteRequest.call(context)
+              }} = RouteRequest.call(context)
     end
 
     test "returns an error if router is not configured", %{context: context} do
@@ -53,7 +56,7 @@ defmodule Juvet.Middleware.RouteRequestTest do
       assert {:error,
               %Juvet.ConfigurationError{
                 message: "Router missing in Juvet configuration."
-              }} = Juvet.Middleware.RouteRequest.call(context)
+              }} = RouteRequest.call(context)
     end
 
     test "returns an error if router could not be found", %{context: context} do
@@ -62,9 +65,8 @@ defmodule Juvet.Middleware.RouteRequestTest do
 
       assert {:error,
               %Juvet.ConfigurationError{
-                message:
-                  "Router Blah configured in Juvet configuration is not found."
-              }} = Juvet.Middleware.RouteRequest.call(context)
+                message: "Router Blah configured in Juvet configuration is not found."
+              }} = RouteRequest.call(context)
     end
 
     test "returns an error if the request was not verified", %{
@@ -74,7 +76,7 @@ defmodule Juvet.Middleware.RouteRequestTest do
       context = %{context | request: request}
 
       assert {:error, %Juvet.RoutingError{message: "Request was not verified."}} =
-               Juvet.Middleware.RouteRequest.call(context)
+               RouteRequest.call(context)
     end
   end
 end

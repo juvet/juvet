@@ -20,8 +20,7 @@ defmodule Juvet.JuvetTest do
       # ensure process is started after Superintendent
       :timer.sleep(500)
 
-      [{id, pid, type, [modules]} | _] =
-        Supervisor.which_children(Juvet.BotFactory)
+      [{id, pid, type, [modules]} | _] = Supervisor.which_children(Juvet.BotFactory)
 
       assert id == Juvet.FactorySupervisor
       assert Process.alive?(pid)

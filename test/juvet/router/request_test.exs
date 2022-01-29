@@ -2,6 +2,8 @@ defmodule Juvet.Router.RequestTest do
   use ExUnit.Case, async: true
   use Juvet.PlugHelpers
 
+  alias Juvet.Router.Request
+
   setup_all do
     conn = %Plug.Conn{
       req_headers: [{"content-type", "multipart/mixed"}],
@@ -17,7 +19,7 @@ defmodule Juvet.Router.RequestTest do
 
   describe "new/1" do
     test "returns a structure from the conn", %{conn: conn} do
-      request = Juvet.Router.Request.new(conn)
+      request = Request.new(conn)
 
       assert request.headers == [
                {"content-type", "multipart/mixed"}
@@ -39,23 +41,23 @@ defmodule Juvet.Router.RequestTest do
 
   describe "get_header/2" do
     setup %{conn: conn} do
-      [request: Juvet.Router.Request.new(conn)]
+      [request: Request.new(conn)]
     end
 
     test "returns the header values if found", %{request: request} do
-      assert Juvet.Router.Request.get_header(request, "content-type") == [
+      assert Request.get_header(request, "content-type") == [
                "multipart/mixed"
              ]
     end
 
     test "returns an empty list if there were no headers" do
-      request = Juvet.Router.Request.new(%{})
+      request = Request.new(%{})
 
-      assert Juvet.Router.Request.get_header(request, "blah") == []
+      assert Request.get_header(request, "blah") == []
     end
 
     test "returns an empty list of none found", %{request: request} do
-      assert Juvet.Router.Request.get_header(request, "blah") == []
+      assert Request.get_header(request, "blah") == []
     end
   end
 end

@@ -21,7 +21,7 @@ defmodule Juvet.SlackAPI.Conversations do
   """
 
   def open(options \\ %{}) do
-    SlackAPI.request("conversations.open", options)
+    SlackAPI.make_request("conversations.open", options)
     |> SlackAPI.render_response()
   end
 end

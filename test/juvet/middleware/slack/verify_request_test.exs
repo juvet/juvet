@@ -3,6 +3,9 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
   use Juvet.PlugHelpers
   use Juvet.SlackRequestHelpers
 
+  alias Juvet.Middleware.Slack.VerifyRequest
+  alias Juvet.Router.Request
+
   describe "call/1" do
     setup do
       params = %{"token" => "TOKEN", "team_id" => "T12345"}
@@ -15,7 +18,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
       signature = generate_slack_signature(params, signing_secret, timestamp)
 
       request =
-        Juvet.Router.Request.new(%{
+        Request.new(%{
           private: %{juvet: %{raw_body: body}},
           req_headers: [
             {"x-slack-request-timestamp", timestamp},
@@ -34,7 +37,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
     end
 
     test "returns the context for a valid request", %{context: context} do
-      assert {:ok, ctx} = Juvet.Middleware.Slack.VerifyRequest.call(context)
+      assert {:ok, ctx} = VerifyRequest.call(context)
       assert ctx[:request].verified?
     end
 
@@ -43,7 +46,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
       config = Keyword.merge(configuration, slack: [verify_requests: false])
 
       assert {:ok, ctx} =
-               Juvet.Middleware.Slack.VerifyRequest.call(%{
+               VerifyRequest.call(%{
                  context
                  | configuration: config
                })
@@ -57,11 +60,10 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
     } do
       request = %{request | headers: [{"x-slack-signature", signature}]}
 
-      message =
-        "Request missing x-slack-request-timestamp header and could not be verified"
+      message = "Request missing x-slack-request-timestamp header and could not be verified"
 
       assert {:error, %Juvet.InvalidRequestError{message: ^message}} =
-               Juvet.Middleware.Slack.VerifyRequest.call(%{
+               VerifyRequest.call(%{
                  context
                  | request: request
                })
@@ -77,7 +79,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
                 message:
                   "Request body was empty and could not be verified. Ensure you are caching the request body in a body reader plug."
               }} =
-               Juvet.Middleware.Slack.VerifyRequest.call(%{
+               VerifyRequest.call(%{
                  context
                  | request: request
                })
@@ -105,7 +107,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
               %Juvet.InvalidRequestError{
                 message: "Stale Slack request."
               }} =
-               Juvet.Middleware.Slack.VerifyRequest.call(%{
+               VerifyRequest.call(%{
                  context
                  | request: request
                })
@@ -120,7 +122,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
               %Juvet.ConfigurationError{
                 message: "Slack signing secret missing in Juvet configuration."
               }} =
-               Juvet.Middleware.Slack.VerifyRequest.call(%{
+               VerifyRequest.call(%{
                  context
                  | configuration: config
                })
@@ -142,7 +144,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
               %Juvet.InvalidRequestError{
                 message: "Invalid Slack request. Signature mismatch."
               }} =
-               Juvet.Middleware.Slack.VerifyRequest.call(%{
+               VerifyRequest.call(%{
                  context
                  | request: request
                })

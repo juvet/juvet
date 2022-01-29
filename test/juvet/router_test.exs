@@ -1,6 +1,8 @@
 defmodule Juvet.RouterTest do
   use ExUnit.Case, async: true
 
+  alias Juvet.Router.{Request, RouteError}
+
   defmodule MyRouter do
     use Juvet.Router
 
@@ -11,7 +13,7 @@ defmodule Juvet.RouterTest do
 
   describe "compile time validations" do
     test "invalid platform raises RouteError" do
-      assert_raise Juvet.Router.RouteError,
+      assert_raise RouteError,
                    "Platform `blah` is not valid.",
                    fn ->
                      defmodule MyBadRouter do
@@ -51,7 +53,7 @@ defmodule Juvet.RouterTest do
 
   describe "find_route/2" do
     test "returns an ok tuple with the route if it was found" do
-      request = Juvet.Router.Request.new(%{params: %{"command" => "/test"}})
+      request = Request.new(%{params: %{"command" => "/test"}})
       request = %{request | platform: :slack, verified?: true}
 
       assert {:ok, route} = Juvet.Router.find_route(MyRouter, request)
@@ -59,7 +61,7 @@ defmodule Juvet.RouterTest do
     end
 
     test "returns an error tuple if it was not found" do
-      request = Juvet.Router.Request.new(%{params: %{"command" => "/blah"}})
+      request = Request.new(%{params: %{"command" => "/blah"}})
       request = %{request | platform: :slack, verified?: true}
 
       assert {:error, :not_found} = Juvet.Router.find_route(MyRouter, request)

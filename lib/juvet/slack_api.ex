@@ -44,7 +44,7 @@ defmodule Juvet.SlackAPI do
   @doc """
   Make the request to the endpoint and returns that response.
   """
-  def request(endpoint, body) do
+  def make_request(endpoint, body) do
     {access_token, params} = extract_access_token(body)
 
     SlackAPI.get(

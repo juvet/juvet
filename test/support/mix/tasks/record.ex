@@ -1,4 +1,8 @@
 defmodule Mix.Tasks.Record do
+  @moduledoc """
+  Mix task to record VCR cassettes from Slack API requests.
+  """
+
   use Mix.Task
   use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
@@ -51,13 +55,13 @@ defmodule Mix.Tasks.Record do
 
   def record_invalid_auth(method_name) do
     use_cassette "#{cassette_directory_name(method_name)}/invalid_auth" do
-      SlackAPI.request(method_name, %{token: "blah"})
+      SlackAPI.make_request(method_name, %{token: "blah"})
     end
   end
 
   def record_successful(method_name, params) do
     use_cassette "#{cassette_directory_name(method_name)}/successful" do
-      SlackAPI.request(method_name, params)
+      SlackAPI.make_request(method_name, params)
     end
   end
 end

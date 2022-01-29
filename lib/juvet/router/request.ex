@@ -1,4 +1,8 @@
 defmodule Juvet.Router.Request do
+  @moduledoc """
+  Represents a single request from a platform.
+  """
+
   defstruct [
     :host,
     :method,

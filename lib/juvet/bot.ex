@@ -15,6 +15,9 @@ defmodule Juvet.Bot do
       use GenServer
       use Juvet.ReceiverTarget
 
+      alias Juvet.BotState
+      alias Juvet.BotState.{Platform, Team, User}
+
       # Client API
 
       @doc """
@@ -56,7 +59,7 @@ defmodule Juvet.Bot do
       MyBot.connect(bot, :slack, %{token: "MY_TOKEN"})
       ```
       """
-      def connect(pid, :slack, parameters = %{team_id: _team_id}) do
+      def connect(pid, :slack, %{team_id: _team_id} = parameters) do
         GenServer.cast(pid, {:connect, :slack, parameters})
       end
 
@@ -90,7 +93,7 @@ defmodule Juvet.Bot do
 
       @doc false
       def init(state) do
-        {:ok, struct(Juvet.BotState, state)}
+        {:ok, struct(BotState, state)}
       end
 
       @doc false
@@ -107,7 +110,7 @@ defmodule Juvet.Bot do
 
       @doc false
       def handle_call(:get_messages, _from, state) do
-        {:reply, Juvet.BotState.get_messages(state), state}
+        {:reply, BotState.get_messages(state), state}
       end
 
       @doc false
@@ -117,13 +120,13 @@ defmodule Juvet.Bot do
 
       @doc false
       def handle_call({:user_install, platform, parameters}, _from, state) do
-        team = Map.from_struct(Juvet.BotState.Team.from_auth(parameters))
-        user = Map.from_struct(Juvet.BotState.User.from_auth(parameters))
+        team = Map.from_struct(Team.from_auth(parameters))
+        user = Map.from_struct(User.from_auth(parameters))
 
         {state, _platform, team, user} =
-          Juvet.BotState.put_platform(state, platform)
-          |> Juvet.BotState.put_team(team)
-          |> Juvet.BotState.put_user(user)
+          BotState.put_platform(state, platform)
+          |> BotState.put_team(team)
+          |> BotState.put_user(user)
 
         {:reply, {:ok, user, team}, state}
       end
@@ -131,8 +134,8 @@ defmodule Juvet.Bot do
       @doc false
       def handle_cast({:connect, :slack, parameters}, state) do
         {state, _platform, _message} =
-          Juvet.BotState.put_platform(state, :slack)
-          |> Juvet.BotState.put_message(parameters)
+          BotState.put_platform(state, :slack)
+          |> BotState.put_message(parameters)
 
         {:noreply, state}
       end
@@ -149,10 +152,9 @@ defmodule Juvet.Bot do
 
       @doc false
       defp put_message(state, platform_name, message) do
-        platform = %Juvet.BotState.Platform{name: platform_name}
+        platform = %Platform{name: platform_name}
 
-        {state, _platform, _message} =
-          Juvet.BotState.put_message({state, platform}, message)
+        {state, _platform, _message} = BotState.put_message({state, platform}, message)
 
         state
       end

@@ -43,6 +43,5 @@ defmodule Juvet.SlackCommandRoute do
 
   defp get_context(_), do: %{}
 
-  # TODO: Do something clever here
   defp send_error(conn, _error), do: conn |> send_resp(200, "")
 end

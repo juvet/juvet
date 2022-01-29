@@ -1,7 +1,10 @@
 defmodule Juvet.MiddlewareProcessor do
+  @moduledoc """
+  Processes a list of middleware.
+  """
+
   def process(context) do
-    Enum.reduce_while(context.middleware, {:ok, context}, fn middleware,
-                                                             {:ok, result} ->
+    Enum.reduce_while(context.middleware, {:ok, context}, fn middleware, {:ok, result} ->
       case process(middleware, result) do
         {:ok, ctx} -> {:cont, {:ok, ctx}}
         {:error, error} -> {:halt, {:error, error}}
@@ -10,6 +13,7 @@ defmodule Juvet.MiddlewareProcessor do
   end
 
   def process(middleware, context) do
-    apply(elem(middleware, 0), :call, [context])
+    mod = elem(middleware, 0)
+    mod.call(context)
   end
 end

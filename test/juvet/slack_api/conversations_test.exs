@@ -15,8 +15,7 @@ defmodule Juvet.SlackAPI.ConversationsTest do
   describe "SlackAPI.Conversations.open/1" do
     test "returns the channel id", %{users: users, token: token} do
       use_cassette "conversations/open/successful" do
-        assert {:ok, response} =
-                 SlackAPI.Conversations.open(%{users: users, token: token})
+        assert {:ok, response} = SlackAPI.Conversations.open(%{users: users, token: token})
 
         assert response[:channel][:id]
       end
@@ -27,8 +26,7 @@ defmodule Juvet.SlackAPI.ConversationsTest do
       token: token
     } do
       use_cassette "conversations/open/invalid_auth" do
-        assert {:error, response} =
-                 SlackAPI.Conversations.open(%{users: users, token: token})
+        assert {:error, response} = SlackAPI.Conversations.open(%{users: users, token: token})
 
         assert response[:error] == "invalid_auth"
       end

@@ -1,6 +1,8 @@
 defmodule Juvet.Middleware.ParseRequestTest do
   use ExUnit.Case, async: true
 
+  alias Juvet.Middleware.ParseRequest
+
   describe "call/1" do
     setup do
       conn = %Plug.Conn{
@@ -14,7 +16,7 @@ defmodule Juvet.Middleware.ParseRequestTest do
     end
 
     test "returns a request from the conn", %{context: context} do
-      assert {:ok, ctx} = Juvet.Middleware.ParseRequest.call(context)
+      assert {:ok, ctx} = ParseRequest.call(context)
       assert ctx[:request].status == 200
     end
   end
