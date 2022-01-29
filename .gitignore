@@ -21,3 +21,7 @@ erl_crash.dump
 
 # Ignore Secrets
 /config/*.secret.exs
+
+# dialyzer PLTs
+/priv/plts/*.plt
+/priv/plts/*.plt.hash
