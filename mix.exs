@@ -15,7 +15,8 @@ defmodule Juvet.Mixfile do
       description: "The messaging platform for chat apps",
       organization: "Juvet",
       source_url: "https://github.com/juvet/juvet",
-      preferred_cli_env: preferred_cli_env()
+      preferred_cli_env: preferred_cli_env(),
+      dialyzer: dialyzer()
     ]
   end
 
@@ -49,6 +50,14 @@ defmodule Juvet.Mixfile do
 
   defp docs do
     []
+  end
+
+  defp dialyzer do
+    [
+      plt_add_apps: [:mix, :ex_unit],
+      plt_core_path: "priv/plts",
+      plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
+    ]
   end
 
   defp package do
