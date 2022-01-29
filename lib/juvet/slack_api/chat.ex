@@ -21,7 +21,7 @@ defmodule Juvet.SlackAPI.Chat do
   """
 
   def post_message(options \\ %{}) do
-    SlackAPI.request("chat.postMessage", options)
+    SlackAPI.make_request("chat.postMessage", options)
     |> SlackAPI.render_response()
   end
 end

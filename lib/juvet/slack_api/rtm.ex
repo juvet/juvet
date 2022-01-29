@@ -28,7 +28,7 @@ defmodule Juvet.SlackAPI.RTM do
   } = Juvet.Connection.SlackRTM.connect(%{token: token})
   """
   def connect(options \\ %{}) do
-    SlackAPI.request("rtm.connect", options)
+    SlackAPI.make_request("rtm.connect", options)
     |> SlackAPI.render_response()
   end
 end

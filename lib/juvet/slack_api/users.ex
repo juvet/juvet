@@ -21,7 +21,7 @@ defmodule Juvet.SlackAPI.Users do
   """
 
   def info(options \\ %{}) do
-    SlackAPI.request("users.info", options)
+    SlackAPI.make_request("users.info", options)
     |> SlackAPI.render_response()
   end
 end

@@ -21,7 +21,7 @@ defmodule Juvet.SlackAPI.Team do
   """
 
   def info(options \\ %{}) do
-    SlackAPI.request("team.info", options)
+    SlackAPI.make_request("team.info", options)
     |> SlackAPI.render_response()
   end
 end

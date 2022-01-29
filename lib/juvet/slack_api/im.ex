@@ -22,7 +22,7 @@ defmodule Juvet.SlackAPI.IM do
   """
 
   def open(options \\ %{}) do
-    SlackAPI.request("im.open", options)
+    SlackAPI.make_request("im.open", options)
     |> SlackAPI.render_response()
   end
 end
