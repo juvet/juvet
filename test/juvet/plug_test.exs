@@ -29,10 +29,11 @@ defmodule Juvet.PlugTest do
   end
 
   describe "GET /slack/blah" do
-    test "responds with a 404 status" do
+    test "returns the conn without sending a response" do
       conn = request!(:post, "/slack/blah")
 
-      assert conn.status == 404
+      refute conn.status
+      assert conn.state == :unset
     end
   end
 end
