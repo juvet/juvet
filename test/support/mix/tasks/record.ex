@@ -12,7 +12,6 @@ defmodule Mix.Tasks.Record do
     "chat.postMessage",
     "chat.update",
     "conversations.open",
-    "im.open",
     "rtm.connect",
     "team.info",
     "users.info"
