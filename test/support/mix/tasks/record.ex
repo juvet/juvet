@@ -33,6 +33,8 @@ defmodule Mix.Tasks.Record do
         method -> [method]
       end
 
+    params = params |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+
     Enum.each(methods, fn method_name ->
       delete_cassettes(method_name)
     end)
