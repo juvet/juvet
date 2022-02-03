@@ -12,6 +12,7 @@ config :exvcr,
     [pattern: "https://slack.com", placeholder: "http://localhost:51345"]
   ],
   filter_request_headers: [
+    "Authorization",
     "X-Slack-Req-Id",
     "X-Via",
     "X-Amz-Cf-Id"
