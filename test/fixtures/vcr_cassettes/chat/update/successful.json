@@ -1,20 +1,22 @@
 [
   {
     "request": {
-      "body": "",
+      "body": "channel=C04ASG29V&text=Hello+from+Juvet&ts=1643920315.545689&user=U04ASG29K&users=U052YB8KQ",
       "headers": {
-        "Accept": "application/json"
+        "Accept": "application/json; charset=utf-8",
+        "Authorization": "***",
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      "method": "get",
+      "method": "post",
       "options": [],
       "request_body": "",
-      "url": "http://localhost:51345/api/chat.update?channel=C04ASG29V&text=Hello+from+Juvet&token=***&ts=1643920315.545689"
+      "url": "http://localhost:51345/api/chat.update"
     },
     "response": {
       "binary": false,
-      "body": "{\"ok\":true,\"channel\":\"C04ASG29V\",\"ts\":\"1643920315.545689\",\"text\":\"Hello from Juvet\",\"message\":{\"bot_id\":\"B01MZ3JQYP4\",\"type\":\"message\",\"text\":\"Hello from Juvet\",\"user\":\"U01MSA502JJ\",\"app_id\":\"A01JVR00QJX\",\"team\":\"T04ASG29D\",\"bot_profile\":{\"id\":\"B01MZ3JQYP4\",\"app_id\":\"A01JVR00QJX\",\"name\":\"Tatsu Next\",\"icons\":{\"image_36\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_36.png\",\"image_48\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_48.png\",\"image_72\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/service_72.png\"},\"deleted\":false,\"updated\":1613150623,\"team_id\":\"T04ASG29D\"},\"edited\":{\"user\":\"B01MZ3JQYP4\",\"ts\":\"1643922175.000000\"},\"blocks\":[{\"type\":\"image\",\"block_id\":\"1FE\",\"image_url\":\"http:\\/\\/tatsu-next-development.ngrok.io\\/images\\/comic_4.jpg\",\"alt_text\":\"Pam & Tommy\",\"image_width\":372,\"image_height\":295,\"image_bytes\":48383,\"fallback\":\"372x295px image\",\"rotation\":0,\"is_animated\":false}]}}",
+      "body": "{\"ok\":true,\"channel\":\"C04ASG29V\",\"ts\":\"1643920315.545689\",\"text\":\"Hello from Juvet\",\"message\":{\"bot_id\":\"B01MZ3JQYP4\",\"type\":\"message\",\"text\":\"Hello from Juvet\",\"user\":\"U01MSA502JJ\",\"app_id\":\"A01JVR00QJX\",\"team\":\"T04ASG29D\",\"bot_profile\":{\"id\":\"B01MZ3JQYP4\",\"app_id\":\"A01JVR00QJX\",\"name\":\"Tatsu Next\",\"icons\":{\"image_36\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_36.png\",\"image_48\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_48.png\",\"image_72\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/service_72.png\"},\"deleted\":false,\"updated\":1613150623,\"team_id\":\"T04ASG29D\"},\"edited\":{\"user\":\"B01MZ3JQYP4\",\"ts\":\"1643931052.000000\"},\"blocks\":[{\"type\":\"image\",\"block_id\":\"1FE\",\"image_url\":\"http:\\/\\/tatsu-next-development.ngrok.io\\/images\\/comic_4.jpg\",\"alt_text\":\"Pam & Tommy\",\"image_width\":372,\"image_height\":295,\"image_bytes\":48383,\"fallback\":\"372x295px image\",\"rotation\":0,\"is_animated\":false}]}}",
       "headers": {
-        "date": "Thu, 03 Feb 2022 21:02:55 GMT",
+        "date": "Thu, 03 Feb 2022 23:30:52 GMT",
         "server": "Apache",
         "x-powered-by": "HHVM/4.128.0",
         "access-control-allow-origin": "*",
@@ -30,14 +32,14 @@
         "pragma": "no-cache",
         "x-xss-protection": "0",
         "x-content-type-options": "nosniff",
-        "x-slack-req-id": "6387b15069fd4dbc7b21345e38cc6f23",
+        "x-slack-req-id": "f6f26286deb3ba93e1f02737281780c0",
         "vary": "Accept-Encoding",
         "content-type": "application/json; charset=utf-8",
-        "x-envoy-upstream-service-time": "73",
+        "x-envoy-upstream-service-time": "63",
         "x-backend": "main_normal main_bedrock_normal_with_overflow main_canary_with_overflow main_bedrock_canary_with_overflow main_control_with_overflow main_bedrock_control_with_overflow",
-        "x-server": "slack-www-hhvm-main-iad-7yt3",
+        "x-server": "slack-www-hhvm-main-iad-ihp7",
         "x-slack-shared-secret-outcome": "no-match",
-        "via": "envoy-www-iad-f776, envoy-edge-iad-vmlx",
+        "via": "envoy-www-iad-kan1, envoy-edge-iad-yhlg",
         "x-edge-backend": "envoy-www",
         "x-slack-edge-shared-secret-outcome": "no-match",
         "transfer-encoding": "chunked"

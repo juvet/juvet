@@ -3,10 +3,11 @@
     "request": {
       "body": "",
       "headers": {
-        "Accept": "application/json",
-        "Authorization": "Bearer blah"
+        "Accept": "application/json; charset=utf-8",
+        "Authorization": "***",
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      "method": "get",
+      "method": "post",
       "options": [],
       "request_body": "",
       "url": "http://localhost:51345/api/chat.update"
@@ -15,7 +16,7 @@
       "binary": false,
       "body": "{\"ok\":false,\"error\":\"invalid_auth\"}",
       "headers": {
-        "date": "Thu, 03 Feb 2022 21:02:55 GMT",
+        "date": "Thu, 03 Feb 2022 23:30:55 GMT",
         "server": "Apache",
         "x-powered-by": "HHVM/4.128.0",
         "access-control-allow-origin": "*",
@@ -30,14 +31,14 @@
         "x-robots-tag": "noindex,nofollow",
         "x-xss-protection": "0",
         "x-content-type-options": "nosniff",
-        "x-slack-req-id": "462f421884a9ce0bf9c4c0720ee8fb7f",
+        "x-slack-req-id": "9c905758f03e4e19f048bf511a27655a",
         "vary": "Accept-Encoding",
         "content-type": "application/json; charset=utf-8",
-        "x-envoy-upstream-service-time": "5",
+        "x-envoy-upstream-service-time": "4",
         "x-backend": "main_normal main_bedrock_normal_with_overflow main_canary_with_overflow main_bedrock_canary_with_overflow main_control_with_overflow main_bedrock_control_with_overflow",
-        "x-server": "slack-www-hhvm-main-iad-z8v6",
+        "x-server": "slack-www-hhvm-main-iad-w6v1",
         "x-slack-shared-secret-outcome": "no-match",
-        "via": "envoy-www-iad-rorw, envoy-edge-iad-vmlx",
+        "via": "envoy-www-iad-c7v8, envoy-edge-iad-yhlg",
         "x-edge-backend": "envoy-www",
         "x-slack-edge-shared-secret-outcome": "no-match",
         "transfer-encoding": "chunked"
