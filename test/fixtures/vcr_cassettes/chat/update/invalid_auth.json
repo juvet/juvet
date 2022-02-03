@@ -1,0 +1,49 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer blah"
+      },
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/chat.update"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":false,\"error\":\"invalid_auth\"}",
+      "headers": {
+        "date": "Thu, 03 Feb 2022 21:02:55 GMT",
+        "server": "Apache",
+        "x-powered-by": "HHVM/4.128.0",
+        "access-control-allow-origin": "*",
+        "referrer-policy": "no-referrer",
+        "x-slack-backend": "r",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "access-control-allow-headers": "slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags",
+        "access-control-expose-headers": "x-slack-req-id, retry-after",
+        "expires": "Mon, 26 Jul 1997 05:00:00 GMT",
+        "cache-control": "private, no-cache, no-store, must-revalidate",
+        "pragma": "no-cache",
+        "x-robots-tag": "noindex,nofollow",
+        "x-xss-protection": "0",
+        "x-content-type-options": "nosniff",
+        "x-slack-req-id": "462f421884a9ce0bf9c4c0720ee8fb7f",
+        "vary": "Accept-Encoding",
+        "content-type": "application/json; charset=utf-8",
+        "x-envoy-upstream-service-time": "5",
+        "x-backend": "main_normal main_bedrock_normal_with_overflow main_canary_with_overflow main_bedrock_canary_with_overflow main_control_with_overflow main_bedrock_control_with_overflow",
+        "x-server": "slack-www-hhvm-main-iad-z8v6",
+        "x-slack-shared-secret-outcome": "no-match",
+        "via": "envoy-www-iad-rorw, envoy-edge-iad-vmlx",
+        "x-edge-backend": "envoy-www",
+        "x-slack-edge-shared-secret-outcome": "no-match",
+        "transfer-encoding": "chunked"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
