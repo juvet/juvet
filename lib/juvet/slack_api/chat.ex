@@ -20,6 +20,8 @@ defmodule Juvet.SlackAPI.Chat do
   } = Juvet.SlackAPI.Chat.post_message(%{token: token, channel: channel, text: text})
   """
   def post_message(options \\ %{}) do
+    {_, options} = options |> Map.get_and_update(:blocks, &{&1, Poison.encode!(&1)})
+
     SlackAPI.make_request("chat.postMessage", options)
     |> SlackAPI.render_response()
   end
@@ -40,6 +42,8 @@ defmodule Juvet.SlackAPI.Chat do
   } = Juvet.SlackAPI.Chat.update(%{token: token, channel: channel, text: text, ts: timestamp})
   """
   def update(options \\ %{}) do
+    {_, options} = options |> Map.get_and_update(:blocks, &{&1, Poison.encode!(&1)})
+
     SlackAPI.make_request("chat.update", options)
     |> SlackAPI.render_response()
   end
