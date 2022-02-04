@@ -5,8 +5,8 @@ defmodule Juvet.ControllerTest do
   defmodule MyController do
     use Juvet.Controller
 
-    def send_response_test(context) do
-      send_response(context)
+    def send_response_test(context, response \\ nil) do
+      send_response(context, response)
     end
   end
 
@@ -25,6 +25,14 @@ defmodule Juvet.ControllerTest do
 
       assert conn.halted
       assert conn.status == 200
+    end
+
+    test "can send an optional different request", %{context: context} do
+      %{conn: conn, response: response} =
+        MyController.send_response_test(context, Juvet.Router.Response.new(status: 404))
+
+      assert conn.status == 404
+      assert response.status == 404
     end
   end
 end
