@@ -5,7 +5,10 @@ defmodule Juvet.Controller do
 
   defmacro __using__(_opts) do
     quote do
-      def send_response(context), do: Juvet.Router.Conn.send_resp(context)
+      def send_response(context) do
+        conn = Juvet.Router.Conn.send_resp(context)
+        Map.put(context, :conn, conn)
+      end
     end
   end
 end

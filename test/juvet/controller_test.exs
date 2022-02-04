@@ -21,7 +21,7 @@ defmodule Juvet.ControllerTest do
     end
 
     test "sends the default response in the context to the requestor", %{context: context} do
-      conn = MyController.send_response_test(context)
+      %{conn: conn} = MyController.send_response_test(context)
 
       assert conn.halted
       assert conn.status == 200
