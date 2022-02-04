@@ -30,5 +30,5 @@ defmodule Juvet.Plug do
   match(_, do: conn)
 
   defp insert_juvet_options(conn, opts),
-    do: Juvet.Conn.put_private(conn, %{options: opts})
+    do: Juvet.Router.Conn.put_private(conn, %{options: opts})
 end

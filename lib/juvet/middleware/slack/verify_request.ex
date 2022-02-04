@@ -76,7 +76,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   defp compare_signature(true, context), do: request_verified!(context)
 
   defp get_request_raw_body(request) do
-    case get_in(request.private, [Juvet.Conn.private_key(), :raw_body]) do
+    case get_in(request.private, [Juvet.Router.Conn.private_key(), :raw_body]) do
       nil -> {:error, :missing_raw_body}
       raw_body -> {:ok, raw_body}
     end

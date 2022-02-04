@@ -26,7 +26,7 @@ defmodule Juvet.SlackCommandRoute do
   end
 
   defp get_config(%Plug.Conn{} = conn),
-    do: get_config(Juvet.Conn.get_private(conn))
+    do: get_config(Juvet.Router.Conn.get_private(conn))
 
   defp get_config(%{options: options}) do
     get_in(options, [:configuration]) || []
@@ -35,7 +35,7 @@ defmodule Juvet.SlackCommandRoute do
   defp get_config(_), do: []
 
   defp get_context(%Plug.Conn{} = conn),
-    do: get_context(Juvet.Conn.get_private(conn))
+    do: get_context(Juvet.Router.Conn.get_private(conn))
 
   defp get_context(%{options: options}) do
     get_in(options, [:context]) || %{}

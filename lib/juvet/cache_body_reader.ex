@@ -10,7 +10,7 @@ defmodule Juvet.CacheBodyReader do
   end
 
   defp put_raw_body(%Plug.Conn{} = conn, body) do
-    Juvet.Conn.put_private(conn, raw_body_map(body))
+    Juvet.Router.Conn.put_private(conn, raw_body_map(body))
   end
 
   defp raw_body_map(body) do
