@@ -2,7 +2,7 @@ defmodule Juvet.Router.ConnTest do
   use ExUnit.Case, async: true
   use Juvet.PlugHelpers
 
-  alias Juvet.Router.Conn
+  alias Juvet.Router.{Conn, Response}
 
   describe "put_private/2" do
     setup do
@@ -31,7 +31,7 @@ defmodule Juvet.Router.ConnTest do
       context =
         Map.new(
           conn: build_conn(:post, "/slack/commands"),
-          response: Juvet.Router.Response.new()
+          response: Response.new()
         )
 
       [context: context]

@@ -9,6 +9,8 @@ defmodule Juvet.Plug do
   use Plug.Router
   use Juvet.SlackRoutes, config: Juvet.configuration()
 
+  alias Juvet.Router.Conn
+
   def init(opts) do
     config = Keyword.get(opts, :configuration, Juvet.configuration())
 
@@ -29,6 +31,5 @@ defmodule Juvet.Plug do
 
   match(_, do: conn)
 
-  defp insert_juvet_options(conn, opts),
-    do: Juvet.Router.Conn.put_private(conn, %{options: opts})
+  defp insert_juvet_options(conn, opts), do: Conn.put_private(conn, %{options: opts})
 end

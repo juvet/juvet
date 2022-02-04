@@ -2,10 +2,11 @@ defmodule Juvet.Midddleware.BuildDefaultResponseTest do
   use ExUnit.Case, async: true
 
   alias Juvet.Midddleware.BuildDefaultResponse
+  alias Juvet.Router.Request
 
   describe "call/1" do
     setup do
-      request = Juvet.Router.Request.new(%{platform: :slack})
+      request = Request.new(%{platform: :slack})
 
       [context: %{request: request}]
     end

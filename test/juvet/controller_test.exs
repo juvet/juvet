@@ -2,6 +2,8 @@ defmodule Juvet.ControllerTest do
   use ExUnit.Case, async: true
   use Juvet.PlugHelpers
 
+  alias Juvet.Router.Response
+
   defmodule MyController do
     use Juvet.Controller
 
@@ -14,7 +16,7 @@ defmodule Juvet.ControllerTest do
     setup do
       context = %{
         conn: build_conn(:post, "/slack/commands"),
-        response: Juvet.Router.Response.new()
+        response: Response.new()
       }
 
       [context: context]
@@ -29,7 +31,7 @@ defmodule Juvet.ControllerTest do
 
     test "can send an optional different request", %{context: context} do
       %{conn: conn, response: response} =
-        MyController.send_response_test(context, Juvet.Router.Response.new(status: 404))
+        MyController.send_response_test(context, Response.new(status: 404))
 
       assert conn.status == 404
       assert response.status == 404
