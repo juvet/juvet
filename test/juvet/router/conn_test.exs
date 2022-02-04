@@ -9,7 +9,7 @@ defmodule Juvet.Router.ConnTest do
       context =
         Map.new(
           conn: build_conn(:post, "/slack/commands"),
-          response: %{status: 200, body: ""}
+          response: Juvet.Router.Response.new()
         )
 
       [context: context]
