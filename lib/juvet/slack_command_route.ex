@@ -16,9 +16,8 @@ defmodule Juvet.SlackCommandRoute do
     context = get_context(conn)
 
     case Juvet.Runner.run(conn, Map.merge(%{configuration: config}, context)) do
-      {:ok, _context} ->
-        send_resp(conn, 200, "")
-        |> halt()
+      {:ok, context} ->
+        maybe_send_response(context)
 
       {:error, error} ->
         send_error(conn, error)
@@ -44,4 +43,9 @@ defmodule Juvet.SlackCommandRoute do
   defp get_context(_), do: %{}
 
   defp send_error(conn, _error), do: conn |> send_resp(200, "")
+
+  defp maybe_send_response(%{conn: %{state: :chunked} = conn}), do: conn
+  defp maybe_send_response(%{conn: %{state: :sent} = conn}), do: conn
+
+  defp maybe_send_response(%{conn: _conn} = context), do: Juvet.Router.Conn.send_resp(context)
 end
