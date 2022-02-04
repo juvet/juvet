@@ -8,6 +8,15 @@ defmodule Mix.Tasks.Record do
 
   alias Juvet.SlackAPI
 
+  @all_methods [
+    "chat.postMessage",
+    "chat.update",
+    "conversations.open",
+    "rtm.connect",
+    "team.info",
+    "users.info"
+  ]
+
   @shortdoc "Re-record ExVCR cassettes for the Slack endpoints"
   def run(args) do
     params =
@@ -15,14 +24,15 @@ defmodule Mix.Tasks.Record do
       |> Enum.map(fn arg -> String.split(arg, ":") end)
       |> Enum.into(%{}, fn [a, b] -> {String.trim_trailing(a, ":"), b} end)
 
-    methods = [
-      "chat.postMessage",
-      "conversations.open",
-      "im.open",
-      "rtm.connect",
-      "team.info",
-      "users.info"
-    ]
+    {method, params} = Map.pop(params, "method")
+
+    methods =
+      case method do
+        nil -> @all_methods
+        method -> [method]
+      end
+
+    params = params |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
 
     Enum.each(methods, fn method_name ->
       delete_cassettes(method_name)

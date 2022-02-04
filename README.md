@@ -223,10 +223,12 @@ mix test
 You can re-record the responses from Slack with the following mix command:
 
 ```
-MIX_ENV=test mix record token:<slack token here> channel:<slack channel id here> text:<Welcome from Juvet!> user:<slack user id here> users:<slack user id here>,<another slack user id here>
+MIX_ENV=test mix record token:<slack token here> channel:<slack channel id here> text:"<Welcome from Juvet!>" ts:<valid message timestamp here> user:<slack user id here> users:<slack user id here>,<another slack user id here>
 ```
 
-You can create a Slack token for any of your teams [here](https://api.slack.com/custom-integrations/legacy-tokens)/.
+You can record the casettes for just one method by adding a `method` parameter above (i.e. `method:chat.update`) and it will just re-record that one method.
+
+You can create a Slack token for any of your teams by visiting the `OAuth & Permissions` area in your [Slack API Apps](https://api.slack.com/apps).
 
 ## COMMUNITY
 

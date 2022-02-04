@@ -41,31 +41,19 @@ defmodule Juvet.SlackAPI do
     "#{url}/api/#{endpoint}"
   end
 
+  def process_request_body(body), do: body |> URI.encode_query()
+
   @doc """
   Make the request to the endpoint and returns that response.
   """
   def make_request(endpoint, body) do
     {access_token, params} = extract_access_token(body)
 
-    SlackAPI.get(
+    SlackAPI.post(
       endpoint,
-      headers(access_token),
-      params: request_params(params)
+      params,
+      headers(access_token)
     )
-  end
-
-  @doc false
-  defp request_param({key, value}) when is_list(value),
-    do: {key, Enum.join(value, ",")}
-
-  @doc false
-  defp request_param(param), do: param
-
-  @doc false
-  defp request_params(params) do
-    params
-    |> Enum.map(&request_param/1)
-    |> Enum.into(%{})
   end
 
   @doc false
@@ -84,7 +72,8 @@ defmodule Juvet.SlackAPI do
   @doc false
   defp headers(access_token) do
     %{
-      "Accept" => "application/json"
+      "Accept" => "application/json; charset=utf-8",
+      "Content-Type" => "application/x-www-form-urlencoded"
     }
     |> append_authorization_header(access_token)
   end

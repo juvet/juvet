@@ -1,7 +1,7 @@
 [
   {
     "request": {
-      "body": "channel=D01N58ER3KN&text=Hello+from+Juvet&ts=1643920315.545689&user=U04ASG29K&users=U052YB8KQ",
+      "body": "",
       "headers": {
         "Accept": "application/json; charset=utf-8",
         "Authorization": "***",
@@ -10,13 +10,13 @@
       "method": "post",
       "options": [],
       "request_body": "",
-      "url": "http://localhost:51345/api/conversations.open"
+      "url": "http://localhost:51345/api/chat.update"
     },
     "response": {
       "binary": false,
-      "body": "{\"ok\":true,\"no_op\":true,\"already_open\":true,\"channel\":{\"id\":\"D01N58ER3KN\"}}",
+      "body": "{\"ok\":false,\"error\":\"invalid_auth\"}",
       "headers": {
-        "date": "Thu, 03 Feb 2022 23:33:36 GMT",
+        "date": "Thu, 03 Feb 2022 23:30:55 GMT",
         "server": "Apache",
         "x-powered-by": "HHVM/4.128.0",
         "access-control-allow-origin": "*",
@@ -25,21 +25,20 @@
         "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
         "access-control-allow-headers": "slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags",
         "access-control-expose-headers": "x-slack-req-id, retry-after",
-        "x-oauth-scopes": "users:read,team:read,channels:manage,im:write,chat:write,chat:write.public,commands",
-        "x-accepted-oauth-scopes": "channels:write,groups:write,mpim:write,im:write,post",
         "expires": "Mon, 26 Jul 1997 05:00:00 GMT",
         "cache-control": "private, no-cache, no-store, must-revalidate",
         "pragma": "no-cache",
+        "x-robots-tag": "noindex,nofollow",
         "x-xss-protection": "0",
         "x-content-type-options": "nosniff",
-        "x-slack-req-id": "72880e02af16f4c3a3acb2fa02c6a744",
+        "x-slack-req-id": "9c905758f03e4e19f048bf511a27655a",
         "vary": "Accept-Encoding",
         "content-type": "application/json; charset=utf-8",
-        "x-envoy-upstream-service-time": "30",
+        "x-envoy-upstream-service-time": "4",
         "x-backend": "main_normal main_bedrock_normal_with_overflow main_canary_with_overflow main_bedrock_canary_with_overflow main_control_with_overflow main_bedrock_control_with_overflow",
-        "x-server": "slack-www-hhvm-main-iad-zy5g",
+        "x-server": "slack-www-hhvm-main-iad-w6v1",
         "x-slack-shared-secret-outcome": "no-match",
-        "via": "envoy-www-iad-rm15, envoy-edge-iad-3zw3",
+        "via": "envoy-www-iad-c7v8, envoy-edge-iad-yhlg",
         "x-edge-backend": "envoy-www",
         "x-slack-edge-shared-secret-outcome": "no-match",
         "transfer-encoding": "chunked"

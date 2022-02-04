@@ -21,6 +21,8 @@ defmodule Juvet.SlackAPI.Conversations do
   """
 
   def open(options \\ %{}) do
+    {_, options} = options |> Map.get_and_update(:users, &{&1, Poison.encode!(&1)})
+
     SlackAPI.make_request("conversations.open", options)
     |> SlackAPI.render_response()
   end

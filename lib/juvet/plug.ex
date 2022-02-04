@@ -27,7 +27,7 @@ defmodule Juvet.Plug do
 
   plug(:dispatch)
 
-  match(_, do: send_resp(conn, 404, "Oh no! This route is not handled in Juvet"))
+  match(_, do: conn)
 
   defp insert_juvet_options(conn, opts),
     do: Juvet.Conn.put_private(conn, %{options: opts})
