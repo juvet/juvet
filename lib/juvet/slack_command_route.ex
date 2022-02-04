@@ -16,9 +16,8 @@ defmodule Juvet.SlackCommandRoute do
     context = get_context(conn)
 
     case Juvet.Runner.run(conn, Map.merge(%{configuration: config}, context)) do
-      {:ok, _context} ->
-        send_resp(conn, 200, "")
-        |> halt()
+      {:ok, context} ->
+        maybe_send_response(context)
 
       {:error, error} ->
         send_error(conn, error)
@@ -26,7 +25,7 @@ defmodule Juvet.SlackCommandRoute do
   end
 
   defp get_config(%Plug.Conn{} = conn),
-    do: get_config(Juvet.Conn.get_private(conn))
+    do: get_config(Juvet.Router.Conn.get_private(conn))
 
   defp get_config(%{options: options}) do
     get_in(options, [:configuration]) || []
@@ -35,7 +34,7 @@ defmodule Juvet.SlackCommandRoute do
   defp get_config(_), do: []
 
   defp get_context(%Plug.Conn{} = conn),
-    do: get_context(Juvet.Conn.get_private(conn))
+    do: get_context(Juvet.Router.Conn.get_private(conn))
 
   defp get_context(%{options: options}) do
     get_in(options, [:context]) || %{}
@@ -44,4 +43,9 @@ defmodule Juvet.SlackCommandRoute do
   defp get_context(_), do: %{}
 
   defp send_error(conn, _error), do: conn |> send_resp(200, "")
+
+  defp maybe_send_response(%{conn: %{state: :chunked} = conn}), do: conn
+  defp maybe_send_response(%{conn: %{state: :sent} = conn}), do: conn
+
+  defp maybe_send_response(%{conn: _conn} = context), do: Juvet.Router.Conn.send_resp(context)
 end

@@ -4,8 +4,8 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   by verifying it's header with a signing secret.
   """
 
-  alias Juvet.GregorianDateTime
-  alias Juvet.Router.Request
+  alias Juvet.{ConfigurationError, GregorianDateTime, InvalidRequestError}
+  alias Juvet.Router.{Conn, Request}
 
   def call(
         %{
@@ -32,24 +32,24 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
       |> compare_signature(slack_signature, context)
     else
       {:error, "x-slack-request-timestamp" = header} ->
-        {:error, %Juvet.InvalidRequestError{message: missing_header_message(header)}}
+        {:error, %InvalidRequestError{message: missing_header_message(header)}}
 
       {:error, "x-slack-signature" = header} ->
-        {:error, %Juvet.InvalidRequestError{message: missing_header_message(header)}}
+        {:error, %InvalidRequestError{message: missing_header_message(header)}}
 
       {:error, :stale_timestamp} ->
-        {:error, %Juvet.InvalidRequestError{message: "Stale Slack request."}}
+        {:error, %InvalidRequestError{message: "Stale Slack request."}}
 
       {:error, :missing_raw_body} ->
         {:error,
-         %Juvet.InvalidRequestError{
+         %InvalidRequestError{
            message:
              "Request body was empty and could not be verified. Ensure you are caching the request body in a body reader plug."
          }}
 
       {:error, :missing_signing_secret} ->
         {:error,
-         %Juvet.ConfigurationError{
+         %ConfigurationError{
            message: "Slack signing secret missing in Juvet configuration."
          }}
     end
@@ -76,7 +76,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   defp compare_signature(true, context), do: request_verified!(context)
 
   defp get_request_raw_body(request) do
-    case get_in(request.private, [Juvet.Conn.private_key(), :raw_body]) do
+    case get_in(request.private, [Conn.private_key(), :raw_body]) do
       nil -> {:error, :missing_raw_body}
       raw_body -> {:ok, raw_body}
     end
