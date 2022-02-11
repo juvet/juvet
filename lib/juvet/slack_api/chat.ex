@@ -20,7 +20,7 @@ defmodule Juvet.SlackAPI.Chat do
   } = Juvet.SlackAPI.Chat.post_message(%{token: token, channel: channel, text: text})
   """
   def post_message(options \\ %{}) do
-    {_, options} = options |> Map.get_and_update(:blocks, &{&1, Poison.encode!(&1)})
+    options = options |> transform_options
 
     SlackAPI.make_request("chat.postMessage", options)
     |> SlackAPI.render_response()
@@ -42,9 +42,20 @@ defmodule Juvet.SlackAPI.Chat do
   } = Juvet.SlackAPI.Chat.update(%{token: token, channel: channel, text: text, ts: timestamp})
   """
   def update(options \\ %{}) do
-    {_, options} = options |> Map.get_and_update(:blocks, &{&1, Poison.encode!(&1)})
+    options = options |> transform_options
 
     SlackAPI.make_request("chat.update", options)
     |> SlackAPI.render_response()
+  end
+
+  defp encode_blocks(nil), do: nil
+  defp encode_blocks(blocks), do: Poison.encode!(blocks)
+
+  defp transform_options(options) do
+    options
+    |> Map.get_and_update(:blocks, &{&1, encode_blocks(&1)})
+    |> elem(1)
+    |> Enum.filter(fn {_key, value} -> !is_nil(value) end)
+    |> Enum.into(%{})
   end
 end
