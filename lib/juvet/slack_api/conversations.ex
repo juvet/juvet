@@ -27,9 +27,12 @@ defmodule Juvet.SlackAPI.Conversations do
     |> SlackAPI.render_response()
   end
 
+  defp encode_users(nil), do: nil
+  defp encode_users(users), do: Enum.join(users, ",")
+
   defp transform_options(options) do
     options
-    |> Map.get_and_update(:users, &{&1, Enum.join(&1, ",")})
+    |> Map.get_and_update(:users, &{&1, encode_users(&1)})
     |> elem(1)
     |> Enum.filter(fn {_key, value} -> !is_nil(value) end)
     |> Enum.into(%{})
