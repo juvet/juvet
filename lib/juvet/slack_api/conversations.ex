@@ -21,9 +21,20 @@ defmodule Juvet.SlackAPI.Conversations do
   """
 
   def open(options \\ %{}) do
-    {_, options} = options |> Map.get_and_update(:users, &{&1, Poison.encode!(&1)})
+    options = options |> transform_options
 
     SlackAPI.make_request("conversations.open", options)
     |> SlackAPI.render_response()
+  end
+
+  defp encode_users(nil), do: nil
+  defp encode_users(users), do: Enum.join(users, ",")
+
+  defp transform_options(options) do
+    options
+    |> Map.get_and_update(:users, &{&1, encode_users(&1)})
+    |> elem(1)
+    |> Enum.filter(fn {_key, value} -> !is_nil(value) end)
+    |> Enum.into(%{})
   end
 end
