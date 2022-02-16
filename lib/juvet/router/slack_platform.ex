@@ -32,6 +32,13 @@ defmodule Juvet.Router.SlackPlatform do
 
   def validate_route(
         _platform,
+        %Juvet.Router.Route{type: :action} = route,
+        _options
+      ),
+      do: {:ok, route}
+
+  def validate_route(
+        _platform,
         %Juvet.Router.Route{type: :command} = route,
         _options
       ),

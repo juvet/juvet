@@ -80,15 +80,21 @@ defmodule Juvet.Router.PlatformTest do
   describe "validate_route/3" do
     setup do
       platform = Platform.new(:slack)
-      route = Route.new(:command, "/test", to: "controller#action")
 
-      [platform: platform, route: route]
+      [platform: platform]
     end
 
-    test "returns an ok tuple with the route when the route is valid to add", %{
-      platform: platform,
-      route: route
+    test "returns an ok tuple with the route when the command route is valid to add", %{
+      platform: platform
     } do
+      route = Route.new(:command, "/test", to: "controller#action")
+      assert {:ok, route} = Platform.validate_route(platform, route)
+    end
+
+    test "returns an ok tuple with the route when the action route is valid to add", %{
+      platform: platform
+    } do
+      route = Route.new(:action, "test_action", to: "controller#action")
       assert {:ok, route} = Platform.validate_route(platform, route)
     end
 

@@ -45,6 +45,12 @@ defmodule Juvet.Router do
     end
   end
 
+  defmacro action(action, options \\ []) do
+    quote do
+      Route.new(:action, unquote(action), unquote(options))
+    end
+  end
+
   defmacro command(command, options \\ []) do
     quote do
       Route.new(:command, unquote(command), unquote(options))
