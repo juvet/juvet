@@ -27,8 +27,6 @@ defmodule Juvet.Integration.SlackCommandTest do
     |> Enum.into(%{})
   end
 
-  def routed_to(_conn, _route), do: false
-
   describe "with a valid Slack command" do
     setup do
       signing_secret = generate_slack_signing_secret()
