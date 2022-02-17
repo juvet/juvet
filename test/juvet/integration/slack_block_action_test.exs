@@ -21,7 +21,7 @@ defmodule Juvet.Integration.SlackBlockActionTest do
     payload =
       %{
         "type" => "block_actions",
-        "actions" => "[{\"action_id\":\"test_action_id\"}]"
+        "actions" => [%{"action_id" => "test_action_id"}]
       }
       |> Poison.encode!()
 

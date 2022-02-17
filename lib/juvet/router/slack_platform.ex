@@ -56,7 +56,7 @@ defmodule Juvet.Router.SlackPlatform do
 
   defp action_request?(%{params: %{"payload" => payload}}, action_id) do
     payload = payload |> Poison.decode!()
-    action = payload["actions"] |> Poison.decode!() |> List.first()
+    action = payload["actions"] |> List.first()
 
     action["action_id"] == action_id
   end
