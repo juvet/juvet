@@ -77,6 +77,21 @@ defmodule Juvet.Router.PlatformTest do
     end
   end
 
+  describe "validate/1" do
+    test "returns an ok tuple with the platform" do
+      platform = Platform.new(:slack)
+
+      assert {:ok, actual} = Platform.validate(platform)
+      assert actual.platform == platform
+    end
+
+    test "returns an error tuple if the platform is not valid" do
+      platform = Platform.new(:blah)
+
+      assert {:error, :unknown_platform} = Platform.validate(platform)
+    end
+  end
+
   describe "validate_route/3" do
     setup do
       platform = Platform.new(:slack)

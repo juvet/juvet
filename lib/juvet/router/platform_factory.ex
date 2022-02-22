@@ -28,6 +28,8 @@ defmodule Juvet.Router.PlatformFactory do
     platform |> platform.find_route(request)
   end
 
+  def validate(%{__struct__: struct} = platform), do: struct.validate(platform)
+
   def validate_route(platform, route, options \\ %{})
 
   def validate_route(%{__struct__: struct} = platform, route, options) do

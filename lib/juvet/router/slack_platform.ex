@@ -37,6 +37,9 @@ defmodule Juvet.Router.SlackPlatform do
     if command_request?(request, command_text), do: route
   end
 
+  def validate(%{platform: %{platform: :slack}} = platform), do: {:ok, platform}
+  def validate(_platform), do: {:error, :unknown_platform}
+
   def validate_route(
         _platform,
         %Juvet.Router.Route{type: :action} = route,
