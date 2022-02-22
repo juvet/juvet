@@ -82,7 +82,7 @@ defmodule Juvet.Router.PlatformTest do
       platform = Platform.new(:slack)
 
       assert {:ok, actual} = Platform.validate(platform)
-      assert actual.platform == platform
+      assert actual == platform
     end
 
     test "returns an error tuple if the platform is not valid" do
