@@ -46,19 +46,74 @@ defmodule Juvet.Router do
   end
 
   defmacro action(action, options \\ []) do
+    IO.puts("adding action...")
+
     quote do
       Route.new(:action, unquote(action), unquote(options))
     end
   end
 
   defmacro command(command, options \\ []) do
+    IO.puts("adding command...")
+
     quote do
       Route.new(:command, unquote(command), unquote(options))
     end
   end
 
   defmacro platform(platform, do: block) do
-    add_platform(platform, block)
+    # I Don't think this is the way to do it all
+    # We need to add a context to the current platform and allow the `command`, `action`, etc. to work off of the
+    # current platform in the context. I believe this is what scope -> routes do in Phoenix?
+    """
+    routes =
+      case Macro.decompose_call(block) do
+        :error -> []
+        {_name, routes} -> routes
+      end
+
+      add_platform(platform, routes)
+    """
+
+    """
+    block =
+      quote do
+        unquote(block)
+      end
+    """
+
+    quote do
+      IO.puts("unquote the block first")
+      # routes = [unquote(block)] |> IO.inspect()
+      routes = []
+
+      IO.puts("unquoted...")
+
+      case Platform.new(unquote(platform)) |> Platform.validate() do
+        {:ok, platform} ->
+          platform =
+            Enum.reduce(routes, platform, fn route, platform ->
+              case Platform.put_route(platform, route) do
+                {:ok, platform} ->
+                  platform
+
+                {:error, {:unknown_platform, route_info}} ->
+                  platform = Keyword.fetch!(route_info, :platform)
+
+                  raise RouteError,
+                    message: "Platform `#{platform.platform.platform}` is not valid.",
+                    router: __MODULE__
+              end
+            end)
+
+          @juvet_platforms platform
+
+        {:error, :unknown_platform} ->
+          raise RouteError,
+            message: "Platform `#{unquote(platform)}` is not valid.",
+            router: __MODULE__
+      end
+    end
   end
 
   def exists?(mod) do
@@ -75,26 +130,34 @@ defmodule Juvet.Router do
     router.__platforms__()
   end
 
-  defp add_platform(platform, block) do
+  defp add_platform(platform, routes) do
+    IO.inspect(routes, label: "routes")
+
     quote do
-      platform = Platform.new(unquote(platform))
+      case Platform.new(unquote(platform)) |> Platform.validate() do
+        {:ok, platform} ->
+          platform =
+            Enum.reduce(unquote(routes), platform, fn route, platform ->
+              case Platform.put_route(platform, route) do
+                {:ok, platform} ->
+                  platform
 
-      route = unquote(block)
+                {:error, {:unknown_platform, route_info}} ->
+                  platform = Keyword.fetch!(route_info, :platform)
 
-      platform =
-        case Platform.put_route(platform, route) do
-          {:ok, platform} ->
-            platform
+                  raise RouteError,
+                    message: "Platform `#{platform.platform.platform}` is not valid.",
+                    router: __MODULE__
+              end
+            end)
 
-          {:error, {:unknown_platform, route_info}} ->
-            platform = Keyword.fetch!(route_info, :platform)
+          @juvet_platforms platform
 
-            raise RouteError,
-              message: "Platform `#{platform.platform.platform}` is not valid.",
-              router: __MODULE__
-        end
-
-      @juvet_platforms platform
+        {:error, :unknown_platform} ->
+          raise RouteError,
+            message: "Platform `#{unquote(platform)}` is not valid.",
+            router: __MODULE__
+      end
     end
   end
 end
