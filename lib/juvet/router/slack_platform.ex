@@ -24,11 +24,28 @@ defmodule Juvet.Router.SlackPlatform do
   end
 
   def find_route(
+        %Juvet.Router.Route{type: :action, route: action_id} = route,
+        request
+      ) do
+    if action_request?(request, action_id), do: route
+  end
+
+  def find_route(
         %Juvet.Router.Route{type: :command, route: command_text} = route,
         request
       ) do
-    if command_request?(request, command_without_slash(command_text)), do: route
+    if command_request?(request, command_text), do: route
   end
+
+  def validate(%{platform: %{platform: :slack} = platform}), do: {:ok, platform}
+  def validate(_platform), do: {:error, :unknown_platform}
+
+  def validate_route(
+        _platform,
+        %Juvet.Router.Route{type: :action} = route,
+        _options
+      ),
+      do: {:ok, route}
 
   def validate_route(
         _platform,
@@ -39,6 +56,15 @@ defmodule Juvet.Router.SlackPlatform do
 
   def validate_route(platform, %Juvet.Router.Route{} = route, options),
     do: {:error, {:unknown_route, [platform: platform, route: route, options: options]}}
+
+  defp action_request?(%{params: %{"payload" => payload}}, action_id) do
+    payload = payload |> Poison.decode!()
+    action = payload["actions"] |> List.first()
+
+    action["action_id"] == action_id
+  end
+
+  defp action_request?(_request, _action_id), do: false
 
   defp command_request?(%{params: params}, command) do
     normalized_command(params["command"]) == normalized_command(command)

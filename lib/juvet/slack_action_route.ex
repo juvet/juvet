@@ -3,7 +3,7 @@ defmodule Juvet.SlackActionRoute do
   Plug to handle any action from Slack.
   """
 
-  import Plug.Conn
+  alias Juvet.Router.Conn
 
   @doc false
   def init(opts), do: opts
@@ -11,7 +11,5 @@ defmodule Juvet.SlackActionRoute do
   @doc """
   Handles web requests targeted for the Slack actions API endpoint.
   """
-  def call(conn, _opts) do
-    send_resp(conn, 200, "")
-  end
+  def call(conn, _opts), do: Conn.run(conn)
 end

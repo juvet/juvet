@@ -26,6 +26,10 @@ defmodule Juvet.Router.Platform do
     PlatformFactory.new(platform) |> PlatformFactory.find_route(request)
   end
 
+  def validate(platform) do
+    PlatformFactory.new(platform) |> PlatformFactory.validate()
+  end
+
   def validate_route(platform, route, options \\ %{}) do
     PlatformFactory.new(platform)
     |> PlatformFactory.validate_route(route, options)

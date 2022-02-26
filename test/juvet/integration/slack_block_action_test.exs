@@ -1,4 +1,4 @@
-defmodule Juvet.Integration.SlackCommandTest do
+defmodule Juvet.Integration.SlackBlockActionTest do
   use ExUnit.Case, async: true
   use Juvet.PlugHelpers
   use Juvet.SlackRequestHelpers
@@ -7,8 +7,7 @@ defmodule Juvet.Integration.SlackCommandTest do
     use Juvet.Router
 
     platform :slack do
-      command("/test", to: "juvet.integration.slack_command_test.test#action")
-      action("test_id", to: "controller#action")
+      action("test_action_id", to: "juvet.integration.slack_block_action_test.test#action")
     end
   end
 
@@ -18,17 +17,22 @@ defmodule Juvet.Integration.SlackCommandTest do
     end
   end
 
-  def fixture(:valid_slack_command) do
+  def fixture(:valid_slack_block_action) do
+    payload =
+      %{
+        "type" => "block_actions",
+        "actions" => [%{"action_id" => "test_action_id"}]
+      }
+      |> Poison.encode!()
+
     [
       {"token", "SLACK_TOKEN"},
-      {"team_id", "T1234"},
-      {"command", "/test"},
-      {"text", ""}
+      {"payload", payload}
     ]
     |> Enum.into(%{})
   end
 
-  describe "with a valid Slack command" do
+  describe "with a valid Slack block action" do
     setup do
       signing_secret = generate_slack_signing_secret()
 
@@ -36,12 +40,12 @@ defmodule Juvet.Integration.SlackCommandTest do
     end
 
     test "is routed correctly", %{signing_secret: signing_secret} do
-      params = fixture(:valid_slack_command)
+      params = fixture(:valid_slack_block_action)
 
       conn =
         request!(
           :post,
-          "/slack/commands",
+          "/slack/actions",
           params,
           slack_headers(params, signing_secret),
           context: %{pid: self()},
