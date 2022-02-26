@@ -8,6 +8,7 @@ defmodule Juvet.Integration.SlackCommandTest do
 
     platform :slack do
       command("/test", to: "juvet.integration.slack_command_test.test#action")
+      action("test_id", to: "controller#action")
     end
   end
 

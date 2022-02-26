@@ -7,6 +7,7 @@ defmodule Juvet.RouterTest do
     use Juvet.Router
 
     platform :slack do
+      action("test_action_id", to: "controller#action")
       command("/test", to: "controller#action")
     end
   end
@@ -46,8 +47,9 @@ defmodule Juvet.RouterTest do
     test "accumulates the routes within the router" do
       platforms = Juvet.Router.platforms(MyRouter)
 
-      assert Enum.count(List.first(platforms).routes) == 1
-      assert List.first(List.first(platforms).routes).route == "/test"
+      assert Enum.count(List.first(platforms).routes) == 2
+      assert List.first(List.first(platforms).routes).route == "test_action_id"
+      assert List.last(List.first(platforms).routes).route == "/test"
     end
   end
 
