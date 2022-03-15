@@ -1,6 +1,6 @@
-defmodule Juvet.SlackFormValues do
-  def form_values(slack_form_values) do
-    slack_form_values
+defmodule Juvet.SlackViewState do
+  def parse(view_state) do
+    view_state
     |> Enum.reduce(%{}, fn {_block_id, block}, form ->
       [{action_id, action}] = block |> Map.to_list()
       Map.merge(form, action_value(action_id, action))

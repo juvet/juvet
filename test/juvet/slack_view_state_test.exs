@@ -1,11 +1,11 @@
-defmodule Juvet.SlackFormValuesTest do
+defmodule Juvet.SlackViewStateTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.SlackFormValues
+  alias Juvet.SlackViewState
 
-  describe "values/1" do
+  describe "parse/1" do
     test "returns a map of keys and values parsed from Slack's conversation select" do
-      slack_form_values = %{
+      view_state = %{
         "block_id" => %{
           "conversation_select_name" => %{
             "selected_conversation" => "C12345",
@@ -14,13 +14,13 @@ defmodule Juvet.SlackFormValuesTest do
         }
       }
 
-      assert SlackFormValues.form_values(slack_form_values) == %{
+      assert SlackViewState.parse(view_state) == %{
                "conversation_select_name" => "C12345"
              }
     end
 
     test "returns a map of keys and values parsed from Slack's plain text value" do
-      slack_form_values = %{
+      view_state = %{
         "block_id" => %{
           "plain_text_field" => %{
             "value" => "Hello world",
@@ -29,13 +29,13 @@ defmodule Juvet.SlackFormValuesTest do
         }
       }
 
-      assert SlackFormValues.form_values(slack_form_values) == %{
+      assert SlackViewState.parse(view_state) == %{
                "plain_text_field" => "Hello world"
              }
     end
 
     test "returns a map of keys and values parsed from Slack's form" do
-      slack_form_values = %{
+      view_state = %{
         "block_id_1" => %{
           "menu_field" => %{
             "selected_option" => %{
@@ -64,7 +64,7 @@ defmodule Juvet.SlackFormValuesTest do
         }
       }
 
-      assert SlackFormValues.form_values(slack_form_values) == %{
+      assert SlackViewState.parse(view_state) == %{
                "menu_field" => "selected_value",
                "checkboxes_field" => ["selected_value"]
              }
