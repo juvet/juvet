@@ -1,4 +1,8 @@
 defmodule Juvet.SlackViewState do
+  @moduledoc """
+  Functions to operate on Slack's view responses and the view state passed back.
+  """
+
   def parse(view_state) do
     view_state
     |> Enum.reduce(%{}, fn {_block_id, block}, form ->
