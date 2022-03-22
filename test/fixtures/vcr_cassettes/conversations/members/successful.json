@@ -1,0 +1,51 @@
+[
+  {
+    "request": {
+      "body": "channel=C04ASG29V",
+      "headers": {
+        "Accept": "application/json; charset=utf-8",
+        "Authorization": "***",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/conversations.members"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":true,\"members\":[\"U04ASG29K\",\"U052YB8KQ\",\"U053KUSLV\"],\"response_metadata\":{\"next_cursor\":\"\"}}",
+      "headers": {
+        "date": "Tue, 22 Mar 2022 21:03:08 GMT",
+        "server": "Apache",
+        "x-powered-by": "HHVM/4.153.0",
+        "access-control-allow-origin": "*",
+        "referrer-policy": "no-referrer",
+        "x-slack-backend": "r",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "access-control-allow-headers": "slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags",
+        "access-control-expose-headers": "x-slack-req-id, retry-after",
+        "x-oauth-scopes": "users:read,team:read,channels:manage,im:write,chat:write,chat:write.public,commands,channels:read,groups:read,mpim:read",
+        "x-accepted-oauth-scopes": "channels:read,groups:read,mpim:read,im:read,read",
+        "expires": "Mon, 26 Jul 1997 05:00:00 GMT",
+        "cache-control": "private, no-cache, no-store, must-revalidate",
+        "pragma": "no-cache",
+        "x-xss-protection": "0",
+        "x-content-type-options": "nosniff",
+        "x-slack-req-id": "d1676d912aaccfe9730c02c066b859d5",
+        "vary": "Accept-Encoding",
+        "content-type": "application/json; charset=utf-8",
+        "x-envoy-upstream-service-time": "28",
+        "x-backend": "main_normal main_bedrock_normal_with_overflow main_canary_with_overflow main_bedrock_canary_with_overflow main_control_with_overflow main_bedrock_control_with_overflow",
+        "x-server": "slack-www-hhvm-main-iad-n4le",
+        "x-slack-shared-secret-outcome": "no-match",
+        "via": "envoy-www-iad-abhh, envoy-edge-iad-24wx",
+        "x-edge-backend": "envoy-www",
+        "x-slack-edge-shared-secret-outcome": "no-match",
+        "transfer-encoding": "chunked"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
