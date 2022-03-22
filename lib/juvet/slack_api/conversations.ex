@@ -6,6 +6,27 @@ defmodule Juvet.SlackAPI.Conversations do
   alias Juvet.SlackAPI
 
   @doc """
+  Request to retrieve all the user ids for the users within a Conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    members:[
+      "USER1",
+      "USER2"
+    ]
+  } = Juvet.SlackAPI.Conversations.members(%{token: token, channel: "CHANNEL1"})
+  """
+
+  def members(options \\ %{}) do
+    SlackAPI.make_request("conversations.members", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Requests a new Conversation between the requestor and the users or channel specified.
 
   Returns a map of the Slack response.
