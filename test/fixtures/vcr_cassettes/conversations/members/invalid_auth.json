@@ -1,0 +1,50 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json; charset=utf-8",
+        "Authorization": "***",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/conversations.members"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":false,\"error\":\"invalid_auth\"}",
+      "headers": {
+        "date": "Tue, 22 Mar 2022 21:03:09 GMT",
+        "server": "Apache",
+        "x-powered-by": "HHVM/4.153.0",
+        "access-control-allow-origin": "*",
+        "referrer-policy": "no-referrer",
+        "x-slack-backend": "r",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "access-control-allow-headers": "slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags",
+        "access-control-expose-headers": "x-slack-req-id, retry-after",
+        "expires": "Mon, 26 Jul 1997 05:00:00 GMT",
+        "cache-control": "private, no-cache, no-store, must-revalidate",
+        "pragma": "no-cache",
+        "x-robots-tag": "noindex,nofollow",
+        "x-xss-protection": "0",
+        "x-content-type-options": "nosniff",
+        "x-slack-req-id": "4666c0eb9c5be329ccbd6da8a22d92bb",
+        "vary": "Accept-Encoding",
+        "content-type": "application/json; charset=utf-8",
+        "x-envoy-upstream-service-time": "6",
+        "x-backend": "main_normal main_bedrock_normal_with_overflow main_canary_with_overflow main_bedrock_canary_with_overflow main_control_with_overflow main_bedrock_control_with_overflow",
+        "x-server": "slack-www-hhvm-main-iad-kmxh",
+        "x-slack-shared-secret-outcome": "no-match",
+        "via": "envoy-www-iad-hj0w, envoy-edge-iad-24wx",
+        "x-edge-backend": "envoy-www",
+        "x-slack-edge-shared-secret-outcome": "no-match",
+        "transfer-encoding": "chunked"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
