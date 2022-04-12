@@ -20,9 +20,30 @@ defmodule Juvet.SlackAPI.Views do
   } = Juvet.SlackAPI.Views.open(%{token: token, trigger_id: trigger_id, view: view})
   """
   def open(options \\ %{}) do
-    options = options |> transform_options |> IO.inspect(label: "options")
+    options = options |> transform_options
 
     SlackAPI.make_request("views.open", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Update an existing view.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    view: {
+      id: "VIEW1"
+    }
+  } = Juvet.SlackAPI.Views.update(%{token: token, view_id: view_id, view: view})
+  """
+  def update(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("views.update", options)
     |> SlackAPI.render_response()
   end
 
