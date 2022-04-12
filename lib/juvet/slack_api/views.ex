@@ -6,6 +6,27 @@ defmodule Juvet.SlackAPI.Views do
   alias Juvet.SlackAPI
 
   @doc """
+  Push a view onto the stack of a root view.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    view: {
+      id: "VIEW1"
+    }
+  } = Juvet.SlackAPI.Views.push(%{token: token, trigger_id: trigger_id, view: view})
+  """
+  def push(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("views.push", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Publish a static view for a User.
 
   Returns a map of the Slack response.
