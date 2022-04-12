@@ -20,11 +20,20 @@ defmodule Juvet.SlackAPI.Views do
   } = Juvet.SlackAPI.Views.open(%{token: token, trigger_id: trigger_id, view: view})
   """
   def open(options \\ %{}) do
-    options = options |> transform_options
+    options = options |> transform_options |> IO.inspect(label: "options")
 
     SlackAPI.make_request("views.open", options)
     |> SlackAPI.render_response()
   end
 
-  defp transform_options(options), do: options
+  defp encode_view(nil), do: nil
+  defp encode_view(view), do: Poison.encode!(view)
+
+  defp transform_options(options) do
+    options
+    |> Map.get_and_update(:view, &{&1, encode_view(&1)})
+    |> elem(1)
+    |> Enum.filter(fn {_key, value} -> !is_nil(value) end)
+    |> Enum.into(%{})
+  end
 end
