@@ -71,9 +71,11 @@ defmodule Juvet.Router.SlackPlatform do
   def validate_route(platform, %Juvet.Router.Route{} = route, options),
     do: {:error, {:unknown_route, [platform: platform, route: route, options: options]}}
 
+  defp action_from_payload(%{"actions" => actions}), do: List.first(actions)
+  defp action_from_payload(_payload), do: nil
+
   defp action_request?(%{params: %{"payload" => payload}}, action_id) do
-    payload = payload |> Poison.decode!()
-    action = payload["actions"] |> List.first()
+    action = payload |> Poison.decode!() |> action_from_payload
 
     normalized_value(action["action_id"]) == normalized_value(action_id)
   end
