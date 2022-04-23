@@ -99,4 +99,6 @@ defmodule Juvet.Router.SlackPlatform do
 
     normalized_value(view["callback_id"]) == normalized_value(callback_id)
   end
+
+  defp view_submission_request?(_request, _callback_id), do: false
 end
