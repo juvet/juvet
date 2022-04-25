@@ -26,11 +26,18 @@ defmodule Juvet.Integration.SlackViewSubmissionTest do
       ]
       |> Enum.into(%{})
 
+    payload =
+      [
+        {"type", "view_submission"},
+        {"token", "SLACK_TOKEN"},
+        {"team_id", "T1234"},
+        {"view", view}
+      ]
+      |> Enum.into(%{})
+      |> Poison.encode!()
+
     [
-      {"type", "view_submission"},
-      {"token", "SLACK_TOKEN"},
-      {"team_id", "T1234"},
-      {"view", view |> Poison.encode!()}
+      {"payload", payload}
     ]
     |> Enum.into(%{})
   end

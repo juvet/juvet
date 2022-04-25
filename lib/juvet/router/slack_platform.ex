@@ -72,7 +72,7 @@ defmodule Juvet.Router.SlackPlatform do
     do: {:error, {:unknown_route, [platform: platform, route: route, options: options]}}
 
   defp action_from_payload(%{"actions" => actions}), do: List.first(actions)
-  defp action_from_payload(_payload), do: nil
+  defp action_from_payload(_payload), do: %{}
 
   defp action_request?(%{params: %{"payload" => payload}}, action_id) do
     action = payload |> Poison.decode!() |> action_from_payload
@@ -81,6 +81,9 @@ defmodule Juvet.Router.SlackPlatform do
   end
 
   defp action_request?(_request, _action_id), do: false
+
+  defp callback_id_from_payload(%{"view" => %{"callback_id" => callback_id}}), do: callback_id
+  defp callback_id_from_payload(_payload), do: nil
 
   defp command_request?(%{params: params}, command) do
     normalized_command(params["command"]) == normalized_command(command)
@@ -96,10 +99,10 @@ defmodule Juvet.Router.SlackPlatform do
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
 
-  defp view_submission_request?(%{params: %{"view" => view}}, callback_id) do
-    view = view |> Poison.decode!()
+  defp view_submission_request?(%{params: %{"payload" => payload}}, callback_id) do
+    incoming_callback_id = payload |> Poison.decode!() |> callback_id_from_payload
 
-    normalized_value(view["callback_id"]) == normalized_value(callback_id)
+    normalized_value(incoming_callback_id) == normalized_value(callback_id)
   end
 
   defp view_submission_request?(_request, _callback_id), do: false
