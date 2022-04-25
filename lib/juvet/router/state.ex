@@ -54,6 +54,17 @@ defmodule Juvet.Router.State do
         raise RouteError,
           message: "Platform `#{platform.platform.platform}` is not valid.",
           router: module
+
+      {:error, {:unknown_route, route_info}} ->
+        put_platform(module, platform)
+
+        platform = Keyword.fetch!(route_info, :platform)
+        route = Keyword.fetch!(route_info, :route)
+
+        raise RouteError,
+          message:
+            "Route `#{route.route}` (#{route.type}) for `#{platform.platform.platform}` not found.",
+          router: module
     end
 
     route

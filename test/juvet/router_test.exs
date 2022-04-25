@@ -9,6 +9,7 @@ defmodule Juvet.RouterTest do
     platform :slack do
       action("test_action_id", to: "controller#action")
       command("/test", to: "controller#action")
+      view_submission("test_callback_id", to: "controller#action")
     end
   end
 
@@ -47,9 +48,10 @@ defmodule Juvet.RouterTest do
     test "accumulates the routes within the router" do
       platforms = Juvet.Router.platforms(MyRouter)
 
-      assert Enum.count(List.first(platforms).routes) == 2
-      assert List.first(List.first(platforms).routes).route == "test_action_id"
-      assert List.last(List.first(platforms).routes).route == "/test"
+      assert Enum.count(List.first(platforms).routes) == 3
+      assert Enum.at(List.first(platforms).routes, 0).route == "test_action_id"
+      assert Enum.at(List.first(platforms).routes, 1).route == "/test"
+      assert Enum.at(List.first(platforms).routes, 2).route == "test_callback_id"
     end
   end
 

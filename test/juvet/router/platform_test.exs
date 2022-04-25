@@ -113,6 +113,13 @@ defmodule Juvet.Router.PlatformTest do
       assert {:ok, route} = Platform.validate_route(platform, route)
     end
 
+    test "returns an ok tuple with the route when the view submission route is valid to add", %{
+      platform: platform
+    } do
+      route = Route.new(:view_submission, "test_callback", to: "controller#action")
+      assert {:ok, route} = Platform.validate_route(platform, route)
+    end
+
     test "returns an error tuple with the route when the route is not valid", %{
       platform: platform
     } do
