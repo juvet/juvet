@@ -12,12 +12,13 @@ defmodule Juvet.RunnerTest do
   end
 
   defmodule TestController do
-    def action(%{pid: pid}) do
+    def action(%{pid: pid} = context) do
       send(pid, :called_controller)
+
+      {:ok, context}
     end
 
-    def action(_context) do
-    end
+    def action(context), do: {:ok, context}
   end
 
   describe "route/2" do

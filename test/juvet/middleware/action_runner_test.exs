@@ -5,15 +5,26 @@ defmodule Juvet.Middleware.ActionRunnerTest do
 
   defmodule TestController do
     def action(context) do
-      send(context.pid, :called_controller)
+      if context[:pid], do: send(context.pid, :called_controller)
+
+      context = Map.merge(context, %{hello: "world"})
+
+      {:ok, context}
+    end
+
+    def action_with_bad_return(_context) do
+      "blah"
     end
   end
 
   describe "call/1" do
     setup do
+      controller = :"Elixir.Juvet.Middleware.ActionRunnerTest.TestController"
+
       [
+        controller: controller,
         context: %{
-          action: {:"Elixir.Juvet.Middleware.ActionRunnerTest.TestController", :action}
+          action: {controller, :action}
         }
       ]
     end
@@ -36,6 +47,18 @@ defmodule Juvet.Middleware.ActionRunnerTest do
       assert {:ok, ctx} = ActionRunner.call(Map.merge(context, %{pid: self()}))
 
       assert_received :called_controller
+    end
+
+    test "returns the updated context from the controller", %{context: context} do
+      assert {:ok, %{hello: "world"}} = ActionRunner.call(context)
+    end
+
+    test "requires an ok tuple with the context to be returned", %{controller: controller} do
+      result = ActionRunner.call(%{action: {controller, :action_with_bad_return}})
+
+      assert result ==
+               {:error,
+                "`action_with_bad_return/1` is required to return the `context` in an `:ok` tuple or an `:error` tuple"}
     end
   end
 end
