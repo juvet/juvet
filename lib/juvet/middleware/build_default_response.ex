@@ -1,4 +1,4 @@
-defmodule Juvet.Midddleware.BuildDefaultResponse do
+defmodule Juvet.Middleware.BuildDefaultResponse do
   @moduledoc """
   Middleware to create a default `Juvet.Router.Response` for the request that is
   contained within the context.
