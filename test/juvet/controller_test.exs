@@ -10,6 +10,28 @@ defmodule Juvet.ControllerTest do
     def send_response_test(context, response \\ nil) do
       send_response(context, response)
     end
+
+    def update_response_test(context, response) do
+      update_response(context, response)
+    end
+  end
+
+  describe "update_response/2" do
+    setup do
+      context = %{
+        conn: build_conn(:post, "/slack/commands"),
+        response: Response.new(body: "old")
+      }
+
+      [context: context]
+    end
+
+    test "updates the response in the context", %{context: context} do
+      %{response: response} =
+        MyController.update_response_test(context, Response.new(body: "new"))
+
+      assert response.body == "new"
+    end
   end
 
   describe "send_response/2" do
