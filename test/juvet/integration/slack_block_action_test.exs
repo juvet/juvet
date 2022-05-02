@@ -12,8 +12,10 @@ defmodule Juvet.Integration.SlackBlockActionTest do
   end
 
   defmodule TestController do
-    def action(%{pid: pid}) do
+    def action(%{pid: pid} = context) do
       send(pid, :called_controller)
+
+      {:ok, context}
     end
   end
 

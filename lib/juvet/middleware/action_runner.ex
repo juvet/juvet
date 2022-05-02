@@ -9,12 +9,19 @@ defmodule Juvet.Middleware.ActionRunner do
     f = elem(action, 1)
 
     try do
-      apply(m, f, [context])
+      case apply(m, f, [context]) do
+        {:ok, ctx} when is_map(ctx) ->
+          {:ok, ctx}
+
+        {:error, error} ->
+          {:error, error}
+
+        _ ->
+          {:error,
+           "`#{f}/1` is required to return the `context` in an `:ok` tuple or an `:error` tuple"}
+      end
     rescue
       UndefinedFunctionError -> {:error, "`#{m}.#{f}/1` is not defined"}
-    else
-      _ ->
-        {:ok, context}
     end
   end
 

@@ -1,7 +1,7 @@
-defmodule Juvet.Midddleware.BuildDefaultResponseTest do
+defmodule Juvet.Middleware.BuildDefaultResponseTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Midddleware.BuildDefaultResponse
+  alias Juvet.Middleware.BuildDefaultResponse
   alias Juvet.Router.Request
 
   describe "call/1" do

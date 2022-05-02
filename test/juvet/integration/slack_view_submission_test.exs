@@ -14,8 +14,10 @@ defmodule Juvet.Integration.SlackViewSubmissionTest do
   end
 
   defmodule TestController do
-    def submit(%{pid: pid}) do
+    def submit(%{pid: pid} = context) do
       send(pid, :called_controller)
+
+      {:ok, context}
     end
   end
 
