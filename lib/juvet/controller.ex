@@ -18,6 +18,7 @@ defmodule Juvet.Controller do
         send_the_response(context)
       end
 
+      @spec update_response(map(), Response.t()) :: map()
       def update_response(context, %Response{} = response),
         do: maybe_update_response(context, response)
 
