@@ -7,6 +7,7 @@ defmodule Juvet.Controller do
 
   defmacro __using__(_opts) do
     quote do
+      @spec send_response(map(), Response.t() | nil) :: map()
       def send_response(context, response \\ nil)
 
       def send_response(context, nil), do: send_the_response(context)

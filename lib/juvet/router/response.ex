@@ -3,6 +3,11 @@ defmodule Juvet.Router.Response do
   Represents a single response to a request from a platform.
   """
 
+  @type t :: %__MODULE__{
+          body: String.t() | nil,
+          status: integer() | String.t()
+        }
+
   defstruct [:status, :body]
 
   def new(options \\ []) do
