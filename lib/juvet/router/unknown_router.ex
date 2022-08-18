@@ -1,9 +1,9 @@
-defmodule Juvet.Router.UnknownPlatform do
+defmodule Juvet.Router.UnknownRouter do
   @moduledoc """
-  Represents a `Juvet.Router.Platform` that could not be idenfied.
+  Represents a `Juvet.Router` that could not be idenfied for a platform definition.
   """
 
-  defstruct platform: nil
+  defstruct platform: :unknown
 
   def new(platform) do
     %__MODULE__{platform: platform}
