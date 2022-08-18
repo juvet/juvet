@@ -1,9 +1,12 @@
+# Juvet.Router.SlackRouter
+# @behavior Juvet.Router.PlatformRouter
 defmodule Juvet.Router.SlackPlatform do
   @moduledoc """
   Struct that represents the `Juvet.Router.Route`s that are available for the
   Slack platform.
   """
 
+  # name instead? to remove the platform.name
   defstruct platform: nil
 
   def new(platform) do
