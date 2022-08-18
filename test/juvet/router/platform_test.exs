@@ -1,7 +1,7 @@
 defmodule Juvet.Router.PlatformTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Router.{Platform, Request, Route, SlackPlatform}
+  alias Juvet.Router.{Platform, Route, SlackPlatform}
 
   describe "put_route/3" do
     setup do
@@ -31,48 +31,6 @@ defmodule Juvet.Router.PlatformTest do
                   platform: %SlackPlatform{platform: platform},
                   route: error_route,
                   options: %{}
-                ]}
-    end
-  end
-
-  describe "find_route/2" do
-    setup do
-      platform = Platform.new(:slack)
-      route = Route.new(:command, "/test", to: "controller#action")
-      {:ok, platform} = Platform.put_route(platform, route)
-
-      request = Request.new(%{params: %{"command" => "test"}})
-      request = %{request | platform: :slack, verified?: true}
-
-      [platform: platform, request: request]
-    end
-
-    test "returns an ok tuple with the route that were found", %{
-      platform: platform,
-      request: request
-    } do
-      assert {:ok, route} = Platform.find_route(platform, request)
-      assert route.type == :command
-      assert route.route == "/test"
-      assert route.options == [to: "controller#action"]
-    end
-
-    test "returns an error tuple with the route when the route is not found", %{
-      platform: platform,
-      request: request
-    } do
-      request = %{
-        request
-        | params: Map.merge(request.params, %{"command" => "/blah"})
-      }
-
-      assert {:error, error} = Platform.find_route(platform, request)
-
-      assert error ==
-               {:unknown_route,
-                [
-                  platform: %SlackPlatform{platform: platform},
-                  request: request
                 ]}
     end
   end

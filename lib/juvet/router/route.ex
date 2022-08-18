@@ -3,6 +3,11 @@ defmodule Juvet.Router.Route do
   Represents a single route that is defined within the `Juvet.Router`.
   """
 
+  @type t :: %__MODULE__{
+          type: atom(),
+          route: String.t(),
+          options: keyword()
+        }
   defstruct type: nil, route: nil, options: []
 
   def new(type, route, options \\ []) do

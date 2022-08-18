@@ -3,6 +3,7 @@ defmodule Juvet.Router.Request do
   Represents a single request from a platform.
   """
 
+  @type t :: %__MODULE__{}
   defstruct [
     :host,
     :method,
