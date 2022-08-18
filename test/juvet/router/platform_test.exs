@@ -1,7 +1,7 @@
 defmodule Juvet.Router.PlatformTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Router.{Platform, Route, SlackPlatform}
+  alias Juvet.Router.{Platform, Route, SlackRouter}
 
   describe "put_route/3" do
     setup do
@@ -28,7 +28,7 @@ defmodule Juvet.Router.PlatformTest do
       assert error ==
                {:unknown_route,
                 [
-                  platform: %SlackPlatform{platform: platform},
+                  platform: %SlackRouter{platform: platform},
                   route: error_route,
                   options: %{}
                 ]}

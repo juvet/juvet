@@ -3,7 +3,10 @@ defmodule Juvet.Router.UnknownRouter do
   Represents a `Juvet.Router` that could not be idenfied for a platform definition.
   """
 
-  defstruct platform: :unknown
+  @type t :: %__MODULE__{
+          platform: Juvet.Router.Platform.t()
+        }
+  defstruct platform: nil
 
   def new(platform) do
     %__MODULE__{platform: platform}
@@ -11,7 +14,7 @@ defmodule Juvet.Router.UnknownRouter do
 
   def validate(_platform), do: {:error, :unknown_platform}
 
-  def validate_route(platform, route, options \\ %{}) do
-    {:error, {:unknown_platform, [platform: platform, route: route, options: options]}}
+  def validate_route(router, route, options \\ %{}) do
+    {:error, {:unknown_platform, [router: router, route: route, options: options]}}
   end
 end

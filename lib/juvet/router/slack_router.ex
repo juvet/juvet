@@ -1,13 +1,11 @@
-# Juvet.Router.SlackRouter
-defmodule Juvet.Router.SlackPlatform do
+defmodule Juvet.Router.SlackRouter do
   @moduledoc """
-  Struct that represents the `Juvet.Router.Route`s that are available for the
-  Slack platform.
+  Represents a `Juvet.Router` that is used for any routes defined under a Slack `Platform`.
   """
 
-  # name instead? to remove the platform.name
-  # platform_definition? instead
-  # Use Router instead of Platform, which means PlatformFactory == RouterFactory
+  @type t :: %__MODULE__{
+          platform: Juvet.Router.Platform.t()
+        }
   defstruct platform: nil
 
   def new(platform) do

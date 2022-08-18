@@ -1,7 +1,7 @@
 defmodule Juvet.Router.RouterFactoryTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Router.{Platform, RouterFactory, Request, Route, SlackPlatform}
+  alias Juvet.Router.{Platform, RouterFactory, Request, Route, SlackRouter, UnknownRouter}
 
   describe "find_route/2" do
     setup do
@@ -39,7 +39,7 @@ defmodule Juvet.Router.RouterFactoryTest do
       assert error ==
                {:unknown_route,
                 [
-                  platform: %SlackPlatform{platform: platform},
+                  platform: %SlackRouter{platform: platform},
                   request: request
                 ]}
     end
@@ -82,7 +82,7 @@ defmodule Juvet.Router.RouterFactoryTest do
       assert {:error,
               {:unknown_route,
                [
-                 platform: %SlackPlatform{platform: %Platform{platform: :slack}},
+                 platform: %SlackRouter{platform: %Platform{platform: :slack}},
                  route: error_route,
                  options: %{}
                ]}} ==
@@ -93,7 +93,8 @@ defmodule Juvet.Router.RouterFactoryTest do
       unknown_platform = Platform.new(:blah)
 
       assert {:error,
-              {:unknown_platform, [platform: unknown_platform, route: route, options: %{}]}} =
+              {:unknown_platform,
+               [router: %UnknownRouter{platform: unknown_platform}, route: route, options: %{}]}} =
                RouterFactory.validate_route(
                  unknown_platform,
                  route
