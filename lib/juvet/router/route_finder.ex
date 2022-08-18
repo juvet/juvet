@@ -3,7 +3,7 @@ defmodule Juvet.Router.RouteFinder do
   Finds a specific `Juvet.Router.Route` based on a `Juvet.Router.Request`.
   """
 
-  alias Juvet.Router.PlatformFactory
+  alias Juvet.Router.RouterFactory
 
   @spec find(list(Juvet.Router.Platform.t()), Juvet.Router.Request.t()) ::
           {:ok, Juvet.Router.Route.t()} | {:error, any()}
@@ -25,5 +25,5 @@ defmodule Juvet.Router.RouteFinder do
 
   @spec find_route(Juvet.Router.Platform.t(), Juvet.Router.Request.t()) ::
           {:ok, Juvet.Router.Route.t()} | {:error, any()}
-  def find_route(platform, request), do: PlatformFactory.find_route(platform, request)
+  def find_route(platform, request), do: RouterFactory.find_route(platform, request)
 end

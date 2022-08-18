@@ -1,5 +1,4 @@
 # Juvet.Router.SlackRouter
-# @behavior Juvet.Router.PlatformRouter
 defmodule Juvet.Router.SlackPlatform do
   @moduledoc """
   Struct that represents the `Juvet.Router.Route`s that are available for the
