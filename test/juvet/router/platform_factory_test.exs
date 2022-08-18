@@ -66,26 +66,47 @@ defmodule Juvet.Router.PlatformFactoryTest do
       route = Route.new(:command, "/test", to: "controller#action")
       platform = Platform.new(:slack)
 
-      [platform: %SlackPlatform{platform: platform}, route: route]
+      [platform: platform, route: route]
     end
 
-    test "delegates to the platform module", %{platform: platform, route: route} do
-      assert {:ok, route} ==
-               PlatformFactory.validate_route(platform, route)
+    test "returns an ok tuple with the route when the command route is valid to add", %{
+      platform: platform
+    } do
+      route = Route.new(:command, "/test", to: "controller#action")
+      assert {:ok, route} = PlatformFactory.validate_route(platform, route)
     end
 
-    test "returns an error if the route is not valid", %{platform: platform} do
+    test "returns an ok tuple with the route when the action route is valid to add", %{
+      platform: platform
+    } do
+      route = Route.new(:action, "test_action", to: "controller#action")
+      assert {:ok, route} = PlatformFactory.validate_route(platform, route)
+    end
+
+    test "returns an ok tuple with the route when the view submission route is valid to add", %{
+      platform: platform
+    } do
+      route = Route.new(:view_submission, "test_callback", to: "controller#action")
+      assert {:ok, route} = PlatformFactory.validate_route(platform, route)
+    end
+
+    test "returns an error tuple with the route when the route is not valid", %{
+      platform: platform
+    } do
       error_route = %Route{type: :blah}
 
-      assert {:error, {:unknown_route, [platform: platform, route: error_route, options: %{}]}} =
-               PlatformFactory.validate_route(
-                 platform,
-                 error_route
-               )
+      assert {:error,
+              {:unknown_route,
+               [
+                 platform: %SlackPlatform{platform: %Platform{platform: :slack}},
+                 route: error_route,
+                 options: %{}
+               ]}} ==
+               PlatformFactory.validate_route(platform, error_route)
     end
 
     test "returns an error if the platform is not valid", %{route: route} do
-      unknown_platform = %UnknownPlatform{platform: :blah}
+      unknown_platform = Platform.new(:blah)
 
       assert {:error,
               {:unknown_platform, [platform: unknown_platform, route: route, options: %{}]}} =

@@ -49,48 +49,4 @@ defmodule Juvet.Router.PlatformTest do
       assert {:error, :unknown_platform} = Platform.validate(platform)
     end
   end
-
-  describe "validate_route/3" do
-    setup do
-      platform = Platform.new(:slack)
-
-      [platform: platform]
-    end
-
-    test "returns an ok tuple with the route when the command route is valid to add", %{
-      platform: platform
-    } do
-      route = Route.new(:command, "/test", to: "controller#action")
-      assert {:ok, route} = Platform.validate_route(platform, route)
-    end
-
-    test "returns an ok tuple with the route when the action route is valid to add", %{
-      platform: platform
-    } do
-      route = Route.new(:action, "test_action", to: "controller#action")
-      assert {:ok, route} = Platform.validate_route(platform, route)
-    end
-
-    test "returns an ok tuple with the route when the view submission route is valid to add", %{
-      platform: platform
-    } do
-      route = Route.new(:view_submission, "test_callback", to: "controller#action")
-      assert {:ok, route} = Platform.validate_route(platform, route)
-    end
-
-    test "returns an error tuple with the route when the route is not valid", %{
-      platform: platform
-    } do
-      error_route = %Route{type: :blah}
-
-      assert {:error,
-              {:unknown_route,
-               [
-                 platform: %SlackPlatform{platform: platform},
-                 route: error_route,
-                 options: %{}
-               ]}} ==
-               Platform.validate_route(platform, error_route)
-    end
-  end
 end

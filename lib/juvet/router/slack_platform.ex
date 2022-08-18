@@ -7,6 +7,8 @@ defmodule Juvet.Router.SlackPlatform do
   """
 
   # name instead? to remove the platform.name
+  # platform_definition? instead
+  # Use Router instead of Platform, which means PlatformFactory == RouterFactory
   defstruct platform: nil
 
   def new(platform) do
@@ -47,7 +49,7 @@ defmodule Juvet.Router.SlackPlatform do
     if view_submission_request?(request, callback_id), do: route
   end
 
-  def validate(%{platform: %{platform: :slack} = platform}), do: {:ok, platform}
+  def validate(%{platform: :slack} = platform), do: {:ok, platform}
   def validate(_platform), do: {:error, :unknown_platform}
 
   def validate_route(

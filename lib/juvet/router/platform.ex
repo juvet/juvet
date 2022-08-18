@@ -15,8 +15,8 @@ defmodule Juvet.Router.Platform do
     %__MODULE__{platform: platform}
   end
 
-  def put_route(platform, route, options \\ %{}) do
-    case validate_route(platform, route, options) do
+  def put_route(%Juvet.Router.Platform{} = platform, route, options \\ %{}) do
+    case PlatformFactory.validate_route(platform, route, options) do
       {:ok, route} ->
         routes = platform.routes
         {:ok, %{platform | routes: routes ++ [route]}}
@@ -26,12 +26,6 @@ defmodule Juvet.Router.Platform do
     end
   end
 
-  def validate(platform) do
-    PlatformFactory.new(platform) |> PlatformFactory.validate()
-  end
-
-  def validate_route(platform, route, options \\ %{}) do
-    PlatformFactory.new(platform)
-    |> PlatformFactory.validate_route(route, options)
-  end
+  def validate(%Juvet.Router.Platform{} = platform),
+    do: PlatformFactory.router(platform).validate(platform)
 end

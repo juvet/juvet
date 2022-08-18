@@ -5,33 +5,20 @@ defmodule Juvet.Router.PlatformFactory do
 
   alias Juvet.Router.UnknownPlatform
 
-  def new(:unknown, platform), do: UnknownPlatform.new(platform)
-
-  def new(platform) do
-    platform_module(platform).new(platform)
-  rescue
-    _ in ArgumentError -> new(:unknown, platform)
-  end
+  def new(platform), do: router(platform).new(platform)
 
   def find_route(%Juvet.Router.Platform{} = platform, request) do
-    platform_module(platform).find_route(new(platform), request)
+    router(platform).find_route(new(platform), request)
   end
 
-  def validate(%{__struct__: struct} = platform), do: struct.validate(platform)
-
-  def validate_route(platform, route, options \\ %{})
-
-  def validate_route(%{__struct__: struct} = platform, route, options) do
-    platform |> struct.validate_route(route, options)
+  # TODO: This name will make sense in a bit
+  def router(%Juvet.Router.Platform{platform: platform}) do
+    String.to_existing_atom("Elixir.Juvet.Router.#{Macro.camelize(to_string(platform))}Platform")
+  rescue
+    _ in ArgumentError -> UnknownPlatform
   end
 
-  def validate_route(platform, route, options) do
-    platform |> platform.validate_route(route, options)
+  def validate_route(%Juvet.Router.Platform{} = platform, route, options \\ %{}) do
+    router(platform).validate_route(new(platform), route, options)
   end
-
-  defp platform_module(%Juvet.Router.Platform{platform: platform}),
-    do:
-      String.to_existing_atom(
-        "Elixir.Juvet.Router.#{Macro.camelize(to_string(platform))}Platform"
-      )
 end
