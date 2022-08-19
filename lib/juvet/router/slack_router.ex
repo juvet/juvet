@@ -3,11 +3,14 @@ defmodule Juvet.Router.SlackRouter do
   Represents a `Juvet.Router` that is used for any routes defined under a Slack `Platform`.
   """
 
+  @behaviour Juvet.Router
+
   @type t :: %__MODULE__{
           platform: Juvet.Router.Platform.t()
         }
   defstruct platform: nil
 
+  @impl Juvet.Router
   def new(platform) do
     %__MODULE__{platform: platform}
   end
@@ -46,7 +49,10 @@ defmodule Juvet.Router.SlackRouter do
     if view_submission_request?(request, callback_id), do: route
   end
 
+  @impl Juvet.Router
   def validate(%{platform: :slack} = platform), do: {:ok, platform}
+
+  @impl Juvet.Router
   def validate(_platform), do: {:error, :unknown_platform}
 
   def validate_route(

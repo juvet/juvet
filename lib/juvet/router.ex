@@ -73,4 +73,10 @@ defmodule Juvet.Router do
   def platforms(router) do
     router.__platforms__()
   end
+
+  # Behaviour
+  @callback new(atom()) :: struct()
+
+  @callback validate(Juvet.Router.Platform.t()) ::
+              {:ok, Juvet.Router.Platform.t()} | {:error, term()}
 end
