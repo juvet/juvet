@@ -79,4 +79,7 @@ defmodule Juvet.Router do
 
   @callback validate(Juvet.Router.Platform.t()) ::
               {:ok, Juvet.Router.Platform.t()} | {:error, term()}
+
+  @callback validate_route(%{platform: Juvet.Router.Platform.t()}, Juvet.Router.Route.t(), map()) ::
+              {:ok, Juvet.Router.Route.t()} | {:error, term()}
 end

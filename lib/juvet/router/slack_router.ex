@@ -55,29 +55,33 @@ defmodule Juvet.Router.SlackRouter do
   @impl Juvet.Router
   def validate(_platform), do: {:error, :unknown_platform}
 
+  @impl Juvet.Router
   def validate_route(
-        _platform,
+        _router,
         %Juvet.Router.Route{type: :action} = route,
         _options
       ),
       do: {:ok, route}
 
+  @impl Juvet.Router
   def validate_route(
-        _platform,
+        _router,
         %Juvet.Router.Route{type: :command} = route,
         _options
       ),
       do: {:ok, route}
 
+  @impl Juvet.Router
   def validate_route(
-        _platform,
+        _router,
         %Juvet.Router.Route{type: :view_submission} = route,
         _options
       ),
       do: {:ok, route}
 
-  def validate_route(platform, %Juvet.Router.Route{} = route, options),
-    do: {:error, {:unknown_route, [platform: platform, route: route, options: options]}}
+  @impl Juvet.Router
+  def validate_route(router, %Juvet.Router.Route{} = route, options),
+    do: {:error, {:unknown_route, [router: router, route: route, options: options]}}
 
   defp action_from_payload(%{"actions" => actions}), do: List.first(actions)
   defp action_from_payload(_payload), do: %{}

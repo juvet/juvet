@@ -28,7 +28,7 @@ defmodule Juvet.Router.PlatformTest do
       assert error ==
                {:unknown_route,
                 [
-                  platform: %SlackRouter{platform: platform},
+                  router: %SlackRouter{platform: platform},
                   route: error_route,
                   options: %{}
                 ]}
