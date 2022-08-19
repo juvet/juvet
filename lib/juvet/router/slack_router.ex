@@ -15,9 +15,11 @@ defmodule Juvet.Router.SlackRouter do
     %__MODULE__{platform: platform}
   end
 
+  @impl Juvet.Router
   def find_route(platform, %{verified?: false} = request),
     do: {:error, {:unverified_route, [platform: platform, request: request]}}
 
+  @impl Juvet.Router
   def find_route(
         %{platform: %{routes: routes}} = platform,
         %{platform: :slack, verified?: true} = request
