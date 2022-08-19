@@ -39,7 +39,7 @@ defmodule Juvet.Router.RouterFactoryTest do
       assert error ==
                {:unknown_route,
                 [
-                  platform: %SlackRouter{platform: platform},
+                  router: %SlackRouter{platform: platform},
                   request: request
                 ]}
     end

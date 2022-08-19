@@ -16,16 +16,16 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   @impl Juvet.Router
-  def find_route(platform, %{verified?: false} = request),
-    do: {:error, {:unverified_route, [platform: platform, request: request]}}
+  def find_route(router, %{verified?: false} = request),
+    do: {:error, {:unverified_route, [router: router, request: request]}}
 
   @impl Juvet.Router
   def find_route(
-        %{platform: %{routes: routes}} = platform,
+        %{platform: %{routes: routes}} = router,
         %{platform: :slack, verified?: true} = request
       ) do
     case Enum.find(routes, &(!is_nil(find_route(&1, request)))) do
-      nil -> {:error, {:unknown_route, [platform: platform, request: request]}}
+      nil -> {:error, {:unknown_route, [router: router, request: request]}}
       route -> {:ok, route}
     end
   end
