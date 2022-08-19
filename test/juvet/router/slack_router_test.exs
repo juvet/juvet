@@ -1,7 +1,7 @@
-defmodule Juvet.Router.SlackPlatformTest do
+defmodule Juvet.Router.SlackRouterTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Router.{Platform, Request, Route, SlackPlatform}
+  alias Juvet.Router.{Platform, Request, Route, SlackRouter}
 
   describe "find_route/2" do
     setup do
@@ -11,34 +11,34 @@ defmodule Juvet.Router.SlackPlatformTest do
         Platform.new(:slack)
         |> Platform.put_route(route)
 
-      platform = SlackPlatform.new(platform)
+      router = SlackRouter.new(platform)
 
       request = Request.new(%{params: %{"command" => "test"}})
       request = %{request | platform: :slack, verified?: true}
 
-      [platform: platform, request: request]
+      [router: router, request: request]
     end
 
     test "returns an ok tuple with the route if the request is a verified Slack command request",
-         %{platform: platform, request: request} do
-      assert {:ok, route} = SlackPlatform.find_route(platform, request)
+         %{router: router, request: request} do
+      assert {:ok, route} = SlackRouter.find_route(router, request)
       assert route.type == :command
       assert route.route == "/test"
       assert route.options == [to: "controller#action"]
     end
 
     test "returns an error tuple with an unverified request", %{
-      platform: platform,
+      router: router,
       request: request
     } do
       request = %{request | verified?: false}
 
-      assert {:error, {:unverified_route, [platform: platform, request: request]}} =
-               SlackPlatform.find_route(platform, request)
+      assert {:error, {:unverified_route, [router: router, request: request]}} =
+               SlackRouter.find_route(router, request)
     end
 
     test "returns an error tuple if the request is not found", %{
-      platform: platform,
+      router: router,
       request: request
     } do
       request = %{
@@ -46,8 +46,8 @@ defmodule Juvet.Router.SlackPlatformTest do
         | params: Map.merge(request.params, %{"command" => "/blah"})
       }
 
-      assert {:error, {:unknown_route, [platform: platform, request: request]}} =
-               SlackPlatform.find_route(platform, request)
+      assert {:error, {:unknown_route, [router: router, request: request]}} =
+               SlackRouter.find_route(router, request)
     end
   end
 end

@@ -3,16 +3,20 @@ defmodule Juvet.Router.Platform do
   Represents a list of routes for a specific platform (e.g. `Slack`).
   """
 
+  @type t :: %__MODULE__{
+          platform: atom() | nil,
+          routes: list(Juvet.Router.Route.t())
+        }
   defstruct platform: nil, routes: []
 
-  alias Juvet.Router.PlatformFactory
+  alias Juvet.Router.RouterFactory
 
   def new(platform) do
     %__MODULE__{platform: platform}
   end
 
-  def put_route(platform, route, options \\ %{}) do
-    case validate_route(platform, route, options) do
+  def put_route(%Juvet.Router.Platform{} = platform, route, options \\ %{}) do
+    case RouterFactory.validate_route(platform, route, options) do
       {:ok, route} ->
         routes = platform.routes
         {:ok, %{platform | routes: routes ++ [route]}}
@@ -22,16 +26,6 @@ defmodule Juvet.Router.Platform do
     end
   end
 
-  def find_route(platform, request) do
-    PlatformFactory.new(platform) |> PlatformFactory.find_route(request)
-  end
-
-  def validate(platform) do
-    PlatformFactory.new(platform) |> PlatformFactory.validate()
-  end
-
-  def validate_route(platform, route, options \\ %{}) do
-    PlatformFactory.new(platform)
-    |> PlatformFactory.validate_route(route, options)
-  end
+  def validate(%Juvet.Router.Platform{} = platform),
+    do: RouterFactory.router(platform).validate(platform)
 end
