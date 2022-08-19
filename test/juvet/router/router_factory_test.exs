@@ -1,7 +1,7 @@
 defmodule Juvet.Router.RouterFactoryTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Router.{Platform, RouterFactory, Request, Route, SlackRouter, UnknownRouter}
+  alias Juvet.Router.{Platform, Request, Route, RouterFactory, SlackRouter, UnknownRouter}
 
   describe "find_route/2" do
     setup do
