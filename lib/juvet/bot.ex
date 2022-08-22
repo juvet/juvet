@@ -46,6 +46,7 @@ defmodule Juvet.Bot do
       })
       ```
       """
+      @spec add_receiver(pid(), atom(), map()) :: {:ok, pid()}
       def add_receiver(pid, type, parameters) do
         GenServer.call(pid, {:add_receiver, type, parameters})
       end
@@ -59,6 +60,7 @@ defmodule Juvet.Bot do
       MyBot.connect(bot, :slack, %{token: "MY_TOKEN"})
       ```
       """
+      @spec connect(pid(), atom(), map()) :: :ok
       def connect(pid, :slack, %{team_id: _team_id} = parameters) do
         GenServer.cast(pid, {:connect, :slack, parameters})
       end
@@ -72,6 +74,7 @@ defmodule Juvet.Bot do
       messages = MyBot.get_messages(bot)
       ```
       """
+      @spec get_messages(pid()) :: list(map())
       def get_messages(pid), do: GenServer.call(pid, :get_messages)
 
       @doc """
@@ -83,6 +86,7 @@ defmodule Juvet.Bot do
       state = MyBot.get_state(bot)
       ```
       """
+      @spec get_state(pid()) :: Juvet.BotState.t()
       def get_state(pid), do: GenServer.call(pid, :get_state)
 
       def user_install(pid, platform, parameters) do
@@ -92,11 +96,13 @@ defmodule Juvet.Bot do
       # Server Callbacks
 
       @doc false
+      @impl true
       def init(state) do
         {:ok, struct(BotState, state)}
       end
 
       @doc false
+      @impl true
       def handle_call({:add_receiver, type, parameters}, _from, state) do
         result =
           generate_receiver(type).start(
@@ -109,16 +115,19 @@ defmodule Juvet.Bot do
       end
 
       @doc false
+      @impl true
       def handle_call(:get_messages, _from, state) do
         {:reply, BotState.get_messages(state), state}
       end
 
       @doc false
+      @impl true
       def handle_call(:get_state, _from, state) do
         {:reply, state, state}
       end
 
       @doc false
+      @impl true
       def handle_call({:user_install, platform, parameters}, _from, state) do
         team = Map.from_struct(Team.from_auth(parameters))
         user = Map.from_struct(User.from_auth(parameters))
@@ -132,6 +141,7 @@ defmodule Juvet.Bot do
       end
 
       @doc false
+      @impl true
       def handle_cast({:connect, :slack, parameters}, state) do
         {state, _platform, _message} =
           BotState.put_platform(state, :slack)
@@ -141,11 +151,13 @@ defmodule Juvet.Bot do
       end
 
       @doc false
+      @impl true
       def handle_info({:connected, platform, message}, state) do
         {:noreply, put_message(state, platform, message)}
       end
 
       @doc false
+      @impl true
       def handle_info({:new_message, platform, message}, state) do
         {:noreply, put_message(state, platform, message)}
       end

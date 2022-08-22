@@ -145,6 +145,7 @@ defmodule Juvet.BotFactory do
   # Callbacks
 
   @doc false
+  @impl true
   def init(config) do
     children = [
       {Juvet.Superintendent, config}

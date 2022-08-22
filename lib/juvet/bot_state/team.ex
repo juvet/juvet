@@ -3,11 +3,20 @@ defmodule Juvet.BotState.Team do
   Represents a team that is stored in the state for a `Juvet.Bot`.
   """
 
+  @type t :: %__MODULE__{
+          id: String.t(),
+          name: String.t(),
+          scopes: list(map()),
+          token: String.t(),
+          url: String.t(),
+          users: list(Juvet.BotState.User.t())
+        }
   @enforce_keys [:id]
   defstruct [:id, :name, :scopes, :token, :url, users: []]
 
   alias Juvet.BotState.User
 
+  @spec from_auth(map()) :: Juvet.BotState.Team.t()
   def from_auth(auth) do
     %Juvet.BotState.Team{
       id: get_in(auth, [:team, :id]),
@@ -17,6 +26,7 @@ defmodule Juvet.BotState.Team do
     }
   end
 
+  @spec put_user(Juvet.BotState.t(), map()) :: Juvet.BotState.t()
   def put_user(state, %{id: user_id} = user) do
     case user(state, user_id) do
       nil ->
@@ -34,10 +44,12 @@ defmodule Juvet.BotState.Team do
     end
   end
 
+  @spec has_user?(Juvet.BotState.t(), String.t()) :: boolean()
   def has_user?(state, user_id) do
     Enum.any?(state.users, &find(&1, user_id))
   end
 
+  @spec user(Juvet.BotState.t(), String.t()) :: Juvet.BotState.User.t()
   def user(state, user_id) do
     case Enum.find(state.users, &find(&1, user_id)) do
       nil -> nil
