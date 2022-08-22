@@ -101,6 +101,7 @@ defmodule Juvet do
   @doc """
   Returns the configuration configured for Juvet within the `Application`
   """
+  @spec configuration :: map()
   def configuration do
     Application.get_all_env(:juvet)
   end
@@ -118,6 +119,7 @@ defmodule Juvet do
   {:ok, pid} = Juvet.create_bot("MyBot")
   ```
   """
+  @spec create_bot(String.t()) :: {:ok, pid()} | {:error, any()}
   def create_bot(name) do
     Juvet.BotFactory.create(name)
   end
@@ -137,6 +139,7 @@ defmodule Juvet do
   pid = Juvet.create_bot!("MyBot")
   ```
   """
+  @spec create_bot!(String.t()) :: pid()
   def create_bot!(name) do
     Juvet.BotFactory.create!(name)
   end
@@ -161,6 +164,7 @@ defmodule Juvet do
   Juvet.connect_bot(bot, :slack_rtm, %{team_id: "T12345", token: "MY_TOKEN"})
   ```
   """
+  @spec connect_bot(pid(), atom(), map()) :: :ok
   def connect_bot(bot, platform, parameters) do
     Juvet.Superintendent.connect_bot(bot, platform, parameters)
   end
@@ -176,6 +180,7 @@ defmodule Juvet do
   {:ok, bot} = Juvet.find_or_create_bot("MyBot")
   ```
   """
+  @spec find_or_create_bot(String.t()) :: {:ok, pid()} | {:error, any()}
   def find_or_create_bot(name) do
     Juvet.BotFactory.find_or_create(name)
   end
@@ -193,6 +198,7 @@ defmodule Juvet do
   pid = Juvet.find_or_create_bot!("MyBot")
   ```
   """
+  @spec find_or_create_bot(String.t()) :: pid()
   def find_or_create_bot!(name) do
     Juvet.BotFactory.find_or_create!(name)
   end
@@ -209,6 +215,7 @@ defmodule Juvet do
   Juvet.route("home#index", %{team: team, user: user})
   ```
   """
+  @spec route(String.t(), map()) :: {:ok, map()} | {:error, any()}
   def route(path, context \\ %{}) do
     Juvet.Runner.route(path, context)
   end
@@ -223,6 +230,7 @@ defmodule Juvet do
   bot = Juvet.start_bot!("MyBot", :slack, %{token: "MY_TOKEN"})
   ```
   """
+  @spec start_bot!(String.t(), atom(), map()) :: pid()
   def start_bot!(name, platform, parameters) do
     bot = __MODULE__.create_bot!(name)
     __MODULE__.connect_bot(bot, platform, parameters)
