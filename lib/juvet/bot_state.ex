@@ -16,7 +16,7 @@ defmodule Juvet.BotState do
     Enum.flat_map(state.platforms, &Platform.get_messages(&1))
   end
 
-  @spec put_message({Juvet.BotState.t(), Juvet.BotState.Platform.t()}, map()) ::
+  @spec put_message({Juvet.BotState.t(), Juvet.BotState.Platform.t() | nil}, map()) ::
           {Juvet.BotState.t(), Juvet.BotState.Platform.t() | nil, map() | nil}
   def put_message({state, %{name: platform_name}}, message) do
     case platform(state, platform_name) do
@@ -36,7 +36,7 @@ defmodule Juvet.BotState do
     end
   end
 
-  @spec put_platform(Juvet.BotState.t(), String.t()) ::
+  @spec put_platform(Juvet.BotState.t(), String.t() | atom()) ::
           {Juvet.BotState.t(), Juvet.BotState.Platform.t()}
   def put_platform(state, platform_name) do
     case platform(state, platform_name) do

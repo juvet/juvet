@@ -6,19 +6,18 @@ defmodule Juvet.BotState.Team do
   @type t :: %__MODULE__{
           id: String.t(),
           name: String.t(),
-          scopes: list(map()) | [] | nil,
+          scopes: list(map()),
           token: String.t(),
           url: String.t(),
-          users: list(Juvet.BotState.User.t()) | []
+          users: list(Juvet.BotState.User.t())
         }
   @enforce_keys [:id]
   defstruct [:id, :name, :scopes, :token, :url, users: []]
 
   alias Juvet.BotState.User
 
-  @spec from_auth(Access.t()) :: Juvet.BotState.Team.t()
   def from_auth(auth) do
-    %Juvet.BotState.Team{
+    %__MODULE__{
       id: get_in(auth, [:team, :id]),
       name: get_in(auth, [:team, :name]),
       token: get_in(auth, [:access_token]),
@@ -26,7 +25,8 @@ defmodule Juvet.BotState.Team do
     }
   end
 
-  @spec put_user(Juvet.BotState.Team.t(), map()) :: Juvet.BotState.User.t()
+  @spec put_user(Juvet.BotState.Team.t(), map()) ::
+          {Juvet.BotState.Team.t(), Juvet.BotState.User.t()}
   def put_user(team, %{id: user_id} = user) do
     case user(team, user_id) do
       nil ->

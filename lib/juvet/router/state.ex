@@ -22,7 +22,7 @@ defmodule Juvet.Router.State do
     platform
   end
 
-  @spec put_platform!(module(), Juvet.Router.Platform.t()) :: :ok
+  @spec put_platform!(module(), atom()) :: :ok
   def put_platform!(module, platform) when is_atom(platform) do
     case Platform.new(platform) |> Platform.validate() do
       {:ok, platform} ->

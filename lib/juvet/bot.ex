@@ -159,9 +159,9 @@ defmodule Juvet.Bot do
 
       @doc false
       @impl true
-      def handle_cast({:connect, :slack, parameters}, state) do
+      def handle_cast({:connect, platform, parameters}, state) do
         {state, _platform, _message} =
-          BotState.put_platform(state, :slack)
+          BotState.put_platform(state, platform)
           |> BotState.put_message(parameters)
 
         {:noreply, state}
