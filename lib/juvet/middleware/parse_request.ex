@@ -6,6 +6,7 @@ defmodule Juvet.Middleware.ParseRequest do
 
   alias Juvet.Router.Request
 
+  @spec call(map()) :: {:ok, map()} | {:error, any()}
   def call(%{conn: conn} = context) do
     {:ok, Map.put_new(context, :request, generate_request(conn))}
   end

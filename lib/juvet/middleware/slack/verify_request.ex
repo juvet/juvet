@@ -7,6 +7,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   alias Juvet.{ConfigurationError, GregorianDateTime, InvalidRequestError}
   alias Juvet.Router.{Conn, Request}
 
+  @spec call(map()) :: {:ok, map()} | {:error, any()}
   def call(
         %{
           configuration: [slack: [verify_requests: false]],

@@ -6,6 +6,7 @@ defmodule Juvet.Middleware.BuildDefaultResponse do
 
   alias Juvet.Router.Response
 
+  @spec call(map()) :: {:ok, map()}
   def call(%{request: _request} = context),
     do: {:ok, Map.put_new(context, :response, default_response())}
 

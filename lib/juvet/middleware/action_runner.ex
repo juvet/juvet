@@ -4,6 +4,7 @@ defmodule Juvet.Middleware.ActionRunner do
   that function with the `Juvet.Context` that was created.
   """
 
+  @spec call(map()) :: {:ok, map()} | {:error, any()}
   def call(%{action: action} = context) do
     m = elem(action, 0)
     f = elem(action, 1)

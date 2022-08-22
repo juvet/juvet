@@ -7,6 +7,7 @@ defmodule Juvet.Middleware.RouteRequest do
   alias Juvet.Router
   alias Juvet.Router.{Request, Route}
 
+  @spec call(map()) :: {:ok, map()} | {:error, any()}
   def call(%{request: %Request{verified?: false} = request}),
     do:
       {:error,

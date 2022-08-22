@@ -3,6 +3,7 @@ defmodule Juvet.Middleware do
   Middleware groups to define what middleware is run during the request flow.
   """
 
+  @spec group(atom()) :: list({})
   def group(:partial) do
     [{Juvet.Middleware.ActionGenerator}, {Juvet.Middleware.ActionRunner}]
   end

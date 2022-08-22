@@ -26,11 +26,13 @@ defmodule Juvet.Config do
   @doc """
   Returns the module that defines your bot.
   """
+  @spec bot(keyword()) :: module() | nil
   def bot(config), do: Keyword.get(config, :bot, @defaults[:bot])
 
   @doc """
   Returns true if the configuration is not valid and false if it is valid.
   """
+  @spec invalid?(keyword()) :: boolean()
   def invalid?(config) do
     bot(config) |> to_string() |> String.trim() == ""
   end
@@ -38,17 +40,20 @@ defmodule Juvet.Config do
   @doc """
   Returns all of the configuration for the Slack service.
   """
+  @spec slack(keyword()) :: map()
   def slack(config),
     do: slack_config(Keyword.get(config, :slack, @defaults[:slack]))
 
   @doc """
   Returns true if the configuration contains configuration for Slack.
   """
+  @spec slack_configured?(keyword()) :: boolean()
   def slack_configured?(config), do: slack_config_configured?(slack(config))
 
   @doc """
   Returns true if the configuration is valid and false if it is not valid.
   """
+  @spec valid?(keyword()) :: boolean()
   def valid?(config), do: !__MODULE__.invalid?(config)
 
   defp slack_config(nil), do: nil
