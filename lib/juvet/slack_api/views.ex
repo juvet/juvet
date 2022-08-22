@@ -19,6 +19,7 @@ defmodule Juvet.SlackAPI.Views do
     }
   } = Juvet.SlackAPI.Views.push(%{token: token, trigger_id: trigger_id, view: view})
   """
+  @spec push(map()) :: {:ok, map()} | {:error, map()}
   def push(options \\ %{}) do
     options = options |> transform_options
 
@@ -40,6 +41,7 @@ defmodule Juvet.SlackAPI.Views do
     }
   } = Juvet.SlackAPI.Views.publish(%{token: token, user_id: user_id, view: view})
   """
+  @spec publish(map()) :: {:ok, map()} | {:error, map()}
   def publish(options \\ %{}) do
     options = options |> transform_options
 
@@ -61,6 +63,7 @@ defmodule Juvet.SlackAPI.Views do
     }
   } = Juvet.SlackAPI.Views.open(%{token: token, trigger_id: trigger_id, view: view})
   """
+  @spec open(map()) :: {:ok, map()} | {:error, map()}
   def open(options \\ %{}) do
     options = options |> transform_options
 
@@ -82,6 +85,7 @@ defmodule Juvet.SlackAPI.Views do
     }
   } = Juvet.SlackAPI.Views.update(%{token: token, view_id: view_id, view: view})
   """
+  @spec update(map()) :: {:ok, map()} | {:error, map()}
   def update(options \\ %{}) do
     options = options |> transform_options
 
