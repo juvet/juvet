@@ -44,7 +44,7 @@ defmodule Juvet.Router.State do
     put_platforms(module, platforms)
   end
 
-  @spec put_route_on_top!(module(), Juvet.Router.Router.t()) :: Juvet.Router.Route.t()
+  @spec put_route_on_top!(module(), Juvet.Router.Route.t()) :: Juvet.Router.Route.t() | nil
   def put_route_on_top!(module, route) do
     platform = pop_platform(module)
 

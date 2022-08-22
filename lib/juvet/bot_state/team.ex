@@ -26,7 +26,7 @@ defmodule Juvet.BotState.Team do
     }
   end
 
-  @spec put_user(Juvet.BotState.Team.t(), map()) :: Juvet.BotState.Team.t()
+  @spec put_user(Juvet.BotState.Team.t(), map()) :: Juvet.BotState.User.t()
   def put_user(team, %{id: user_id} = user) do
     case user(team, user_id) do
       nil ->
@@ -49,7 +49,7 @@ defmodule Juvet.BotState.Team do
     Enum.any?(team.users, &find(&1, user_id))
   end
 
-  @spec user(Juvet.BotState.Team.t(), String.t()) :: Juvet.BotState.User.t()
+  @spec user(Juvet.BotState.Team.t(), String.t()) :: Juvet.BotState.User.t() | nil
   def user(team, user_id) do
     case Enum.find(team.users, &find(&1, user_id)) do
       nil -> nil
