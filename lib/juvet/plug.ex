@@ -11,6 +11,8 @@ defmodule Juvet.Plug do
 
   alias Juvet.Router.Conn
 
+  @doc false
+  @impl true
   def init(opts) do
     config = Keyword.get(opts, :configuration, Juvet.configuration())
 
