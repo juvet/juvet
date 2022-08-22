@@ -100,7 +100,7 @@ defmodule Juvet.Bot do
       @spec get_state(pid()) :: Juvet.BotState.t()
       def get_state(pid), do: GenServer.call(pid, :get_state)
 
-      @spec user_install(pid(), atom(), keyword()) ::
+      @spec user_install(pid(), atom(), Access.t()) ::
               {:ok, Juvet.BotState.User.t(), Juvet.BotState.Team.t()}
       def user_install(pid, platform, parameters) do
         GenServer.call(pid, {:user_install, platform, parameters})
