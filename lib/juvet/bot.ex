@@ -12,14 +12,25 @@ defmodule Juvet.Bot do
 
   defmacro __using__(_) do
     quote do
+      unquote(prelude())
+      unquote(client())
+      unquote(server())
+    end
+  end
+
+  defp prelude do
+    quote do
       use GenServer
       use Juvet.ReceiverTarget
 
       alias Juvet.BotState
       alias Juvet.BotState.{Platform, Team, User}
+    end
+  end
 
-      # Client API
-
+  # Client API
+  defp client do
+    quote do
       @doc """
       Starts a `Juvet.Bot` process linked to the current process.
 
@@ -89,12 +100,18 @@ defmodule Juvet.Bot do
       @spec get_state(pid()) :: Juvet.BotState.t()
       def get_state(pid), do: GenServer.call(pid, :get_state)
 
+      @spec user_install(pid(), atom(), keyword()) ::
+              {:ok, Juvet.BotState.User.t(), Juvet.BotState.Team.t()}
       def user_install(pid, platform, parameters) do
         GenServer.call(pid, {:user_install, platform, parameters})
       end
+    end
+  end
 
-      # Server Callbacks
-
+  # Server Callbacks
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp server do
+    quote do
       @doc false
       @impl true
       def init(state) do
@@ -162,7 +179,6 @@ defmodule Juvet.Bot do
         {:noreply, put_message(state, platform, message)}
       end
 
-      @doc false
       defp put_message(state, platform_name, message) do
         platform = %Platform{name: platform_name}
 
