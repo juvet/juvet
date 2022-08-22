@@ -9,6 +9,7 @@ defmodule Juvet.ReceiverTarget do
       @doc """
       Generates a `Juvet.Receivers.SlackRTMReceiver`.
       """
+      @spec generate_receiver(atom()) :: struct()
       def generate_receiver(:slack_rtm), do: generate_receiver(:slack_RTM)
 
       @doc """

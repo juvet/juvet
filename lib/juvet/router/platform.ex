@@ -11,10 +11,13 @@ defmodule Juvet.Router.Platform do
 
   alias Juvet.Router.RouterFactory
 
+  @spec new(atom()) :: Juvet.Router.Platform.t()
   def new(platform) do
     %__MODULE__{platform: platform}
   end
 
+  @spec put_route(Juvet.Router.Platform.t(), Juvet.Router.Route.t(), map()) ::
+          {:ok, Juvet.Router.Platform.t()} | {:error, any()}
   def put_route(%Juvet.Router.Platform{} = platform, route, options \\ %{}) do
     case RouterFactory.validate_route(platform, route, options) do
       {:ok, route} ->
@@ -26,6 +29,7 @@ defmodule Juvet.Router.Platform do
     end
   end
 
+  @spec validate(Juvet.Router.Platform.t()) :: {:ok, Juvet.Router.Platform.t()} | {:error, any()}
   def validate(%Juvet.Router.Platform{} = platform),
     do: RouterFactory.router(platform).validate(platform)
 end

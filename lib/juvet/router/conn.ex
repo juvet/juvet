@@ -6,10 +6,12 @@ defmodule Juvet.Router.Conn do
 
   @private_key :juvet
 
+  @spec get_private(Plug.Conn.t(), any()) :: any()
   def get_private(%Plug.Conn{private: private}, default \\ nil) do
     private[@private_key] || default
   end
 
+  @spec put_private(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def put_private(%Plug.Conn{} = conn, value) when is_map(value) do
     current = get_private(conn, %{})
     Plug.Conn.put_private(conn, @private_key, Map.merge(current, value))
@@ -17,6 +19,7 @@ defmodule Juvet.Router.Conn do
 
   def private_key, do: @private_key
 
+  @spec run(Plug.Conn.t()) :: Plug.Conn.t()
   def run(conn) do
     config = get_config(conn)
     context = get_context(conn)
@@ -30,6 +33,7 @@ defmodule Juvet.Router.Conn do
     end
   end
 
+  @spec send_resp(map(), keyword()) :: Plug.Conn.t()
   def send_resp(%{conn: conn, response: %{body: body, status: status}}, options \\ []) do
     case already_sent?(conn) do
       true ->

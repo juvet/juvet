@@ -3,7 +3,20 @@ defmodule Juvet.Router.Request do
   Represents a single request from a platform.
   """
 
-  @type t :: %__MODULE__{}
+  @type t :: %__MODULE__{
+          host: String.t(),
+          method: String.t(),
+          params: map(),
+          port: integer(),
+          path: String.t(),
+          private: map(),
+          query_string: String.t(),
+          scheme: atom(),
+          status: atom(),
+          headers: list({String.t(), String.t()}),
+          platform: atom(),
+          verified?: boolean()
+        }
   defstruct [
     :host,
     :method,
@@ -19,6 +32,7 @@ defmodule Juvet.Router.Request do
     verified?: false
   ]
 
+  @spec new(Plug.Conn.t()) :: Juvet.Router.Request.t()
   def new(conn) do
     %__MODULE__{
       headers: Map.get(conn, :req_headers),
@@ -34,6 +48,7 @@ defmodule Juvet.Router.Request do
     }
   end
 
+  @spec get_header(Juvet.Router.Request.t(), String.t()) :: list(String.t())
   def get_header(%__MODULE__{headers: nil}, _header), do: []
 
   def get_header(%__MODULE__{headers: headers}, header) do

@@ -10,6 +10,7 @@ defmodule Juvet.Router.Response do
 
   defstruct [:status, :body]
 
+  @spec new(keyword()) :: Juvet.Router.Response.t()
   def new(options \\ []) do
     %__MODULE__{
       body: Keyword.get(options, :body, ""),
