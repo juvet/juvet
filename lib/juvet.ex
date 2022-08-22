@@ -101,7 +101,7 @@ defmodule Juvet do
   @doc """
   Returns the configuration configured for Juvet within the `Application`
   """
-  @spec configuration :: map()
+  @spec configuration :: Keyword.t()
   def configuration do
     Application.get_all_env(:juvet)
   end
@@ -198,7 +198,7 @@ defmodule Juvet do
   pid = Juvet.find_or_create_bot!("MyBot")
   ```
   """
-  @spec find_or_create_bot(String.t()) :: pid()
+  @spec find_or_create_bot!(String.t()) :: pid()
   def find_or_create_bot!(name) do
     Juvet.BotFactory.find_or_create!(name)
   end

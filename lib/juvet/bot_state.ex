@@ -16,8 +16,8 @@ defmodule Juvet.BotState do
     Enum.flat_map(state.platforms, &Platform.get_messages(&1))
   end
 
-  @spec put_message(Juvet.BotState.t(), map()) ::
-          {Juvet.BotState.t(), Juvet.BotState.Platform.t(), map()}
+  @spec put_message({Juvet.BotState.t(), Juvet.BotState.Platform.t()}, map()) ::
+          {Juvet.BotState.t(), Juvet.BotState.Platform.t() | nil, map() | nil}
   def put_message({state, %{name: platform_name}}, message) do
     case platform(state, platform_name) do
       nil ->
@@ -51,7 +51,7 @@ defmodule Juvet.BotState do
     end
   end
 
-  @spec put_team(Juvet.BotState.t(), map()) ::
+  @spec put_team({Juvet.BotState.t(), Juvet.BotState.Platform.t()}, map()) ::
           {Juvet.BotState.t(), Juvet.BotState.Platform.t() | nil, map() | nil}
   def put_team({state, %{name: platform_name}}, team) do
     case platform(state, platform_name) do
@@ -71,7 +71,7 @@ defmodule Juvet.BotState do
     end
   end
 
-  @spec put_user(Juvet.BotState.t(), map()) ::
+  @spec put_user({Juvet.BotState.t(), Juvet.BotState.Platform.t()}, map()) ::
           {Juvet.BotState.t(), Juvet.BotState.Platform.t() | nil, map() | nil, map() | nil}
   def put_user({state, platform, team}, user) do
     case put_team({state, platform}, team) do
@@ -103,7 +103,7 @@ defmodule Juvet.BotState do
     Enum.any?(state.platforms, &find(&1, platform_name))
   end
 
-  @spec platform(Juvet.BotState.t(), String.t()) :: Juvet.BotState.Platform.t()
+  @spec platform(Juvet.BotState.t(), String.t()) :: Juvet.BotState.Platform.t() | nil
   def platform(state, platform_name) do
     case Enum.find(state.platforms, &find(&1, platform_name)) do
       nil -> nil

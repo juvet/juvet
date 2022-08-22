@@ -25,7 +25,7 @@ defmodule Juvet.FactorySupervisor do
   {:ok, bot} = Juvet.FactorySupervisor.add_bot(factory_supervisor, MyBot, :my_bot)
   ```
   """
-  @spec add_bot(pid(), module(), String.t()) :: {:ok, pid()} | {:error, any()}
+  @spec add_bot(pid(), module(), String.t() | atom()) :: {:ok, pid()} | {:error, any()}
   def add_bot(pid, module, name) when is_binary(name),
     do: add_bot(pid, module, String.to_atom(name))
 

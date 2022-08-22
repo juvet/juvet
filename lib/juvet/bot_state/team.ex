@@ -6,17 +6,17 @@ defmodule Juvet.BotState.Team do
   @type t :: %__MODULE__{
           id: String.t(),
           name: String.t(),
-          scopes: list(map()),
+          scopes: list(map()) | [] | nil,
           token: String.t(),
           url: String.t(),
-          users: list(Juvet.BotState.User.t())
+          users: list(Juvet.BotState.User.t()) | []
         }
   @enforce_keys [:id]
   defstruct [:id, :name, :scopes, :token, :url, users: []]
 
   alias Juvet.BotState.User
 
-  @spec from_auth(map()) :: Juvet.BotState.Team.t()
+  @spec from_auth(Access.t()) :: Juvet.BotState.Team.t()
   def from_auth(auth) do
     %Juvet.BotState.Team{
       id: get_in(auth, [:team, :id]),
@@ -26,32 +26,32 @@ defmodule Juvet.BotState.Team do
     }
   end
 
-  @spec put_user(Juvet.BotState.t(), map()) :: Juvet.BotState.t()
-  def put_user(state, %{id: user_id} = user) do
-    case user(state, user_id) do
+  @spec put_user(Juvet.BotState.Team.t(), map()) :: Juvet.BotState.Team.t()
+  def put_user(team, %{id: user_id} = user) do
+    case user(team, user_id) do
       nil ->
         new_user = struct(User, user)
-        users = state.users
+        users = team.users
 
-        {%{state | users: users ++ [new_user]}, new_user}
+        {%{team | users: users ++ [new_user]}, new_user}
 
       existing_user ->
         new_user = Map.merge(existing_user, user)
-        users = state.users
+        users = team.users
         index = Enum.find_index(users, &find(&1, existing_user.id))
 
-        {%{state | users: List.replace_at(users, index, new_user)}, new_user}
+        {%{team | users: List.replace_at(users, index, new_user)}, new_user}
     end
   end
 
-  @spec has_user?(Juvet.BotState.t(), String.t()) :: boolean()
-  def has_user?(state, user_id) do
-    Enum.any?(state.users, &find(&1, user_id))
+  @spec has_user?(Juvet.BotState.Team.t(), String.t()) :: boolean()
+  def has_user?(team, user_id) do
+    Enum.any?(team.users, &find(&1, user_id))
   end
 
-  @spec user(Juvet.BotState.t(), String.t()) :: Juvet.BotState.User.t()
-  def user(state, user_id) do
-    case Enum.find(state.users, &find(&1, user_id)) do
+  @spec user(Juvet.BotState.Team.t(), String.t()) :: Juvet.BotState.User.t()
+  def user(team, user_id) do
+    case Enum.find(team.users, &find(&1, user_id)) do
       nil -> nil
       user -> user
     end

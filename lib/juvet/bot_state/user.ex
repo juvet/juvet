@@ -13,7 +13,7 @@ defmodule Juvet.BotState.User do
   @enforce_keys [:id]
   defstruct [:id, :name, :scopes, :token, :username]
 
-  @spec from_auth(map()) :: Juvet.BotState.User.t()
+  @spec from_auth(Access.t()) :: Juvet.BotState.User.t()
   def from_auth(auth) do
     %Juvet.BotState.User{
       id: get_in(auth, [:authed_user, :id]),

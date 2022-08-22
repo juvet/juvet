@@ -13,44 +13,44 @@ defmodule Juvet.BotState.Platform do
 
   alias Juvet.BotState.Team
 
-  @spec get_messages(Juvet.BotState.t()) :: list(map())
-  def get_messages(state) do
-    state.messages
+  @spec get_messages(Juvet.BotState.Platform.t()) :: list(map())
+  def get_messages(platform) do
+    platform.messages
   end
 
-  @spec put_message(Juvet.BotState.t(), map()) :: Juvet.BotState.t()
-  def put_message(state, message) do
-    messages = state.messages
+  @spec put_message(Juvet.BotState.Platform.t(), map()) :: {Juvet.BotState.Platform.t(), map}
+  def put_message(platform, message) do
+    messages = platform.messages
 
-    {%{state | messages: messages ++ [message]}, message}
+    {%{platform | messages: messages ++ [message]}, message}
   end
 
-  @spec put_team(Juvet.BotState.t(), map()) :: Juvet.BotState.t()
-  def put_team(state, %{id: team_id} = team) do
-    case team(state, team_id) do
+  @spec put_team(Juvet.BotState.Platform.t(), map()) :: {Juvet.BotState.Platform.t(), map()}
+  def put_team(platform, %{id: team_id} = team) do
+    case team(platform, team_id) do
       nil ->
         new_team = struct(Team, team)
-        teams = state.teams
+        teams = platform.teams
 
-        {%{state | teams: teams ++ [new_team]}, new_team}
+        {%{platform | teams: teams ++ [new_team]}, new_team}
 
       existing_team ->
         new_team = Map.merge(existing_team, team)
-        teams = state.teams
+        teams = platform.teams
         index = Enum.find_index(teams, &find(&1, existing_team.id))
 
-        {%{state | teams: List.replace_at(teams, index, new_team)}, new_team}
+        {%{platform | teams: List.replace_at(teams, index, new_team)}, new_team}
     end
   end
 
-  @spec has_team?(Juvet.BotState.t(), String.t()) :: boolean()
-  def has_team?(state, team_id) do
-    Enum.any?(state.teams, &find(&1, team_id))
+  @spec has_team?(Juvet.BotState.Platform.t(), String.t()) :: boolean()
+  def has_team?(platform, team_id) do
+    Enum.any?(platform.teams, &find(&1, team_id))
   end
 
-  @spec team(Juvet.BotState.t(), String.t()) :: Juvet.BotState.Team.t()
-  def team(state, team_id) do
-    case Enum.find(state.teams, &find(&1, team_id)) do
+  @spec team(Juvet.BotState.Platform.t(), String.t()) :: Juvet.BotState.Team.t() | nil
+  def team(platform, team_id) do
+    case Enum.find(platform.teams, &find(&1, team_id)) do
       nil -> nil
       team -> team
     end
