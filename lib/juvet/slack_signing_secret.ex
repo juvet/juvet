@@ -3,6 +3,7 @@ defmodule Juvet.SlackSigningSecret do
   Module to generate a sha for a Slack request in order to verify the request is from Slack.
   """
 
+  @spec generate(String.t(), String.t(), NaiveDateTime.t() | integer() | String.t()) :: String.t()
   def generate(body, signing_secret, timestamp \\ NaiveDateTime.utc_now())
 
   def generate(body, signing_secret, timestamp) when is_integer(timestamp),

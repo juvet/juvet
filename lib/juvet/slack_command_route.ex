@@ -11,5 +11,6 @@ defmodule Juvet.SlackCommandRoute do
   @doc """
   Handles web requests targeted for the Slack commands API endpoint.
   """
+  @spec call(Plug.Conn.t(), Keyword.t()) :: Plug.Conn.t()
   def call(conn, _opts), do: Conn.run(conn)
 end

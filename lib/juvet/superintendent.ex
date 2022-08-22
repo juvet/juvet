@@ -15,6 +15,10 @@ defmodule Juvet.Superintendent do
     Represents the state that is held within this process.
     """
 
+    @type t :: %__MODULE__{
+            factory_supervisor: pid(),
+            config: map()
+          }
     defstruct factory_supervisor: nil, config: %{}
   end
 
