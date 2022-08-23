@@ -21,6 +21,7 @@ defmodule Juvet.SlackAPI.Conversations do
   } = Juvet.SlackAPI.Conversations.members(%{token: token, channel: "CHANNEL1"})
   """
 
+  @spec members(map()) :: {:ok, map()} | {:error, map()}
   def members(options \\ %{}) do
     SlackAPI.make_request("conversations.members", options)
     |> SlackAPI.render_response()
@@ -41,6 +42,7 @@ defmodule Juvet.SlackAPI.Conversations do
   } = Juvet.SlackAPI.Conversations.open(%{token: token, users: [user]})
   """
 
+  @spec open(map()) :: {:ok, map()} | {:error, map()}
   def open(options \\ %{}) do
     options = options |> transform_options
 

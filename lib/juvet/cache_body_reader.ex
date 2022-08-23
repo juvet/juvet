@@ -3,6 +3,7 @@ defmodule Juvet.CacheBodyReader do
   Stores the raw body in private `Juvet` area in the `Plug.Conn`
   for verification purposes.
   """
+  @spec read_body(Plug.Conn.t(), keyword()) :: {:ok, String.t(), Plug.Conn.t()}
   def read_body(conn, opts) do
     {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
     conn = put_raw_body(conn, body)

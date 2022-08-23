@@ -20,6 +20,7 @@ defmodule Juvet.SlackAPI.Users do
   } = Juvet.SlackAPI.Users.info(%{token: token, user: user})
   """
 
+  @spec info(map()) :: {:ok, map()} | {:error, map()}
   def info(options \\ %{}) do
     SlackAPI.make_request("users.info", options)
     |> SlackAPI.render_response()

@@ -20,6 +20,7 @@ defmodule Juvet.SlackAPI.Team do
   } = Juvet.SlackAPI.Team.info(%{token: token, team: team})
   """
 
+  @spec info(map()) :: {:ok, map()} | {:error, map()}
   def info(options \\ %{}) do
     SlackAPI.make_request("team.info", options)
     |> SlackAPI.render_response()

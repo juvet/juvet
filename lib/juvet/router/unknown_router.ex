@@ -10,6 +10,7 @@ defmodule Juvet.Router.UnknownRouter do
         }
   defstruct platform: nil
 
+  @spec new(atom()) :: Juvet.Router.UnknownRouter.t()
   @impl Juvet.Router
   def new(platform) do
     %__MODULE__{platform: platform}

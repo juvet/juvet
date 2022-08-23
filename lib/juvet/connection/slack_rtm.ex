@@ -12,6 +12,10 @@ defmodule Juvet.Connection.SlackRTM do
     A struct that represents the state stored for the connection.
     """
 
+    @type t :: %__MODULE__{
+            receiver: pid(),
+            message: map()
+          }
     defstruct receiver: nil, message: nil
   end
 
@@ -23,6 +27,7 @@ defmodule Juvet.Connection.SlackRTM do
 
   {:ok, pid} = Juvet.Connection.SlackRTM.connect(pid, %{token: token})
   """
+  @spec connect(pid(), map()) :: {:ok, pid()} | {:error, any()}
   def connect(receiver, %{token: _token} = parameters) do
     state = %State{receiver: receiver}
 
@@ -38,6 +43,7 @@ defmodule Juvet.Connection.SlackRTM do
 
   {:ok, message} = Juvet.Connection.SlackRTM.get_message(pid)
   """
+  @spec get_message(pid()) :: {:ok, map()}
   def get_message(pid) do
     %{message: {_, body}} = :sys.get_state(pid)
 

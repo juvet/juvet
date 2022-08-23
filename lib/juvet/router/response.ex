@@ -3,8 +3,14 @@ defmodule Juvet.Router.Response do
   Represents a single response to a request from a platform.
   """
 
+  @type t :: %__MODULE__{
+          body: String.t() | nil,
+          status: integer() | String.t()
+        }
+
   defstruct [:status, :body]
 
+  @spec new(keyword()) :: Juvet.Router.Response.t()
   def new(options \\ []) do
     %__MODULE__{
       body: Keyword.get(options, :body, ""),

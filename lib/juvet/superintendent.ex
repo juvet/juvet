@@ -12,9 +12,13 @@ defmodule Juvet.Superintendent do
 
   defmodule State do
     @moduledoc """
-      Represents the state that is held within this process.
+    Represents the state that is held within this process.
     """
 
+    @type t :: %__MODULE__{
+            factory_supervisor: pid(),
+            config: map()
+          }
     defstruct factory_supervisor: nil, config: %{}
   end
 
@@ -31,6 +35,7 @@ defmodule Juvet.Superintendent do
   @doc """
   Connects a `Juvet.Bot` process with the Slack platform and the given parameters.
   """
+  @spec connect_bot(pid(), atom(), map()) :: :ok
   def connect_bot(bot, :slack, %{team_id: _team_id} = parameters) do
     GenServer.cast(__MODULE__, {:connect_bot, bot, :slack, parameters})
   end
@@ -45,10 +50,12 @@ defmodule Juvet.Superintendent do
   {:ok, bot} = Juvet.Superintendent.create_bot("MyBot")
   ```
   """
+  @spec create_bot(String.t()) :: {:ok, pid()} | {:error, any()}
   def create_bot(name) do
     GenServer.call(__MODULE__, {:create_bot, name})
   end
 
+  @spec find_bot(String.t()) :: {:ok, pid()} | {:error, any()}
   def find_bot(name) do
     GenServer.call(__MODULE__, {:find_bot, name})
   end
@@ -62,11 +69,13 @@ defmodule Juvet.Superintendent do
   state = Juvet.Superintendent.get_state(bot)
   ```
   """
+  @spec get_state() :: map()
   def get_state, do: GenServer.call(__MODULE__, :get_state)
 
   # Server Callbacks
 
   @doc false
+  @impl true
   def init(config) do
     if Juvet.Config.valid?(config) do
       send(self(), :start_factory_supervisor)
@@ -76,6 +85,7 @@ defmodule Juvet.Superintendent do
   end
 
   @doc false
+  @impl true
   def handle_call(
         {:create_bot, name},
         _from,
@@ -87,6 +97,7 @@ defmodule Juvet.Superintendent do
   end
 
   @doc false
+  @impl true
   def handle_call(
         {:find_bot, name},
         _from,
@@ -102,11 +113,13 @@ defmodule Juvet.Superintendent do
   end
 
   @doc false
+  @impl true
   def handle_call(:get_state, _from, state) do
     {:reply, state, Map.from_struct(state)}
   end
 
   @doc false
+  @impl true
   def handle_cast(
         {:connect_bot, bot, platform, parameters},
         %{config: config} = state
@@ -119,6 +132,7 @@ defmodule Juvet.Superintendent do
   end
 
   @doc false
+  @impl true
   def handle_info(:start_factory_supervisor, state) do
     {:ok, factory_supervisor} =
       Supervisor.start_child(

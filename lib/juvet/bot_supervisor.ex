@@ -28,6 +28,7 @@ defmodule Juvet.BotSupervisor do
   {:ok, bot} = Juvet.BotSupervisor.get_bot(supervisor, MyBot)
   ```
   """
+  @spec get_bot(pid(), module()) :: {:ok, pid()}
   def get_bot(pid, module) do
     bot =
       Supervisor.which_children(pid)
@@ -40,6 +41,7 @@ defmodule Juvet.BotSupervisor do
   # Server Callbacks
 
   @doc false
+  @impl true
   def init([module, name]) do
     opts = [strategy: :one_for_one]
 

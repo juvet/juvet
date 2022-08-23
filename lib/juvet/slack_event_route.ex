@@ -11,6 +11,7 @@ defmodule Juvet.SlackEventRoute do
   @doc """
   Handles web requests targeted for the Slack events API endpoint.
   """
+  @spec call(Plug.Conn.t(), Keyword.t()) :: Plug.Conn.t()
   def call(conn, _opts) do
     send_resp(conn, 200, "")
   end

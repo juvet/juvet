@@ -19,6 +19,7 @@ defmodule Juvet.SlackAPI.Chat do
     }
   } = Juvet.SlackAPI.Chat.post_message(%{token: token, channel: channel, text: text})
   """
+  @spec post_message(map()) :: {:ok, map()} | {:error, map()}
   def post_message(options \\ %{}) do
     options = options |> transform_options
 
@@ -41,6 +42,7 @@ defmodule Juvet.SlackAPI.Chat do
     }
   } = Juvet.SlackAPI.Chat.update(%{token: token, channel: channel, text: text, ts: timestamp})
   """
+  @spec update(map()) :: {:ok, map()} | {:error, map()}
   def update(options \\ %{}) do
     options = options |> transform_options
 

@@ -12,6 +12,11 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
     A struct that represents the state that is stored in each connection.
     """
 
+    @type t :: %__MODULE__{
+            bot: pid(),
+            connection: pid(),
+            parameters: map()
+          }
     defstruct bot: nil, connection: nil, parameters: %{}
   end
 
@@ -41,6 +46,7 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
   # Server Callbacks
 
   @doc false
+  @impl true
   def init([bot, parameters]) do
     send(self(), :connect_slack_rtm)
 
@@ -48,11 +54,13 @@ defmodule Juvet.Receivers.SlackRTMReceiver do
   end
 
   @doc false
+  @impl true
   def handle_call(:get_connection, _from, state) do
     {:reply, state.connection, state}
   end
 
   @doc false
+  @impl true
   def handle_info(
         :connect_slack_rtm,
         %{bot: bot, parameters: parameters} = state

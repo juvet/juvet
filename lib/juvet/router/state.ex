@@ -5,12 +5,15 @@ defmodule Juvet.Router.State do
 
   @platforms :juvet_platforms
 
+  @spec init(module()) :: :ok
   def init(module), do: put_platforms(module, [])
 
+  @spec get_platforms(module()) :: list(Juvet.Router.Platform.t())
   def get_platforms(module) do
     Module.get_attribute(module, @platforms)
   end
 
+  @spec pop_platform(module()) :: Juvet.Router.Platform.t()
   def pop_platform(module) do
     {platform, platforms} = List.pop_at(get_platforms(module), 0)
 
@@ -19,6 +22,7 @@ defmodule Juvet.Router.State do
     platform
   end
 
+  @spec put_platform!(module(), atom()) :: :ok
   def put_platform!(module, platform) when is_atom(platform) do
     case Platform.new(platform) |> Platform.validate() do
       {:ok, platform} ->
@@ -31,6 +35,7 @@ defmodule Juvet.Router.State do
     end
   end
 
+  @spec put_platform(module(), Juvet.Router.Platform.t()) :: :ok
   def put_platform(module, platform) do
     platforms = get_platforms(module)
 
@@ -39,6 +44,7 @@ defmodule Juvet.Router.State do
     put_platforms(module, platforms)
   end
 
+  @spec put_route_on_top!(module(), Juvet.Router.Route.t()) :: Juvet.Router.Route.t() | nil
   def put_route_on_top!(module, route) do
     platform = pop_platform(module)
 

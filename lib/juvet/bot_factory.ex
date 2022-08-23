@@ -24,6 +24,7 @@ defmodule Juvet.BotFactory do
   {:ok, bot} = Juvet.BotFactory.create("MyBot")
   ```
   """
+  @spec create(String.t()) :: {:ok, pid()} | {:error, any()}
   def create(name) do
     Juvet.Superintendent.create_bot(name)
   end
@@ -43,6 +44,7 @@ defmodule Juvet.BotFactory do
   pid = Juvet.BotFactory.create!("MyBot")
   ```
   """
+  @spec create!(String.t()) :: pid()
   def create!(name) do
     case Juvet.Superintendent.create_bot(name) do
       {:ok, bot} ->
@@ -68,6 +70,7 @@ defmodule Juvet.BotFactory do
   {:error, reason} = Juvet.BotFactory.find("Some bot that does not exist")
   ```
   """
+  @spec find(String.t()) :: {:ok, pid()} | {:error, any()}
   def find(name) do
     Juvet.Superintendent.find_bot(name)
   end
@@ -85,6 +88,7 @@ defmodule Juvet.BotFactory do
   pid = Juvet.BotFactory.find!("MyBot")
   ```
   """
+  @spec find!(String.t()) :: pid()
   def find!(name) do
     case Juvet.Superintendent.find_bot(name) do
       {:ok, bot} ->
@@ -106,6 +110,7 @@ defmodule Juvet.BotFactory do
   {:ok, bot} = Juvet.BotFactory.find_or_create("MyBot")
   ```
   """
+  @spec find_or_create(String.t()) :: {:ok, pid()} | {:error, any()}
   def find_or_create(name) do
     case Juvet.Superintendent.find_bot(name) do
       {:ok, bot} -> {:ok, bot}
@@ -126,6 +131,7 @@ defmodule Juvet.BotFactory do
   pid = Juvet.BotFactory.find_or_create!("MyBot")
   ```
   """
+  @spec find_or_create!(String.t()) :: pid()
   def find_or_create!(name) do
     case find_or_create(name) do
       {:ok, bot} ->
@@ -139,6 +145,7 @@ defmodule Juvet.BotFactory do
   # Callbacks
 
   @doc false
+  @impl true
   def init(config) do
     children = [
       {Juvet.Superintendent, config}

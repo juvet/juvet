@@ -6,6 +6,12 @@ defmodule Juvet.Runner do
 
   alias Juvet.{Middleware, MiddlewareProcessor}
 
+  @doc """
+  Gathers the configuration along with the specified `Context`, uses the specified
+  `path`, it processes through the middleware and creates the endpoint to process a
+  single specified route.
+  """
+  @spec route(String.t(), map()) :: {:ok, map()} | {:error, any()}
   def route(path, context \\ %{}) do
     {configuration, context} = Map.pop(context, :configuration)
 
@@ -16,6 +22,11 @@ defmodule Juvet.Runner do
     |> MiddlewareProcessor.process()
   end
 
+  @doc """
+  Runs the request through the `Middleware` specifying the `Context` in order to
+  find the correct route (path) and calls that endpoint generated from the request.
+  """
+  @spec run(Plug.Conn.t(), map()) :: {:ok, map()} | {:error, any()}
   def run(conn, context \\ %{}) do
     {configuration, context} = Map.pop(context, :configuration)
 

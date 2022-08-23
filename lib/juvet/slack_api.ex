@@ -11,6 +11,7 @@ defmodule Juvet.SlackAPI do
   Returns an error tuple if the body contains an `ok: false` node, else
   returns an ok tuple and the body.
   """
+  @spec handle_response({:ok, map()}) :: {:ok, map()} | {:error, map()}
   def handle_response({:ok, %{ok: false} = body}) do
     {:error, body}
   end
@@ -22,6 +23,7 @@ defmodule Juvet.SlackAPI do
   @doc """
   Decodes a JSON response and converts it into a Map.
   """
+  @spec parse_response({:ok, HTTPoison.Response.t()}) :: {:ok, map()}
   def parse_response({:ok, %HTTPoison.Response{body: body}}) do
     response = body |> Poison.decode!(keys: :atoms)
     {:ok, response}
@@ -30,6 +32,7 @@ defmodule Juvet.SlackAPI do
   @doc """
   Parses and handles the response from the Slack API.
   """
+  @spec render_response({:ok, map()}) :: {:ok, map()} | {:error, map()}
   def render_response(tuple), do: parse_response(tuple) |> handle_response
 
   @doc """
@@ -46,8 +49,10 @@ defmodule Juvet.SlackAPI do
   @doc """
   Make the request to the endpoint and returns that response.
   """
-  def make_request(endpoint, body) do
-    {access_token, params} = extract_access_token(body)
+  @spec make_request(String.t(), map()) ::
+          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  def make_request(endpoint, params) do
+    {access_token, params} = extract_access_token(params)
 
     SlackAPI.post(
       endpoint,
