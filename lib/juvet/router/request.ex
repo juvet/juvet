@@ -48,6 +48,7 @@ defmodule Juvet.Router.Request do
     }
   end
 
+  @spec base_url(Juvet.Router.Request.t()) :: String.t()
   def base_url(%__MODULE{host: host, port: port, scheme: scheme}) do
     IO.iodata_to_binary([
       to_string(scheme),
