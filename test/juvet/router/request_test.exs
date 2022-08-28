@@ -39,6 +39,14 @@ defmodule Juvet.Router.RequestTest do
     end
   end
 
+  describe "base_url/1" do
+    test "returns a string as the base from the conn", %{conn: conn} do
+      request = Request.new(conn)
+
+      assert Request.base_url(request) == "http://www.example.com"
+    end
+  end
+
   describe "get_header/2" do
     setup %{conn: conn} do
       [request: Request.new(conn)]
