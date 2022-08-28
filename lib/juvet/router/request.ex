@@ -48,10 +48,23 @@ defmodule Juvet.Router.Request do
     }
   end
 
+  def base_url(%__MODULE{host: host, port: port, scheme: scheme}) do
+    IO.iodata_to_binary([
+      to_string(scheme),
+      "://",
+      host,
+      base_url_port(scheme, port)
+    ])
+  end
+
   @spec get_header(Juvet.Router.Request.t(), String.t()) :: list(String.t())
   def get_header(%__MODULE__{headers: nil}, _header), do: []
 
   def get_header(%__MODULE__{headers: headers}, header) do
     for {^header, value} <- headers, do: value
   end
+
+  defp base_url_port(:http, 80), do: ""
+  defp base_url_port(:https, 443), do: ""
+  defp base_url_port(_, port), do: [?:, Integer.to_string(port)]
 end
