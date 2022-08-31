@@ -4,7 +4,7 @@ defmodule Juvet.Mixfile do
   def project do
     [
       app: :juvet,
-      version: "0.0.1",
+      version: "0.0.2",
       elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "Juvet",
@@ -12,7 +12,7 @@ defmodule Juvet.Mixfile do
       docs: docs(),
       package: package(),
       aliases: aliases(),
-      description: "The messaging platform for chat apps",
+      description: description(),
       organization: "Juvet",
       source_url: "https://github.com/juvet/juvet",
       preferred_cli_env: preferred_cli_env(),
@@ -47,6 +47,8 @@ defmodule Juvet.Mixfile do
       {:websockex, "~> 0.4.0"}
     ]
   end
+
+  def description, do: "The messaging platform for chat apps"
 
   defp docs do
     []
