@@ -68,7 +68,8 @@ defmodule Juvet.Mixfile do
       licenses: ["MIT"],
       links: %{
         github: "https://github.com/juvet/juvet",
-        documentation: "http://hexdocs.pm/juvet/"
+        documentation: "http://hexdocs.pm/juvet/",
+        home: "https://juvet.io"
       },
       files: ~w(lib LICENSE.md mix.exs README.md)
     }
