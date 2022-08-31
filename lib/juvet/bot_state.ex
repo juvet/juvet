@@ -121,7 +121,7 @@ defmodule Juvet.BotState do
   end
 
   @doc """
-  Returns a boolean to indiciated if the provided `Juvet.BotState` contains the specified pattern,.
+  Returns a boolean to indiciated if the provided `Juvet.BotState` contains the specified pattern,
   """
   @spec has_platform?(Juvet.BotState.t(), String.t()) :: boolean()
   def has_platform?(state, platform_name) do
