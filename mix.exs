@@ -13,7 +13,6 @@ defmodule Juvet.Mixfile do
       package: package(),
       aliases: aliases(),
       description: description(),
-      organization: "Juvet",
       source_url: "https://github.com/juvet/juvet",
       preferred_cli_env: preferred_cli_env(),
       dialyzer: dialyzer()
