@@ -3,10 +3,10 @@ defmodule Juvet.SlackRoutes do
   Creates routes necessary for incoming Slack messages from configuration.
   """
 
-  defmacro __using__(opts) do
-    config = Keyword.get(opts, :config)
+  defmacro __using__(_opts) do
+    quote do
+      config = Juvet.configuration()
 
-    quote bind_quoted: [config: config] do
       if Juvet.Config.slack_configured?(config) do
         defaults = %{
           actions_endpoint: nil,
