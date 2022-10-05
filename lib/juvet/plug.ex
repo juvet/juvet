@@ -7,7 +7,7 @@ defmodule Juvet.Plug do
   """
 
   use Plug.Router
-  use Juvet.SlackRoutes, config: Juvet.configuration()
+  use Juvet.SlackRoutes
 
   alias Juvet.Router.Conn
 
