@@ -28,6 +28,31 @@ defmodule Juvet.SlackAPI.Chat do
   end
 
   @doc """
+  Schedules a new message for a specific timestamp and sends it to the channel specified.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: "C12345",
+    scheduled_message_id: "Q12345",
+    post_at: "1562180400",
+    message: {
+      text: "Hello World"
+    }
+  } = Juvet.SlackAPI.Chat.schedule_message(%{token: token, channel: channel, post_at: post_at, text: text})
+  """
+  @spec schedule_message(map()) :: {:ok, map()} | {:error, map()}
+  def schedule_message(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.scheduleMessage", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Updates an existing message based on the timestamp and sends it to the channel specified.
 
   Returns a map of the Slack response.
