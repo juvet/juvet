@@ -67,6 +67,26 @@ defmodule Juvet.SlackAPI.Chat do
   end
 
   @doc """
+  Sends an ephemeral message to a user in a channel.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    message_ts: "1502210682.580145"
+  } = Juvet.SlackAPI.Chat.post_ephemeral(%{token: token, channel: channel, text: text, user: user})
+  """
+  @spec post_ephemeral(map()) :: {:ok, map()} | {:error, map()}
+  def post_ephemeral(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.postEphemeral", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Creates a new message and sends it to the channel specified.
 
   Returns a map of the Slack response.
