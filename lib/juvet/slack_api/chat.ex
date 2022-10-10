@@ -181,6 +181,25 @@ defmodule Juvet.SlackAPI.Chat do
     |> SlackAPI.render_response()
   end
 
+  @doc """
+  Provide custom unfurl behavior for user-posted URLs
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Chat.unfurl(%{token: token, channel: channel, ts: timestamp, unfurls: unfurls})
+  """
+  @spec unfurl(map()) :: {:ok, map()} | {:error, map()}
+  def unfurl(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.unfurl", options)
+    |> SlackAPI.render_response()
+  end
+
   defp encode_blocks(nil), do: nil
   defp encode_blocks(blocks), do: Poison.encode!(blocks)
 
