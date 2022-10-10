@@ -6,6 +6,87 @@ defmodule Juvet.SlackAPI.Chat do
   alias Juvet.SlackAPI
 
   @doc """
+  Deletes a pending scheduled message.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Chat.delete_scheduled_message(%{token: token, channel: channel, scheduled_message_id: id})
+  """
+  @spec delete_scheduled_message(map()) :: {:ok, map()} | {:error, map()}
+  def delete_scheduled_message(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.deleteScheduledMessage", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Retrieve a permalink URL for a specific extant message.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: "C12345",
+    permalink: "https://slack.com/archives/M12345"
+  } = Juvet.SlackAPI.Chat.get_permalink(%{token: token, channel: channel, message_ts: ts})
+  """
+  @spec get_permalink(map()) :: {:ok, map()} | {:error, map()}
+  def get_permalink(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.getPermalink", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Share a me message into a channel.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: "C12345",
+    ts: "1417671948.000006"
+  } = Juvet.SlackAPI.Chat.me_message(%{token: token, channel: channel, text: text})
+  """
+  @spec me_message(map()) :: {:ok, map()} | {:error, map()}
+  def me_message(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.meMessage", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Sends an ephemeral message to a user in a channel.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    message_ts: "1502210682.580145"
+  } = Juvet.SlackAPI.Chat.post_ephemeral(%{token: token, channel: channel, text: text, user: user})
+  """
+  @spec post_ephemeral(map()) :: {:ok, map()} | {:error, map()}
+  def post_ephemeral(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.postEphemeral", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Creates a new message and sends it to the channel specified.
 
   Returns a map of the Slack response.
@@ -24,6 +105,56 @@ defmodule Juvet.SlackAPI.Chat do
     options = options |> transform_options
 
     SlackAPI.make_request("chat.postMessage", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Schedules a new message for a specific timestamp and sends it to the channel specified.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: "C12345",
+    scheduled_message_id: "Q12345",
+    post_at: "1562180400",
+    message: {
+      text: "Hello World"
+    }
+  } = Juvet.SlackAPI.Chat.schedule_message(%{token: token, channel: channel, post_at: post_at, text: text})
+  """
+  @spec schedule_message(map()) :: {:ok, map()} | {:error, map()}
+  def schedule_message(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.scheduleMessage", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Returns a list of scheduled messages.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    scheduled_messages: [%{
+      id: "Q12345",
+      channel_id: "C12345",
+      post_at: "1562180400",
+      text: "Hello World"
+    }]
+  } = Juvet.SlackAPI.Chat.schedule_messages_list(%{token: token})
+  """
+  @spec scheduled_messages_list(map()) :: {:ok, map()} | {:error, map()}
+  def scheduled_messages_list(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.scheduledMessages.list", options)
     |> SlackAPI.render_response()
   end
 
@@ -47,6 +178,25 @@ defmodule Juvet.SlackAPI.Chat do
     options = options |> transform_options
 
     SlackAPI.make_request("chat.update", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Provide custom unfurl behavior for user-posted URLs
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Chat.unfurl(%{token: token, channel: channel, ts: timestamp, unfurls: unfurls})
+  """
+  @spec unfurl(map()) :: {:ok, map()} | {:error, map()}
+  def unfurl(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.unfurl", options)
     |> SlackAPI.render_response()
   end
 

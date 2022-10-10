@@ -1,4 +1,4 @@
-defmodule Juvet.SlackAPI.TeamTest do
+defmodule Juvet.SlackAPI.TeamsTest do
   use ExUnit.Case, async: true
   use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
@@ -12,10 +12,10 @@ defmodule Juvet.SlackAPI.TeamTest do
     {:ok, team: "TEAM1", token: "TOKEN"}
   end
 
-  describe "SlackAPI.Team.info/1" do
+  describe "SlackAPI.Teams.info/1" do
     test "returns infomation about the team", %{team: team, token: token} do
       use_cassette "team/info/successful" do
-        assert {:ok, %{} = response} = SlackAPI.Team.info(%{team: team, token: token})
+        assert {:ok, %{} = response} = SlackAPI.Teams.info(%{team: team, token: token})
 
         assert response[:team][:id]
       end
@@ -26,7 +26,7 @@ defmodule Juvet.SlackAPI.TeamTest do
       token: token
     } do
       use_cassette "team/info/invalid_auth" do
-        assert {:error, %{} = response} = SlackAPI.Team.info(%{team: team, token: token})
+        assert {:error, %{} = response} = SlackAPI.Teams.info(%{team: team, token: token})
 
         assert response[:error] == "invalid_auth"
       end

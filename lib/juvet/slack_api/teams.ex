@@ -1,4 +1,4 @@
-defmodule Juvet.SlackAPI.Team do
+defmodule Juvet.SlackAPI.Teams do
   @moduledoc """
   A wrapper around the team methods on the Slack API.
   """
@@ -17,7 +17,7 @@ defmodule Juvet.SlackAPI.Team do
     team: {
       id: "T123456"
     }
-  } = Juvet.SlackAPI.Team.info(%{token: token, team: team})
+  } = Juvet.SlackAPI.Teams.info(%{token: token, team: team})
   """
 
   @spec info(map()) :: {:ok, map()} | {:error, map()}
