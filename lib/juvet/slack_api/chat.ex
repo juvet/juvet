@@ -72,6 +72,31 @@ defmodule Juvet.SlackAPI.Chat do
   end
 
   @doc """
+  Returns a list of scheduled messages.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    scheduled_messages: [%{
+      id: "Q12345",
+      channel_id: "C12345",
+      post_at: "1562180400",
+      text: "Hello World"
+    }]
+  } = Juvet.SlackAPI.Chat.schedule_messages_list(%{token: token})
+  """
+  @spec scheduled_messages_list(map()) :: {:ok, map()} | {:error, map()}
+  def scheduled_messages_list(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.scheduledMessages.list", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Updates an existing message based on the timestamp and sends it to the channel specified.
 
   Returns a map of the Slack response.
