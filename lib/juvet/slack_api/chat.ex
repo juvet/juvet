@@ -25,6 +25,27 @@ defmodule Juvet.SlackAPI.Chat do
   end
 
   @doc """
+  Retrieve a permalink URL for a specific extant message.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: "C12345",
+    permalink: "https://slack.com/archives/M12345"
+  } = Juvet.SlackAPI.Chat.get_permalink(%{token: token, channel: channel, message_ts: ts})
+  """
+  @spec get_permalink(map()) :: {:ok, map()} | {:error, map()}
+  def get_permalink(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.getPermalink", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Creates a new message and sends it to the channel specified.
 
   Returns a map of the Slack response.
