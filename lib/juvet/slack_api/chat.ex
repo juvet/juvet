@@ -46,6 +46,27 @@ defmodule Juvet.SlackAPI.Chat do
   end
 
   @doc """
+  Share a me message into a channel.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: "C12345",
+    ts: "1417671948.000006"
+  } = Juvet.SlackAPI.Chat.me_message(%{token: token, channel: channel, text: text})
+  """
+  @spec me_message(map()) :: {:ok, map()} | {:error, map()}
+  def me_message(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.meMessage", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Creates a new message and sends it to the channel specified.
 
   Returns a map of the Slack response.
