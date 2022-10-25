@@ -229,6 +229,27 @@ defmodule Juvet.SlackAPI.Conversations do
     |> SlackAPI.render_response()
   end
 
+  @doc """
+  Requests a set the topic for a conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: {
+      id: "D123456"
+    }
+  } = Juvet.SlackAPI.Conversations.set_topic(%{token: token, channel: "C12345", topic: "Let's chat about this..."})
+  """
+
+  @spec set_topic(map()) :: {:ok, map()} | {:error, map()}
+  def set_topic(options \\ %{}) do
+    SlackAPI.make_request("conversations.setTopic", options)
+    |> SlackAPI.render_response()
+  end
+
   defp encode_users(nil), do: nil
   defp encode_users(users), do: Enum.join(users, ",")
 
