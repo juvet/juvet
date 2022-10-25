@@ -129,6 +129,24 @@ defmodule Juvet.SlackAPI.Conversations do
   end
 
   @doc """
+  Request to leave a conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Conversations.leave(%{token: token, channel: "C12345"})
+  """
+
+  @spec leave(map()) :: {:ok, map()} | {:error, map()}
+  def leave(options \\ %{}) do
+    SlackAPI.make_request("conversations.leave", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Request to retrieve all the user ids for the users within a Conversation.
 
   Returns a map of the Slack response.
