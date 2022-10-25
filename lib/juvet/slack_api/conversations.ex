@@ -111,6 +111,24 @@ defmodule Juvet.SlackAPI.Conversations do
   end
 
   @doc """
+  Request to remove a user from a conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Conversations.kick(%{token: token, channel: "C12345", user: "U12345"})
+  """
+
+  @spec kick(map()) :: {:ok, map()} | {:error, map()}
+  def kick(options \\ %{}) do
+    SlackAPI.make_request("conversations.kick", options |> transform_options())
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Request to retrieve all the user ids for the users within a Conversation.
 
   Returns a map of the Slack response.
