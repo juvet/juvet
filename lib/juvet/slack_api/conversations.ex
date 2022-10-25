@@ -24,6 +24,24 @@ defmodule Juvet.SlackAPI.Conversations do
   end
 
   @doc """
+  Request to retrieve to close a a direct message or multi-person direct message.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Conversations.close(%{token: token, channel: "C12345"})
+  """
+
+  @spec close(map()) :: {:ok, map()} | {:error, map()}
+  def close(options \\ %{}) do
+    SlackAPI.make_request("conversations.close", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Request to retrieve to initiate a public or private channel-based conversation.
 
   Returns a map of the Slack response.
