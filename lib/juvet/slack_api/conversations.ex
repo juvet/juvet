@@ -88,6 +88,29 @@ defmodule Juvet.SlackAPI.Conversations do
   end
 
   @doc """
+  Request to join an existing conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel:%{
+      id: "C12345",
+      name: "CHANNEL1",
+      is_channel: true
+    }
+  } = Juvet.SlackAPI.Conversations.join(%{token: token, channel: "C12345"})
+  """
+
+  @spec join(map()) :: {:ok, map()} | {:error, map()}
+  def join(options \\ %{}) do
+    SlackAPI.make_request("conversations.join", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Request to retrieve all the user ids for the users within a Conversation.
 
   Returns a map of the Slack response.
