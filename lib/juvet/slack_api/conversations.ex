@@ -185,9 +185,28 @@ defmodule Juvet.SlackAPI.Conversations do
 
   @spec open(map()) :: {:ok, map()} | {:error, map()}
   def open(options \\ %{}) do
-    options = options |> transform_options
+    SlackAPI.make_request("conversations.open", options |> transform_options())
+    |> SlackAPI.render_response()
+  end
 
-    SlackAPI.make_request("conversations.open", options)
+  @doc """
+  Requests a rename for a conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: {
+      id: "D123456"
+    }
+  } = Juvet.SlackAPI.Conversations.rename(%{token: token, channel: "C12345", name: "something-new"})
+  """
+
+  @spec rename(map()) :: {:ok, map()} | {:error, map()}
+  def rename(options \\ %{}) do
+    SlackAPI.make_request("conversations.rename", options)
     |> SlackAPI.render_response()
   end
 
