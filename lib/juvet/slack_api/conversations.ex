@@ -6,6 +6,29 @@ defmodule Juvet.SlackAPI.Conversations do
   alias Juvet.SlackAPI
 
   @doc """
+  Request to retrieve to initiate a public or private channel-based conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel:%{
+      id: "C12345",
+      name: "CHANNEL1",
+      is_channel: true
+    }
+  } = Juvet.SlackAPI.Conversations.create(%{token: token, name: "CHANNEL1"})
+  """
+
+  @spec create(map()) :: {:ok, map()} | {:error, map()}
+  def create(options \\ %{}) do
+    SlackAPI.make_request("conversations.create", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Request to retrieve all the user ids for the users within a Conversation.
 
   Returns a map of the Slack response.
