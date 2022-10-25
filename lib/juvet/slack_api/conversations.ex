@@ -250,6 +250,24 @@ defmodule Juvet.SlackAPI.Conversations do
     |> SlackAPI.render_response()
   end
 
+  @doc """
+  Requests a reverses to a conversation archival.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Conversations.unarchive(%{token: token, channel: "C12345"})
+  """
+
+  @spec unarchive(map()) :: {:ok, map()} | {:error, map()}
+  def unarchive(options \\ %{}) do
+    SlackAPI.make_request("conversations.unarchive", options)
+    |> SlackAPI.render_response()
+  end
+
   defp encode_users(nil), do: nil
   defp encode_users(users), do: Enum.join(users, ",")
 
