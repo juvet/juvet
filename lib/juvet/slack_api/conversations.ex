@@ -6,6 +6,24 @@ defmodule Juvet.SlackAPI.Conversations do
   alias Juvet.SlackAPI
 
   @doc """
+  Request to retrieve to archive a conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Conversations.archive(%{token: token, channel: "C12345"})
+  """
+
+  @spec archive(map()) :: {:ok, map()} | {:error, map()}
+  def archive(options \\ %{}) do
+    SlackAPI.make_request("conversations.archive", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Request to retrieve to initiate a public or private channel-based conversation.
 
   Returns a map of the Slack response.
