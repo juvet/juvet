@@ -210,6 +210,25 @@ defmodule Juvet.SlackAPI.Conversations do
     |> SlackAPI.render_response()
   end
 
+  @doc """
+  Requests a sets the purpose for a conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    purpose: "It's so very special"
+  } = Juvet.SlackAPI.Conversations.set_purpose(%{token: token, channel: "C12345", purpuse: "It's so very special"})
+  """
+
+  @spec set_purpose(map()) :: {:ok, map()} | {:error, map()}
+  def set_purpose(options \\ %{}) do
+    SlackAPI.make_request("conversations.setPurpose", options)
+    |> SlackAPI.render_response()
+  end
+
   defp encode_users(nil), do: nil
   defp encode_users(users), do: Enum.join(users, ",")
 
