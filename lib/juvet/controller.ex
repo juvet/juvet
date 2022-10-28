@@ -33,7 +33,7 @@ defmodule Juvet.Controller do
         HTTPoison.post!(url, response, [{"Content-Type", "application/json"}])
       end
 
-      @spec update_response(map(), Response.t()) :: map()
+      @spec update_response(map(), Response.t() | nil) :: map()
       def update_response(context, %Response{} = response),
         do: maybe_update_response(context, response)
 
