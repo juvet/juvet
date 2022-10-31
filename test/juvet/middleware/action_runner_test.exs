@@ -44,7 +44,7 @@ defmodule Juvet.Middleware.ActionRunnerTest do
     test "calls the controller module and action with the context", %{
       context: context
     } do
-      assert {:ok, ctx} = ActionRunner.call(Map.merge(context, %{pid: self()}))
+      assert {:ok, _ctx} = ActionRunner.call(Map.merge(context, %{pid: self()}))
 
       assert_received :called_controller
     end

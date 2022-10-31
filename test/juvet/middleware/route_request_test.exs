@@ -45,7 +45,7 @@ defmodule Juvet.Middleware.RouteRequestTest do
       assert {:error,
               %Juvet.RoutingError{
                 message: "No route found for the request.",
-                request: request
+                request: ^request
               }} = RouteRequest.call(context)
     end
 
