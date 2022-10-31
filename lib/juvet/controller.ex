@@ -13,8 +13,6 @@ defmodule Juvet.Controller do
       def send_response(context, response) when is_binary(context),
         do: send_url_response(context, response)
 
-      def send_response(context, nil) when is_map(context), do: send_the_response(context)
-
       def send_response(context, %Response{} = response) when is_map(context) do
         context = context |> maybe_update_response(response)
 
@@ -23,6 +21,8 @@ defmodule Juvet.Controller do
 
       def send_response(context, response) when is_map(response),
         do: send_response(context, Response.new(body: response))
+
+      def send_response(context, nil) when is_map(context), do: send_the_response(context)
 
       defp send_url_response(url, %Response{body: body}), do: send_url_response(url, body)
 
