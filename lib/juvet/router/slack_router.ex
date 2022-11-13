@@ -114,11 +114,16 @@ defmodule Juvet.Router.SlackRouter do
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
 
-  defp view_submission_request?(%{params: %{"payload" => payload}}, callback_id) do
-    incoming_callback_id = payload |> Poison.decode!() |> callback_id_from_payload
+  defp view_submission_payload?(%{"type" => "view_submission"} = payload, callback_id) do
+    incoming_callback_id = payload |> callback_id_from_payload
 
     normalized_value(incoming_callback_id) == normalized_value(callback_id)
   end
+
+  defp view_submission_payload?(_payload, _callback_id), do: false
+
+  defp view_submission_request?(%{params: %{"payload" => payload}}, callback_id),
+    do: payload |> Poison.decode!() |> view_submission_payload?(callback_id)
 
   defp view_submission_request?(_request, _callback_id), do: false
 end
