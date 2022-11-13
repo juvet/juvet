@@ -10,15 +10,10 @@ defmodule Juvet.SlackSigningSecret do
     do: generate(body, signing_secret, to_string(timestamp))
 
   def generate(body, signing_secret, timestamp) when is_binary(timestamp) do
-    "v0=#{
-      :crypto.mac(
-        :hmac,
-        :sha256,
-        signing_secret,
-        "v0:#{timestamp}:#{body}"
-      )
-      |> Base.encode16()
-    }"
+    "v0=#{:crypto.mac(:hmac,
+    :sha256,
+    signing_secret,
+    "v0:#{timestamp}:#{body}") |> Base.encode16()}"
     |> String.downcase()
   end
 
