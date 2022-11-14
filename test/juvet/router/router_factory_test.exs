@@ -57,21 +57,21 @@ defmodule Juvet.Router.RouterFactoryTest do
       platform: platform
     } do
       route = Route.new(:command, "/test", to: "controller#action")
-      assert {:ok, route} = RouterFactory.validate_route(platform, route)
+      assert {:ok, _route} = RouterFactory.validate_route(platform, route)
     end
 
     test "returns an ok tuple with the route when the action route is valid to add", %{
       platform: platform
     } do
       route = Route.new(:action, "test_action", to: "controller#action")
-      assert {:ok, route} = RouterFactory.validate_route(platform, route)
+      assert {:ok, _route} = RouterFactory.validate_route(platform, route)
     end
 
     test "returns an ok tuple with the route when the view submission route is valid to add", %{
       platform: platform
     } do
       route = Route.new(:view_submission, "test_callback", to: "controller#action")
-      assert {:ok, route} = RouterFactory.validate_route(platform, route)
+      assert {:ok, _route} = RouterFactory.validate_route(platform, route)
     end
 
     test "returns an error tuple with the route when the route is not valid", %{
@@ -94,7 +94,7 @@ defmodule Juvet.Router.RouterFactoryTest do
 
       assert {:error,
               {:unknown_platform,
-               [router: %UnknownRouter{platform: unknown_platform}, route: route, options: %{}]}} =
+               [router: %UnknownRouter{platform: ^unknown_platform}, route: ^route, options: %{}]}} =
                RouterFactory.validate_route(
                  unknown_platform,
                  route

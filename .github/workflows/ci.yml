@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        elixir: [1.10.4]
+        elixir: [1.14.1]
         otp: [24.1]
 
     steps:
