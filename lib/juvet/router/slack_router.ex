@@ -89,11 +89,16 @@ defmodule Juvet.Router.SlackRouter do
   defp action_from_payload(%{"actions" => actions}), do: List.first(actions)
   defp action_from_payload(_payload), do: %{}
 
-  defp action_request?(%{params: %{"payload" => payload}}, action_id) do
-    action = payload |> Poison.decode!() |> action_from_payload
+  defp action_payload?(%{"type" => "block_actions"} = payload, action_id) do
+    action = payload |> action_from_payload
 
     normalized_value(action["action_id"]) == normalized_value(action_id)
   end
+
+  defp action_payload?(_payload, _action_id), do: false
+
+  defp action_request?(%{params: %{"payload" => payload}}, action_id),
+    do: payload |> Poison.decode!() |> action_payload?(action_id)
 
   defp action_request?(_request, _action_id), do: false
 
