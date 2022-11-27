@@ -46,6 +46,13 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   def find_route(
+        %Juvet.Router.Route{type: :view_closed, route: callback_id} = route,
+        request
+      ) do
+    if view_closed_request?(request, callback_id), do: route
+  end
+
+  def find_route(
         %Juvet.Router.Route{type: :view_submission, route: callback_id} = route,
         request
       ) do
@@ -70,6 +77,14 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :command} = route,
+        _options
+      ),
+      do: {:ok, route}
+
+  @impl Juvet.Router
+  def validate_route(
+        _router,
+        %Juvet.Router.Route{type: :view_closed} = route,
         _options
       ),
       do: {:ok, route}
@@ -119,6 +134,22 @@ defmodule Juvet.Router.SlackRouter do
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
 
+  defp view_closed_payload?(%{"type" => "view_closed"} = payload, callback_id) do
+    incoming_callback_id = payload |> callback_id_from_payload
+
+    normalized_value(incoming_callback_id) == normalized_value(callback_id)
+  end
+
+  defp view_closed_payload?(_payload, _callback_id), do: false
+
+  defp view_closed_request?(%{params: %{"payload" => payload}}, callback_id),
+    do:
+      payload
+      |> Poison.decode!()
+      |> view_closed_payload?(callback_id)
+
+  defp view_closed_request?(_request, _callback_id), do: false
+
   defp view_submission_payload?(%{"type" => "view_submission"} = payload, callback_id) do
     incoming_callback_id = payload |> callback_id_from_payload
 
@@ -128,7 +159,10 @@ defmodule Juvet.Router.SlackRouter do
   defp view_submission_payload?(_payload, _callback_id), do: false
 
   defp view_submission_request?(%{params: %{"payload" => payload}}, callback_id),
-    do: payload |> Poison.decode!() |> view_submission_payload?(callback_id)
+    do:
+      payload
+      |> Poison.decode!()
+      |> view_submission_payload?(callback_id)
 
   defp view_submission_request?(_request, _callback_id), do: false
 end

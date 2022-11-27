@@ -64,12 +64,12 @@ defmodule Juvet.Router.State do
       {:error, {:unknown_route, route_info}} ->
         put_platform(module, platform)
 
-        platform = Keyword.fetch!(route_info, :platform)
+        router = Keyword.fetch!(route_info, :router)
         route = Keyword.fetch!(route_info, :route)
 
         raise RouteError,
           message:
-            "Route `#{route.route}` (#{route.type}) for `#{platform.platform.platform}` not found.",
+            "Route `#{route.route}` (#{route.type}) for `#{router.platform.platform}` not found.",
           router: module
     end
 
