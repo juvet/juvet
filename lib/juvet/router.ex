@@ -51,6 +51,15 @@ defmodule Juvet.Router do
     end
   end
 
+  defmacro view_closed(callback_id, options \\ []) do
+    quote do
+      Router.State.put_route_on_top!(
+        __MODULE__,
+        Route.new(:view_closed, unquote(callback_id), unquote(options))
+      )
+    end
+  end
+
   defmacro view_submission(callback_id, options \\ []) do
     quote do
       Router.State.put_route_on_top!(
