@@ -8,14 +8,19 @@ defmodule Juvet.ViewStateRegistry do
 
   @name :view_state_registry
 
+  def name, do: @name
+
   @spec start_link(any()) :: {:ok, pid()} | {:error, any()}
-  def start_link(_), do: GenServer.start_link(__MODULE__, [], name: @name)
+  def start_link(_), do: GenServer.start_link(__MODULE__, [], name: name())
 
   @spec start_link() :: {:ok, pid()} | {:error, any()}
-  def start_link, do: GenServer.start_link(__MODULE__, [], name: @name)
+  def start_link, do: GenServer.start_link(__MODULE__, [], name: name())
+
+  @spec stop() :: :ok
+  def stop, do: GenServer.call(name(), :stop)
 
   @spec register_name(tuple() | binary(), pid()) :: :ok | :already_registered
-  def register_name(name, pid), do: GenServer.call(@name, {:register_name, name, pid})
+  def register_name(name, pid), do: GenServer.call(name(), {:register_name, name, pid})
 
   @spec send(tuple() | binary(), any()) :: pid() | {:badarg, {tuple() | binary(), any()}}
   def send(name, message) do
@@ -30,12 +35,13 @@ defmodule Juvet.ViewStateRegistry do
   end
 
   @spec unregister_name(tuple() | binary()) :: :ok
-  def unregister_name(name), do: GenServer.cast(@name, {:unregister_name, name})
+  def unregister_name(name), do: GenServer.cast(name(), {:unregister_name, name})
 
   @spec whereis_name(tuple() | binary()) :: pid() | :undefined
-  def whereis_name(name), do: GenServer.call(@name, {:whereis_name, name})
+  def whereis_name(name), do: GenServer.call(name(), {:whereis_name, name})
 
   # Callbacks
+
   def init(_) do
     {:ok, Map.new()}
   end
@@ -49,6 +55,10 @@ defmodule Juvet.ViewStateRegistry do
       _ ->
         {:reply, :already_registered, state}
     end
+  end
+
+  def handle_call(:stop, _from, state) do
+    {:stop, :normal, state, state}
   end
 
   def handle_call({:whereis_name, name}, _from, state) do

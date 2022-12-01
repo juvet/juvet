@@ -3,6 +3,12 @@ defmodule Juvet.ViewStateRegistryTest do
 
   alias Juvet.ViewStateRegistry
 
+  setup_all do
+    if Process.whereis(ViewStateRegistry.name()), do: ViewStateRegistry.stop()
+
+    :ok
+  end
+
   describe "start_link" do
     test "returns the pid" do
       assert {:ok, pid} = ViewStateRegistry.start_link()
@@ -12,9 +18,9 @@ defmodule Juvet.ViewStateRegistryTest do
 
   describe "register_name/2" do
     setup do
-      {:ok, pid} = ViewStateRegistry.start_link()
+      ViewStateRegistry.start_link()
 
-      [pid: pid]
+      :ok
     end
 
     test "registers the name with the pid for lookup" do
@@ -50,9 +56,9 @@ defmodule Juvet.ViewStateRegistryTest do
 
   describe "send/2" do
     setup do
-      {:ok, pid} = ViewStateRegistry.start_link()
+      ViewStateRegistry.start_link()
 
-      [pid: pid]
+      :ok
     end
 
     test "sends the process a message based on the name" do
@@ -76,9 +82,9 @@ defmodule Juvet.ViewStateRegistryTest do
 
   describe "unregister_name/1" do
     setup do
-      {:ok, pid} = ViewStateRegistry.start_link()
+      ViewStateRegistry.start_link()
 
-      [pid: pid]
+      :ok
     end
 
     test "removes the name from lookup" do
