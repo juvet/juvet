@@ -39,10 +39,10 @@ defmodule Juvet.ViewState do
     GenServer.start_link(__MODULE__, %__MODULE__{key: key, value: value}, opts)
   end
 
-  @spec state(pid() | tuple() | binary()) :: Tatsu.Bot.ViewState.t() | nil
+  @spec state(pid() | tuple() | binary()) :: Juvet.ViewState.t() | nil
   def state(pid_or_key), do: GenServer.call(via(pid_or_key), :state)
 
-  @spec stop(pid() | tuple() | binary()) :: Tatsu.Bot.ViewState.t() | nil
+  @spec stop(pid() | tuple() | binary()) :: Juvet.ViewState.t() | nil
   def stop(pid_or_key), do: GenServer.call(via(pid_or_key), :stop)
 
   @spec update(pid() | tuple(), any()) :: :ok
