@@ -3,7 +3,7 @@ defmodule Juvet.ViewStateRegistryTest do
 
   alias Juvet.ViewStateRegistry
 
-  def shut_down_registry(), do: shut_down_registry(nil)
+  def shut_down_registry, do: shut_down_registry(nil)
 
   def shut_down_registry(_context) do
     if(Process.whereis(ViewStateRegistry.name()), do: ViewStateRegistry.stop())
