@@ -5,7 +5,9 @@ defmodule Juvet.Controller do
 
   alias Juvet.Router.{Conn, Response}
 
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
+    view_state_manager = Keyword.get(opts, :view_state_manager, Juvet.ViewStateManager)
+
     quote do
       @spec send_response(map() | String.t(), Response.t() | String.t() | map() | nil) :: map()
       def send_response(context, response \\ nil)
@@ -38,6 +40,8 @@ defmodule Juvet.Controller do
       @spec update_response(map(), Response.t() | nil) :: map()
       def update_response(context, %Response{} = response),
         do: maybe_update_response(context, response)
+
+      def view_state, do: unquote(view_state_manager)
 
       defp send_the_response(context) do
         conn = Conn.send_resp(context)
