@@ -12,6 +12,10 @@ defmodule Juvet.JuvetTest do
       assert Process.whereis(Juvet.BotFactory) |> Process.alive?()
     end
 
+    test "starts the view state manager" do
+      assert Process.whereis(Juvet.ViewStateManager) |> Process.alive?()
+    end
+
     test "starts the Superintendent" do
       assert Process.whereis(Juvet.Superintendent) |> Process.alive?()
     end

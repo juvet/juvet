@@ -148,6 +148,7 @@ defmodule Juvet.BotFactory do
   @impl true
   def init(config) do
     children = [
+      Juvet.ViewStateManager,
       {Juvet.Superintendent, config}
     ]
 

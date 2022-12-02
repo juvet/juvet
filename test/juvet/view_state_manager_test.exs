@@ -1,23 +1,18 @@
 defmodule Juvet.ViewStateManagerTest do
   use ExUnit.Case, async: false
 
-  alias Juvet.{ViewStateManager, ViewStateRegistry}
+  alias Juvet.ViewStateManager
 
   describe "start_link/0" do
     test "returns the pid" do
-      if Process.whereis(ViewStateManager.name()), do: ViewStateManager.stop()
-
-      assert {:ok, pid} = ViewStateManager.start_link()
+      assert {:ok, pid} = start_supervised(ViewStateManager)
       assert is_pid(pid)
     end
   end
 
   describe "store/3" do
     setup do
-      ViewStateManager.start_link()
-
-      if !Process.whereis(ViewStateRegistry.name()), do: ViewStateRegistry.start_link()
-
+      start_supervised!(ViewStateManager)
       :ok
     end
 

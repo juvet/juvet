@@ -3,23 +3,19 @@ defmodule Juvet.ViewStateRegistryTest do
 
   alias Juvet.ViewStateRegistry
 
-  setup_all do
-    if Process.whereis(ViewStateRegistry.name()), do: ViewStateRegistry.stop()
+  def shut_down_registry(), do: shut_down_registry(nil)
 
+  def shut_down_registry(_context) do
+    if(Process.whereis(ViewStateRegistry.name()), do: ViewStateRegistry.stop())
     :ok
   end
 
-  describe "start_link" do
-    test "returns the pid" do
-      assert {:ok, pid} = ViewStateRegistry.start_link()
-      assert is_pid(pid)
-    end
-  end
+  setup_all :shut_down_registry
 
   describe "register_name/2" do
     setup do
-      ViewStateRegistry.start_link()
-
+      start_supervised(ViewStateRegistry)
+      on_exit(&shut_down_registry/0)
       :ok
     end
 
@@ -56,8 +52,8 @@ defmodule Juvet.ViewStateRegistryTest do
 
   describe "send/2" do
     setup do
-      ViewStateRegistry.start_link()
-
+      start_supervised(ViewStateRegistry)
+      on_exit(&shut_down_registry/0)
       :ok
     end
 
@@ -82,8 +78,8 @@ defmodule Juvet.ViewStateRegistryTest do
 
   describe "unregister_name/1" do
     setup do
-      ViewStateRegistry.start_link()
-
+      start_supervised(ViewStateRegistry)
+      on_exit(&shut_down_registry/0)
       :ok
     end
 
