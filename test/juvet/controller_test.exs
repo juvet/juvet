@@ -34,6 +34,14 @@ defmodule Juvet.ControllerTest do
     end
   end
 
+  describe "view_state/0" do
+    test "returns the view state manager" do
+      view_state = MyController.view_state()
+
+      assert view_state == Juvet.ViewStateManager
+    end
+  end
+
   describe "send_response/2" do
     setup do
       context = %{

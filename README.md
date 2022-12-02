@@ -72,12 +72,12 @@ end
 When Juvet starts, the following is what that process tree should look like.
 
 ```asciidoc
-                                            +----------+
-                                            |          |
-                                         +--| Endpoint |
-                                         |  |          |
-                                         |  +----------+
-  +---------------+    +--------------+--+  +----------------+
+                                            +------------------+     +-------------------+
+                                            |                  |-----| ViewStateRegistry |
+                                         +--| ViewStateManager |     +-------------------+
+                                         |  |                  |     +---------------------+
+                                         |  +------------------+-----| ViewStateSupervisor |
+  +---------------+    +--------------+--+  +----------------+       +---------------------+
   |               |    |              |     |                |
   |     Juvet     |----|  BotFactory  |-----| Superintendent |
   | (application) |    |              |     |                |
@@ -103,7 +103,12 @@ When Juvet starts, the following is what that process tree should look like.
   ```
 
   * **Juvet** - Application that starts the `Juvet.BotFactory` supervisor
-  * **BotFactory** - Supervisor that starts the `Juvet.Superintendent` process
+  * **BotFactory** - Supervisor that starts the `Juvet.Superintendent` and `Juvet.ViewStateManager` processes.
+  * **ViewStateManager** - Supervisor that can manage the storage of any arbitray piece of data for
+                           a given set of keys. Starts the `Juvet.ViewStateRegistry` and a dynamic supervisor
+                           for `Juvet.ViewState` processes.
+  * **ViewStateRegistry** - Server to act as a registry service to convert keys (as Tuples) into pids in order
+                            to identify `Juvet.ViewState` processes.
   * **Superintdendent** - The brains of the operation. Process checks the validity of the
                           configuration and if it is configured correctly, it starts
                           the `Juvet.Endpoint` process and the `Juvet.FactorySupervisor`
