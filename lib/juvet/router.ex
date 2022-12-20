@@ -44,6 +44,15 @@ defmodule Juvet.Router do
     end
   end
 
+  defmacro option_load(action_id, options \\ []) do
+    quote do
+      Router.State.put_route_on_top!(
+        __MODULE__,
+        Route.new(:option_load, unquote(action_id), unquote(options))
+      )
+    end
+  end
+
   defmacro platform(platform, do: block) do
     quote do
       Router.State.put_platform!(__MODULE__, unquote(platform))
