@@ -46,6 +46,13 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   def find_route(
+        %Juvet.Router.Route{type: :option_load, route: action_id} = route,
+        request
+      ) do
+    if option_load_request?(request, action_id), do: route
+  end
+
+  def find_route(
         %Juvet.Router.Route{type: :view_closed, route: callback_id} = route,
         request
       ) do
@@ -77,6 +84,14 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :command} = route,
+        _options
+      ),
+      do: {:ok, route}
+
+  @impl Juvet.Router
+  def validate_route(
+        _router,
+        %Juvet.Router.Route{type: :option_load} = route,
         _options
       ),
       do: {:ok, route}
@@ -117,6 +132,11 @@ defmodule Juvet.Router.SlackRouter do
 
   defp action_request?(_request, _action_id), do: false
 
+  defp block_suggestion_payload?(%{"type" => "block_suggestion"} = payload, action_id),
+    do: normalized_value(payload["action_id"]) == normalized_value(action_id)
+
+  defp block_suggestion_payload?(_payload, _action_id), do: false
+
   defp callback_id_from_payload(%{"view" => %{"callback_id" => callback_id}}), do: callback_id
   defp callback_id_from_payload(_payload), do: nil
 
@@ -133,6 +153,14 @@ defmodule Juvet.Router.SlackRouter do
   defp normalized_value(nil), do: nil
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
+
+  defp option_load_request?(%{params: %{"payload" => payload}}, action_id),
+    do:
+      payload
+      |> Poison.decode!()
+      |> block_suggestion_payload?(action_id)
+
+  defp option_load_request?(_payload, _action_id), do: false
 
   defp view_closed_payload?(%{"type" => "view_closed"} = payload, callback_id) do
     incoming_callback_id = payload |> callback_id_from_payload
