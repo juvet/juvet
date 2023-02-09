@@ -7,6 +7,7 @@ defmodule Juvet.Router.RequestParamNormalizer do
 
   defmodule SlackRequestParamNormalizer do
     @moduledoc """
+    Normalizes Slack `Request` params.
     """
 
     def normalize(%Request{raw_params: nil} = request), do: request
