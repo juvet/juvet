@@ -31,7 +31,7 @@ defmodule Juvet.Router.RouterFactoryTest do
     } do
       request = %{
         request
-        | params: Map.merge(request.params, %{"command" => "/blah"})
+        | raw_params: Map.merge(request.raw_params, %{"command" => "/blah"})
       }
 
       assert {:error, error} = RouterFactory.find_route(platform, request)

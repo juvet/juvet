@@ -8,7 +8,7 @@ defmodule Juvet.Router.Request do
   @type t :: %__MODULE__{
           host: String.t(),
           method: String.t(),
-          params: map(),
+          raw_params: map(),
           port: integer(),
           path: String.t(),
           private: map(),
@@ -22,7 +22,7 @@ defmodule Juvet.Router.Request do
   defstruct [
     :host,
     :method,
-    :params,
+    :raw_params,
     :path,
     :port,
     :private,
@@ -40,7 +40,7 @@ defmodule Juvet.Router.Request do
       headers: Map.get(conn, :req_headers),
       host: Map.get(conn, :host),
       method: Map.get(conn, :method),
-      params: Map.get(conn, :params),
+      raw_params: Map.get(conn, :params),
       path: Map.get(conn, :request_path),
       port: Map.get(conn, :port),
       private: Map.get(conn, :private),
@@ -60,7 +60,7 @@ defmodule Juvet.Router.Request do
     ])
   end
 
-  def decode_params(%__MODULE__{} = request), do: RequestParamDecoder.decode(request)
+  def decode_raw_params(%__MODULE__{} = request), do: RequestParamDecoder.decode(request)
 
   @spec get_header(Juvet.Router.Request.t(), String.t()) :: list(String.t())
   def get_header(%__MODULE__{headers: nil}, _header), do: []

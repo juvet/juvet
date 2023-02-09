@@ -33,7 +33,7 @@ defmodule Juvet.Router.RouteFinderTest do
     } do
       request = %{
         request
-        | params: Map.merge(request.params, %{"command" => "blah"})
+        | raw_params: Map.merge(request.raw_params, %{"command" => "blah"})
       }
 
       assert {:error, :not_found} = RouteFinder.find(platforms, request)

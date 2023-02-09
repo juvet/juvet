@@ -10,16 +10,19 @@ defmodule Juvet.Router.RequestParamDecoder do
     Decodes Slack `Request` params.
     """
 
-    def decode(%Request{params: nil} = request), do: request
+    def decode(%Request{raw_params: nil} = request), do: request
 
-    def decode(%Request{params: %{"payload" => payload}} = request) do
+    def decode(%Request{raw_params: %{"payload" => payload}} = request) do
       case Poison.decode(payload) do
-        {:ok, payload} -> %{request | params: put_in(request.params, ["payload"], payload)}
-        {:error, _error} -> request
+        {:ok, payload} ->
+          %{request | raw_params: put_in(request.raw_params, ["payload"], payload)}
+
+        {:error, _error} ->
+          request
       end
     end
 
-    def decode(%Request{params: _params} = request), do: request
+    def decode(%Request{raw_params: _raw_params} = request), do: request
   end
 
   def decode(%Request{platform: :slack} = request), do: SlackRequestParamDecoder.decode(request)

@@ -127,7 +127,7 @@ defmodule Juvet.Router.SlackRouter do
 
   defp action_payload?(_payload, _action_id), do: false
 
-  defp action_request?(%{params: %{"payload" => payload}}, action_id),
+  defp action_request?(%{raw_params: %{"payload" => payload}}, action_id),
     do: payload |> action_payload?(action_id)
 
   defp action_request?(_request, _action_id), do: false
@@ -140,8 +140,8 @@ defmodule Juvet.Router.SlackRouter do
   defp callback_id_from_payload(%{"view" => %{"callback_id" => callback_id}}), do: callback_id
   defp callback_id_from_payload(_payload), do: nil
 
-  defp command_request?(%{params: params}, command) do
-    normalized_command(params["command"]) == normalized_command(command)
+  defp command_request?(%{raw_params: raw_params}, command) do
+    normalized_command(raw_params["command"]) == normalized_command(command)
   end
 
   defp command_without_slash(command), do: String.trim_leading(command, "/")
@@ -154,7 +154,7 @@ defmodule Juvet.Router.SlackRouter do
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
 
-  defp option_load_request?(%{params: %{"payload" => payload}}, action_id),
+  defp option_load_request?(%{raw_params: %{"payload" => payload}}, action_id),
     do: payload |> block_suggestion_payload?(action_id)
 
   defp option_load_request?(_payload, _action_id), do: false
@@ -167,7 +167,7 @@ defmodule Juvet.Router.SlackRouter do
 
   defp view_closed_payload?(_payload, _callback_id), do: false
 
-  defp view_closed_request?(%{params: %{"payload" => payload}}, callback_id),
+  defp view_closed_request?(%{raw_params: %{"payload" => payload}}, callback_id),
     do: payload |> view_closed_payload?(callback_id)
 
   defp view_closed_request?(_request, _callback_id), do: false
@@ -180,7 +180,7 @@ defmodule Juvet.Router.SlackRouter do
 
   defp view_submission_payload?(_payload, _callback_id), do: false
 
-  defp view_submission_request?(%{params: %{"payload" => payload}}, callback_id),
+  defp view_submission_request?(%{raw_params: %{"payload" => payload}}, callback_id),
     do: payload |> view_submission_payload?(callback_id)
 
   defp view_submission_request?(_request, _callback_id), do: false
