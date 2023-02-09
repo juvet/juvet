@@ -3,6 +3,8 @@ defmodule Juvet.Router.Request do
   Represents a single request from a platform.
   """
 
+  alias Juvet.Router.RequestParamDecoder
+
   @type t :: %__MODULE__{
           host: String.t(),
           method: String.t(),
@@ -57,6 +59,8 @@ defmodule Juvet.Router.Request do
       base_url_port(scheme, port)
     ])
   end
+
+  def decode_params(%__MODULE__{} = request), do: RequestParamDecoder.decode(request)
 
   @spec get_header(Juvet.Router.Request.t(), String.t()) :: list(String.t())
   def get_header(%__MODULE__{headers: nil}, _header), do: []

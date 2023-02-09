@@ -47,6 +47,24 @@ defmodule Juvet.Router.RequestTest do
     end
   end
 
+  describe "decode_params/1" do
+    test "returns the same params for an unknown platform", %{conn: conn} do
+      request = Request.new(conn) |> Request.decode_params()
+
+      assert request.params == conn.params
+    end
+
+    test "returns a map of the payload for a Slack platform", %{conn: conn} do
+      conn = %{conn | params: %{"payload" => "{\"foo\": \"bar\"}"}}
+
+      request = Request.new(conn)
+      request = %{request | platform: :slack}
+      request = Request.decode_params(request)
+
+      assert request.params == %{"payload" => %{"foo" => "bar"}}
+    end
+  end
+
   describe "get_header/2" do
     setup %{conn: conn} do
       [request: Request.new(conn)]
