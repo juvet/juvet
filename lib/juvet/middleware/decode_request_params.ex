@@ -1,4 +1,4 @@
-defmodule Juvet.Middleware.DecodeRequestRawParams do
+defmodule Juvet.Middleware.DecodeRequestParams do
   @moduledoc """
   Middleware to decode any parameters within a `Juvet.Router.Request` so the parameters
   can be easily pattern matched.
