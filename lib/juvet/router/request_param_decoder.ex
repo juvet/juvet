@@ -1,7 +1,15 @@
 defmodule Juvet.Router.RequestParamDecoder do
+  @moduledoc """
+  Module to decode the `Request#params` based on the platform for the request.
+  """
+
   alias Juvet.Router.Request
 
   defmodule SlackRequestParamDecoder do
+    @moduledoc """
+    Decodes Slack `Request` params.
+    """
+
     def decode(%Request{params: nil} = request), do: request
 
     def decode(%Request{params: %{"payload" => payload}} = request) do
