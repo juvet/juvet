@@ -8,11 +8,12 @@ defmodule Juvet.Router.Request do
   @type t :: %__MODULE__{
           host: String.t(),
           method: String.t(),
-          raw_params: map(),
-          port: integer(),
+          params: map(),
           path: String.t(),
+          port: integer(),
           private: map(),
           query_string: String.t(),
+          raw_params: map(),
           scheme: atom(),
           status: atom(),
           headers: list({String.t(), String.t()}),
@@ -22,11 +23,12 @@ defmodule Juvet.Router.Request do
   defstruct [
     :host,
     :method,
-    :raw_params,
+    :params,
     :path,
     :port,
     :private,
     :query_string,
+    :raw_params,
     :scheme,
     :status,
     headers: [],
@@ -46,7 +48,8 @@ defmodule Juvet.Router.Request do
       private: Map.get(conn, :private),
       query_string: Map.get(conn, :query_string),
       scheme: Map.get(conn, :scheme),
-      status: Map.get(conn, :status)
+      status: Map.get(conn, :status),
+      params: %{}
     }
   end
 
