@@ -1,6 +1,6 @@
 defmodule Juvet.Router.RequestParamDecoder do
   @moduledoc """
-  Module to decode the `Request#params` based on the platform for the request.
+  Module to decode the `Request#raw_params` based on the platform for the request.
   """
 
   alias Juvet.Router.Request
