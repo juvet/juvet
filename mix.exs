@@ -43,7 +43,7 @@ defmodule Juvet.Mixfile do
       {:exvcr, "~> 0.10", only: [:dev, :test]},
       {:httpoison, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:poison, "~> 3.1"},
+      {:poison, "~> 5.0"},
       {:websockex, "~> 0.4.0"}
     ]
   end
