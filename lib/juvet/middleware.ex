@@ -13,6 +13,7 @@ defmodule Juvet.Middleware do
       {Juvet.Middleware.ParseRequest},
       {Juvet.Middleware.IdentifyRequest},
       {Juvet.Middleware.Slack.VerifyRequest},
+      {Juvet.Middleware.DecodeRequestParams},
       {Juvet.Middleware.BuildDefaultResponse},
       {Juvet.Middleware.RouteRequest}
     ] ++ group(:partial)

@@ -128,7 +128,7 @@ defmodule Juvet.Router.SlackRouter do
   defp action_payload?(_payload, _action_id), do: false
 
   defp action_request?(%{params: %{"payload" => payload}}, action_id),
-    do: payload |> Poison.decode!() |> action_payload?(action_id)
+    do: payload |> action_payload?(action_id)
 
   defp action_request?(_request, _action_id), do: false
 
@@ -155,10 +155,7 @@ defmodule Juvet.Router.SlackRouter do
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
 
   defp option_load_request?(%{params: %{"payload" => payload}}, action_id),
-    do:
-      payload
-      |> Poison.decode!()
-      |> block_suggestion_payload?(action_id)
+    do: payload |> block_suggestion_payload?(action_id)
 
   defp option_load_request?(_payload, _action_id), do: false
 
@@ -171,10 +168,7 @@ defmodule Juvet.Router.SlackRouter do
   defp view_closed_payload?(_payload, _callback_id), do: false
 
   defp view_closed_request?(%{params: %{"payload" => payload}}, callback_id),
-    do:
-      payload
-      |> Poison.decode!()
-      |> view_closed_payload?(callback_id)
+    do: payload |> view_closed_payload?(callback_id)
 
   defp view_closed_request?(_request, _callback_id), do: false
 
@@ -187,10 +181,7 @@ defmodule Juvet.Router.SlackRouter do
   defp view_submission_payload?(_payload, _callback_id), do: false
 
   defp view_submission_request?(%{params: %{"payload" => payload}}, callback_id),
-    do:
-      payload
-      |> Poison.decode!()
-      |> view_submission_payload?(callback_id)
+    do: payload |> view_submission_payload?(callback_id)
 
   defp view_submission_request?(_request, _callback_id), do: false
 end
