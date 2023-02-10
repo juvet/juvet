@@ -25,8 +25,9 @@ defmodule Juvet.SlackAPI do
   """
   @spec parse_response({:ok, HTTPoison.Response.t()}) :: {:ok, map()}
   def parse_response({:ok, %HTTPoison.Response{body: body}}) do
-    response = body |> Poison.decode!(keys: :atoms)
-    {:ok, response}
+    case Poison.decode(body, keys: :atoms) do
+      {:ok, response} -> {:ok, response}
+    end
   end
 
   @doc """
