@@ -3,14 +3,17 @@ defmodule Juvet.Router.Request do
   Represents a single request from a platform.
   """
 
+  alias Juvet.Router.RequestParamDecoder
+
   @type t :: %__MODULE__{
           host: String.t(),
           method: String.t(),
           params: map(),
-          port: integer(),
           path: String.t(),
+          port: integer(),
           private: map(),
           query_string: String.t(),
+          raw_params: map(),
           scheme: atom(),
           status: atom(),
           headers: list({String.t(), String.t()}),
@@ -25,6 +28,7 @@ defmodule Juvet.Router.Request do
     :port,
     :private,
     :query_string,
+    :raw_params,
     :scheme,
     :status,
     headers: [],
@@ -38,13 +42,14 @@ defmodule Juvet.Router.Request do
       headers: Map.get(conn, :req_headers),
       host: Map.get(conn, :host),
       method: Map.get(conn, :method),
-      params: Map.get(conn, :params),
+      raw_params: Map.get(conn, :params),
       path: Map.get(conn, :request_path),
       port: Map.get(conn, :port),
       private: Map.get(conn, :private),
       query_string: Map.get(conn, :query_string),
       scheme: Map.get(conn, :scheme),
-      status: Map.get(conn, :status)
+      status: Map.get(conn, :status),
+      params: %{}
     }
   end
 
@@ -57,6 +62,8 @@ defmodule Juvet.Router.Request do
       base_url_port(scheme, port)
     ])
   end
+
+  def decode_raw_params(%__MODULE__{} = request), do: RequestParamDecoder.decode(request)
 
   @spec get_header(Juvet.Router.Request.t(), String.t()) :: list(String.t())
   def get_header(%__MODULE__{headers: nil}, _header), do: []

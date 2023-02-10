@@ -43,7 +43,7 @@ defmodule Juvet.Router.SlackRouterTest do
     } do
       request = %{
         request
-        | params: Map.merge(request.params, %{"command" => "/blah"})
+        | raw_params: Map.merge(request.raw_params, %{"command" => "/blah"})
       }
 
       assert {:error, {:unknown_route, [router: ^router, request: ^request]}} =

@@ -109,7 +109,7 @@ defmodule Juvet.RunnerTest do
     } do
       {:ok, context} = Juvet.Runner.run(conn, %{configuration: config})
 
-      assert Map.fetch!(context, :request).params == %{
+      assert Map.fetch!(context, :request).raw_params == %{
                "command" => "/test",
                "team_id" => "T12345"
              }

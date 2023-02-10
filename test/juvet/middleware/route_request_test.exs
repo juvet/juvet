@@ -39,7 +39,7 @@ defmodule Juvet.Middleware.RouteRequestTest do
     test "returns an error if the route was not found", %{
       context: %{request: request} = context
     } do
-      request = %{request | params: %{"command" => "/blah"}}
+      request = %{request | raw_params: %{"command" => "/blah"}}
       context = %{context | request: request}
 
       assert {:error,

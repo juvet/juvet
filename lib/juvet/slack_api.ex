@@ -23,10 +23,9 @@ defmodule Juvet.SlackAPI do
   @doc """
   Decodes a JSON response and converts it into a Map.
   """
-  @spec parse_response({:ok, HTTPoison.Response.t()}) :: {:ok, map()}
+  @spec parse_response({:ok, HTTPoison.Response.t()}) :: {:ok, map()} | {:error, Exception.t()}
   def parse_response({:ok, %HTTPoison.Response{body: body}}) do
-    response = body |> Poison.decode!(keys: :atoms)
-    {:ok, response}
+    Poison.decode(body, keys: :atoms)
   end
 
   @doc """

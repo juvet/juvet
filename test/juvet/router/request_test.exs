@@ -27,7 +27,7 @@ defmodule Juvet.Router.RequestTest do
 
       assert request.host == "www.example.com"
       assert request.method == "POST"
-      assert request.params == %{foo: :bar}
+      assert request.raw_params == %{foo: :bar}
       assert request.path == "/slack/commands"
       assert request.port == 80
       assert request.private
@@ -44,6 +44,24 @@ defmodule Juvet.Router.RequestTest do
       request = Request.new(conn)
 
       assert Request.base_url(request) == "http://www.example.com"
+    end
+  end
+
+  describe "decode_raw_params/1" do
+    test "returns the same params for an unknown platform", %{conn: conn} do
+      request = Request.new(conn) |> Request.decode_raw_params()
+
+      assert request.raw_params == conn.params
+    end
+
+    test "returns a map of the payload for a Slack platform", %{conn: conn} do
+      conn = %{conn | params: %{"payload" => "{\"foo\": \"bar\"}"}}
+
+      request = Request.new(conn)
+      request = %{request | platform: :slack}
+      request = Request.decode_raw_params(request)
+
+      assert request.raw_params == %{"payload" => %{"foo" => "bar"}}
     end
   end
 
