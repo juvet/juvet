@@ -1,5 +1,5 @@
 defmodule Juvet.JuvetTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
 
   import Juvet.ProcessHelpers
   import Juvet.ConfigurationHelpers

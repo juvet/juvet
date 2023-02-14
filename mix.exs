@@ -40,8 +40,9 @@ defmodule Juvet.Mixfile do
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
-      {:exvcr, "~> 0.10", only: [:dev, :test]},
+      {:exvcr, "~> 0.13", only: [:dev, :test]},
       {:httpoison, "~> 1.0"},
+      {:mock, "~> 0.3.0", only: :test},
       {:plug_cowboy, "~> 2.0"},
       {:poison, "~> 4.0"},
       {:websockex, "~> 0.4.0"}

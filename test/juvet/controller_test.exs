@@ -1,19 +1,23 @@
 defmodule Juvet.ControllerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use Juvet.PlugHelpers
+
+  import Mock
 
   alias Juvet.Router.Response
 
   defmodule MyController do
     use Juvet.Controller
 
-    def send_response_test(context, response \\ nil) do
-      send_response(context, response)
+    def send_message_test(context, template) do
+      context
+      |> put_view(MyView)
+      |> send_message(template)
     end
 
-    def update_response_test(context, response) do
-      update_response(context, response)
-    end
+    def send_response_test(context, response \\ nil), do: send_response(context, response)
+
+    def update_response_test(context, response), do: update_response(context, response)
   end
 
   describe "update_response/2" do
@@ -39,6 +43,28 @@ defmodule Juvet.ControllerTest do
       view_state = MyController.view_state()
 
       assert view_state == Juvet.ViewStateManager
+    end
+  end
+
+  describe "send_message/2" do
+    setup do
+      context = %{
+        conn: build_conn(:post, "/slack/commands"),
+        response: Response.new()
+      }
+
+      [context: context]
+    end
+
+    test "sends a message via a view and template", %{context: context} do
+      with_mock Juvet.Template,
+        send_message: fn view, :meeting_reminder, _context ->
+          assert view == MyView
+          {:ok, Response.new(body: "ok")}
+        end do
+        MyController.send_message_test(context, :meeting_reminder)
+        assert_called(Juvet.Template.send_message(MyView, :meeting_reminder, context))
+      end
     end
   end
 
