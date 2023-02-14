@@ -19,7 +19,6 @@ defmodule Juvet.Controller do
   @spec put_view(map(), String.t() | atom()) :: map()
   def put_view(context, view), do: Map.put(context, :juvet_view, view)
 
-  @spec send_message(map(), atom() | String.t()) :: map()
   def send_message(context, template) do
     # Allow for a default view to be specified in opts or specified as a convention
     # but the name of the module needs to be deciphered inside the quote
