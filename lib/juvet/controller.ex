@@ -75,8 +75,6 @@ defmodule Juvet.Controller do
     Map.put(context, :conn, conn)
   end
 
-  defp maybe_update_response(context, nil), do: context
-
   defp maybe_update_response(context, %Response{} = response),
     do: Map.put(context, :response, response)
 end
