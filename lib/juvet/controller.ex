@@ -4,7 +4,7 @@ defmodule Juvet.Controller do
   """
 
   alias Juvet.Router.{Conn, Response}
-  alias Juvet.Template
+  alias Juvet.View
 
   defmacro __using__(opts) do
     view_state_manager = Keyword.get(opts, :view_state_manager, Juvet.ViewStateManager)
@@ -31,7 +31,7 @@ defmodule Juvet.Controller do
         """
 
       view ->
-        Template.send_message(view, template, context)
+        View.send_message(view, template, context)
     end
   end
 

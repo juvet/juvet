@@ -57,13 +57,13 @@ defmodule Juvet.ControllerTest do
     end
 
     test "sends a message via a view and template", %{context: context} do
-      with_mock Juvet.Template,
+      with_mock Juvet.View,
         send_message: fn view, :meeting_reminder, _context ->
           assert view == MyView
           {:ok, Response.new(body: "ok")}
         end do
         MyController.send_message_test(context, :meeting_reminder)
-        assert_called(Juvet.Template.send_message(MyView, :meeting_reminder, context))
+        assert_called(Juvet.View.send_message(MyView, :meeting_reminder, context))
       end
     end
   end

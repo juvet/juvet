@@ -1,7 +1,7 @@
-defmodule Juvet.TemplateTest do
+defmodule Juvet.ViewTest do
   use ExUnit.Case, async: false
 
-  alias Juvet.Template
+  alias Juvet.View
 
   defmodule MyPlatformTemplateView do
     def send_slack_some_template_message(%{pid: pid} = context) do
@@ -38,7 +38,7 @@ defmodule Juvet.TemplateTest do
       context: context
     } do
       assert {:ok, _context} =
-               Template.send_message(
+               View.send_message(
                  MyPlatformTemplateView,
                  :some_template,
                  Map.put(context, :pid, self())
@@ -51,7 +51,7 @@ defmodule Juvet.TemplateTest do
       context: context
     } do
       assert {:ok, _context} =
-               Template.send_message(
+               View.send_message(
                  MyTemplateView,
                  :some_template,
                  Map.put(context, :pid, self())
@@ -62,7 +62,7 @@ defmodule Juvet.TemplateTest do
 
     test "sends a platform message when a default handler", %{context: context} do
       assert {:ok, _context} =
-               Template.send_message(
+               View.send_message(
                  MyDefaultView,
                  :some_template,
                  Map.put(context, :pid, self())
@@ -75,7 +75,7 @@ defmodule Juvet.TemplateTest do
       assert_raise ArgumentError,
                    ~r/^No "unknown" platform with "some_template" template defined/,
                    fn ->
-                     Template.send_message(
+                     View.send_message(
                        MyTemplateView,
                        :some_template,
                        Map.put(context, :request, nil)

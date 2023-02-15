@@ -1,6 +1,7 @@
-defmodule Juvet.Template do
+defmodule Juvet.View do
   @moduledoc """
-  Represents a single message that is compiled into Elixir code and is sent to different platform endpoints.
+  Represents a single message that is compiled into Elixir code and is sent to different platform
+  endpoints using `Template`s.
   """
 
   def send_message(view, template, assigns),
@@ -10,7 +11,7 @@ defmodule Juvet.Template do
       |> send_message_via(view, template, assigns)
 
   def send_message_via(platform, view, template, assigns) do
-    case get_view(platform, view, template, assigns) do
+    case get_mfa(platform, view, template, assigns) do
       [module, function, args] ->
         try do
           apply(module, function, args)
@@ -26,7 +27,7 @@ defmodule Juvet.Template do
   defp get_platform(%{request: %{platform: platform}}), do: platform
   defp get_platform(_assigns), do: :unknown
 
-  defp get_view(platform, view, template, assigns) do
+  defp get_mfa(platform, view, template, assigns) do
     template_function = String.to_atom("send_#{template}_message")
     platform_template_function = String.to_atom("send_#{platform}_#{template}_message")
 
