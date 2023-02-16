@@ -9,10 +9,10 @@ defmodule Juvet.ControllerTest do
   defmodule MyController do
     use Juvet.Controller
 
-    def send_message_test(context, template) do
+    def send_message_test(context, template, assigns \\ []) do
       context
       |> put_view(MyView)
-      |> send_message(template)
+      |> send_message(template, assigns)
     end
 
     def send_response_test(context, response \\ nil), do: send_response(context, response)
@@ -64,6 +64,16 @@ defmodule Juvet.ControllerTest do
         end do
         MyController.send_message_test(context, :meeting_reminder)
         assert_called(Juvet.View.send_message(MyView, :meeting_reminder, context))
+      end
+    end
+
+    test "merges any additional assigns in the context", %{context: context} do
+      with_mock Juvet.View,
+        send_message: fn _view, :meeting_reminder, new_context ->
+          assert new_context[:newkey] == :newvalue
+          {:ok, new_context}
+        end do
+        MyController.send_message_test(context, :meeting_reminder, newkey: :newvalue)
       end
     end
   end
