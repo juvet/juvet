@@ -71,6 +71,18 @@ defmodule Juvet.ViewTest do
       assert_received :called_send_message
     end
 
+    test "raises when there is an unknown template", %{context: context} do
+      assert_raise ArgumentError,
+                   ~r/^No "slack" platform with "some_blah_template" template defined/,
+                   fn ->
+                     View.send_message(
+                       MyTemplateView,
+                       :some_blah_template,
+                       Map.put(context, :pid, self())
+                     )
+                   end
+    end
+
     test "raises when there is an unknown request", %{context: context} do
       assert_raise ArgumentError,
                    ~r/^No "unknown" platform with "some_template" template defined/,

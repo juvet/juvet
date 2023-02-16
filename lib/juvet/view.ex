@@ -28,6 +28,8 @@ defmodule Juvet.View do
   defp get_platform(_assigns), do: :unknown
 
   defp get_mfa(platform, view, template, assigns) do
+    Code.ensure_loaded!(view)
+
     template_function = String.to_atom("send_#{template}_message")
     platform_template_function = String.to_atom("send_#{platform}_#{template}_message")
 
@@ -40,6 +42,9 @@ defmodule Juvet.View do
 
       function_exported?(view, :send_message, 3) ->
         [view, :send_message, [platform, template, assigns]]
+
+      true ->
+        raise ArgumentError, message: no_template_message(platform, view, template)
     end
   end
 
