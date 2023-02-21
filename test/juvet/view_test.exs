@@ -1,7 +1,9 @@
 defmodule Juvet.ViewTest do
   use ExUnit.Case, async: false
 
-  alias Juvet.View
+  import Mock
+
+  alias Juvet.{SlackAPI, View}
 
   defmodule MyPlatformTemplateView do
     def send_slack_some_template_message(%{pid: pid} = context) do
@@ -20,10 +22,43 @@ defmodule Juvet.ViewTest do
   end
 
   defmodule MyDefaultView do
+    use View
+
     def send_message(_platform, _template, %{pid: pid} = context) do
       send(pid, :called_send_message)
 
       {:ok, context}
+    end
+
+    def send_message_to_slack(message, message_id \\ nil),
+      do: create_or_update_slack_message(message, message_id)
+  end
+
+  describe "create_or_update_slack_message/2" do
+    test "sends a new message via Slack API without a message id" do
+      message = %{channel: "C1234", blocks: [], text: "Hello World", token: "SLACK_TOKEN"}
+
+      with_mock SlackAPI.Chat, post_message: fn _message -> {:ok, %{}} end do
+        MyDefaultView.send_message_to_slack(message)
+
+        assert_called(SlackAPI.Chat.post_message(message))
+      end
+    end
+
+    test "sends an updated message via Slack API with a message id" do
+      message_id = "SLACK.TIMESTAMP"
+      message = %{channel: "C1234", blocks: [], text: "Hello World", token: "SLACK_TOKEN"}
+
+      with_mock SlackAPI.Chat,
+        update: fn %{ts: timestamp} ->
+          assert timestamp == message_id
+
+          {:ok, %{}}
+        end do
+        MyDefaultView.send_message_to_slack(message, message_id)
+
+        assert_called(SlackAPI.Chat.update(Map.merge(%{ts: :_}, message)))
+      end
     end
   end
 

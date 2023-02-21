@@ -4,6 +4,14 @@ defmodule Juvet.View do
   endpoints using `Template`s.
   """
 
+  defmacro __using__(_opts) do
+    quote do
+      import Juvet.View
+
+      use Juvet.SlackView
+    end
+  end
+
   def send_message(view, template, assigns),
     do:
       assigns
