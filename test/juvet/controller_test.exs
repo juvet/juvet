@@ -70,6 +70,15 @@ defmodule Juvet.ControllerTest do
       end
     end
 
+    test "clears the view from the context after sending the message", %{context: context} do
+      with_mock Juvet.View,
+        send_message: fn _view, :meeting_reminder, context -> {:ok, context} end do
+        assert {:ok, context} = MyController.send_message_test(context, :meeting_reminder)
+
+        refute Map.has_key?(context, :juvet_view)
+      end
+    end
+
     test "sends a message via a default view based on the template", %{context: context} do
       with_mock Juvet.View,
                 [:passthrough],

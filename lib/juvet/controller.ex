@@ -3,6 +3,8 @@ defmodule Juvet.Controller do
   Helper functions for a module handling a request from a platform.
   """
 
+  @view_context_key :juvet_view
+
   alias Juvet.Router.{Conn, Response}
   alias Juvet.{View, ViewStateManager}
 
@@ -22,8 +24,11 @@ defmodule Juvet.Controller do
     end
   end
 
+  @spec clear_view(map()) :: map()
+  def clear_view(context), do: Map.delete(context, @view_context_key)
+
   @spec put_view(map(), String.t() | atom()) :: map()
-  def put_view(context, view), do: Map.put(context, :juvet_view, view)
+  def put_view(context, view), do: Map.put(context, @view_context_key, view)
 
   def send_message(context, template, assigns \\ []) do
     case view_module(context) do
@@ -34,6 +39,7 @@ defmodule Juvet.Controller do
       view ->
         View.send_message(view, template, assigns |> Enum.into(%{}) |> Map.merge(context))
     end
+    |> maybe_clear_view()
   end
 
   @spec send_response(map() | String.t(), Response.t() | String.t() | map() | nil) :: map()
@@ -60,7 +66,7 @@ defmodule Juvet.Controller do
     do: maybe_update_response(context, response)
 
   @spec view_module(map()) :: String.t() | atom() | nil
-  def view_module(context), do: Map.get(context, :juvet_view)
+  def view_module(context), do: Map.get(context, @view_context_key)
 
   defp send_url_response(url, %Response{body: body}), do: send_url_response(url, body)
 
@@ -75,6 +81,20 @@ defmodule Juvet.Controller do
     conn = Conn.send_resp(context)
     Map.put(context, :conn, conn)
   end
+
+  defp maybe_clear_view({:ok, context}) when is_map(context) do
+    context_key = @view_context_key
+
+    case context do
+      %{^context_key => _key} ->
+        {:ok, context |> clear_view()}
+
+      _ ->
+        {:ok, context}
+    end
+  end
+
+  defp maybe_clear_view(response), do: response
 
   defp maybe_update_response(context, %Response{} = response),
     do: Map.put(context, :response, response)
