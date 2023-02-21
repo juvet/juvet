@@ -6,11 +6,26 @@ defmodule Juvet.View do
 
   defmacro __using__(_opts) do
     quote do
-      import Juvet.View
+      unquote(prelude())
+    end
+  end
+
+  defp prelude do
+    quote do
+      import unquote(__MODULE__)
 
       use Juvet.SlackView
     end
   end
+
+  def default_view(template),
+    do:
+      template
+      |> to_string()
+      |> String.replace_trailing("_view", "")
+      |> Kernel.<>("_view")
+      |> Macro.camelize()
+      |> String.to_atom()
 
   def send_message(view, template, assigns),
     do:

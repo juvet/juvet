@@ -4,13 +4,19 @@ defmodule Juvet.Controller do
   """
 
   alias Juvet.Router.{Conn, Response}
-  alias Juvet.View
+  alias Juvet.{View, ViewStateManager}
 
   defmacro __using__(opts) do
-    view_state_manager = Keyword.get(opts, :view_state_manager, Juvet.ViewStateManager)
+    quote do
+      unquote(prelude(opts))
+    end
+  end
+
+  defp prelude(opts) do
+    view_state_manager = Keyword.get(opts, :view_state_manager, ViewStateManager)
 
     quote do
-      import Juvet.Controller
+      import unquote(__MODULE__)
 
       def view_state, do: unquote(view_state_manager)
     end
@@ -20,15 +26,10 @@ defmodule Juvet.Controller do
   def put_view(context, view), do: Map.put(context, :juvet_view, view)
 
   def send_message(context, template, assigns \\ []) do
-    # Allow for a default view to be specified in opts or specified as a convention
-    # but the name of the module needs to be deciphered inside the quote
-    # Phoenix does this with another plug
     case view_module(context) do
       nil ->
-        raise ArgumentError, """
-        expected to have a view specified in `context`. Use `put_view` to specify the view module before
-        calling `send_message`.
-        """
+        View.default_view(template)
+        |> View.send_message(template, assigns |> Enum.into(%{}) |> Map.merge(context))
 
       view ->
         View.send_message(view, template, assigns |> Enum.into(%{}) |> Map.merge(context))

@@ -15,6 +15,9 @@ defmodule Juvet.ControllerTest do
       |> send_message(template, assigns)
     end
 
+    def send_message_with_default_view_test(context, template, assigns \\ []),
+      do: context |> send_message(template, assigns)
+
     def send_response_test(context, response \\ nil), do: send_response(context, response)
 
     def update_response_test(context, response), do: update_response(context, response)
@@ -64,6 +67,18 @@ defmodule Juvet.ControllerTest do
         end do
         MyController.send_message_test(context, :meeting_reminder)
         assert_called(Juvet.View.send_message(MyView, :meeting_reminder, context))
+      end
+    end
+
+    test "sends a message via a default view based on the template", %{context: context} do
+      with_mock Juvet.View,
+                [:passthrough],
+                send_message: fn view, :meeting_reminder, _context ->
+                  assert view == :MeetingReminderView
+                  {:ok, Response.new(body: "ok")}
+                end do
+        MyController.send_message_with_default_view_test(context, :meeting_reminder)
+        assert_called(Juvet.View.send_message(:MeetingReminderView, :meeting_reminder, context))
       end
     end
 

@@ -62,6 +62,16 @@ defmodule Juvet.ViewTest do
     end
   end
 
+  describe "default_view/1" do
+    test "returns the module named after the template" do
+      assert View.default_view(:meeting_reminder) == :MeetingReminderView
+    end
+
+    test "does not append a duplicate view suffix" do
+      assert View.default_view(:meeting_reminder_view) == :MeetingReminderView
+    end
+  end
+
   describe "send_message/3" do
     setup do
       context = %{request: %{platform: :slack}}

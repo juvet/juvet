@@ -7,7 +7,13 @@ defmodule Juvet.SlackView do
 
   defmacro __using__(_opts) do
     quote do
-      import Juvet.SlackView
+      unquote(prelude())
+    end
+  end
+
+  defp prelude do
+    quote do
+      import unquote(__MODULE__)
 
       alias Juvet.SlackAPI
     end
