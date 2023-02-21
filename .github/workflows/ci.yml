@@ -12,12 +12,12 @@ env:
 jobs:
   test:
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
         elixir: [1.14.1]
-        otp: [24.1]
+        otp: [25.0.4]
 
     steps:
     - name: Checkout Juvet
