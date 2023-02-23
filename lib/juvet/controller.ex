@@ -10,15 +10,23 @@ defmodule Juvet.Controller do
 
   defmacro __using__(opts) do
     quote do
-      unquote(prelude(opts))
+      unquote(prelude())
+      unquote(defs(opts))
     end
   end
 
-  defp prelude(opts) do
+  defp prelude do
+    quote do
+      import unquote(__MODULE__)
+    end
+  end
+
+  defp defs(opts) do
     view_state_manager = Keyword.get(opts, :view_state_manager, ViewStateManager)
 
     quote do
-      import unquote(__MODULE__)
+      def send_message(context, template, assigns \\ []),
+        do: send_message_from(__MODULE__, context, template, assigns)
 
       def view_state, do: unquote(view_state_manager)
     end
@@ -30,9 +38,10 @@ defmodule Juvet.Controller do
   @spec put_view(map(), String.t() | atom()) :: map()
   def put_view(context, view), do: Map.put(context, @view_context_key, view)
 
-  def send_message(context, template, assigns \\ []) do
+  def send_message_from(controller, context, template, assigns \\ []) do
     case view_module(context) do
       nil ->
+        # TODO: View.default_view(template, prefix: controller_prefix(controller))
         View.default_view(template)
         |> View.send_message(template, assigns |> Enum.into(%{}) |> Map.merge(context))
 
