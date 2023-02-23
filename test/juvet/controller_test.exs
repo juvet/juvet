@@ -4,9 +4,7 @@ defmodule Juvet.ControllerTest do
 
   import Mock
 
-  alias Juvet.Router.Response
-
-  defmodule MyController do
+  defmodule Controllers.MyController do
     use Juvet.Controller
 
     def send_message_test(context, template, assigns \\ []) do
@@ -23,9 +21,13 @@ defmodule Juvet.ControllerTest do
     def update_response_test(context, response), do: update_response(context, response)
   end
 
+  alias Controllers.MyController
+  alias Juvet.Router.Response
+
   describe "controller_prefix/1" do
     test "returns the module name without controller suffix" do
-      assert Juvet.Controller.controller_prefix(MyController) == "Juvet.ControllerTest.My"
+      assert Juvet.Controller.controller_prefix(MyController) ==
+               "Juvet.ControllerTest.Controllers.My"
     end
 
     test "returns an empty string if nil is provided" do
@@ -34,7 +36,7 @@ defmodule Juvet.ControllerTest do
 
     test "supports an optional suffix" do
       assert Juvet.Controller.controller_prefix(MyController, suffix: ".") ==
-               "Juvet.ControllerTest.My."
+               "Juvet.ControllerTest.Controllers.My."
     end
 
     test "returns an empty string when nil is provided with a suffix" do
@@ -99,7 +101,7 @@ defmodule Juvet.ControllerTest do
     end
 
     test "sends a message via a default view based on the template", %{context: context} do
-      expected_view = "Juvet.ControllerTest.MyMeetingReminderView"
+      expected_view = "Juvet.ControllerTest.Views.MyMeetingReminderView"
 
       with_mock Juvet.View,
                 [:passthrough],
