@@ -29,6 +29,14 @@ defmodule Juvet.View do
     |> maybe_prepend_prefix(prefix)
   end
 
+  defp ensure_view_loaded!(view) when is_atom(view), do: view |> Code.ensure_loaded!()
+
+  defp ensure_view_loaded!(view) when is_binary(view),
+    do:
+      view
+      |> String.to_atom()
+      |> Code.ensure_loaded!()
+
   defp maybe_prepend_prefix(suffix, nil), do: suffix
   defp maybe_prepend_prefix(suffix, prefix), do: prefix <> suffix
 
@@ -56,7 +64,7 @@ defmodule Juvet.View do
   defp get_platform(_assigns), do: :unknown
 
   defp get_mfa(platform, view, template, assigns) do
-    Code.ensure_loaded!(view)
+    view = view |> ensure_view_loaded!()
 
     template_function = String.to_atom("send_#{template}_message")
     platform_template_function = String.to_atom("send_#{platform}_#{template}_message")
