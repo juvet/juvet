@@ -55,8 +55,7 @@ defmodule Juvet.Controller do
   def send_message_from(controller, context, template, assigns \\ []) do
     case view_module(context) do
       nil ->
-        # TODO: View.default_view(template, prefix: controller_prefix(controller))
-        View.default_view(template)
+        View.default_view(template, prefix: controller_prefix(controller))
         |> View.send_message(template, assigns |> Enum.into(%{}) |> Map.merge(context))
 
       view ->
