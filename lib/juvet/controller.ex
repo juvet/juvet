@@ -38,7 +38,7 @@ defmodule Juvet.Controller do
     controller
     |> to_string()
     |> String.replace_leading("Elixir.", "")
-    |> maybe_remove_last_namespace()
+    |> String.replace_trailing("Controller", "")
     |> maybe_append_suffix(suffix)
   end
 
@@ -113,17 +113,6 @@ defmodule Juvet.Controller do
   end
 
   defp maybe_clear_view(response), do: response
-
-  defp maybe_remove_last_namespace(""), do: ""
-
-  defp maybe_remove_last_namespace(name) do
-    name
-    |> String.split(".", trim: true)
-    |> Enum.reverse()
-    |> tl()
-    |> Enum.reverse()
-    |> Enum.join(".")
-  end
 
   defp maybe_update_response(context, %Response{} = response),
     do: Map.put(context, :response, response)

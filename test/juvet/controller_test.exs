@@ -27,7 +27,7 @@ defmodule Juvet.ControllerTest do
   describe "controller_prefix/1" do
     test "returns the module name without controller suffix" do
       assert Juvet.Controller.controller_prefix(MyController) ==
-               "Juvet.ControllerTest.Controllers"
+               "Juvet.ControllerTest.Controllers.My"
     end
 
     test "returns an empty string if nil is provided" do
@@ -36,7 +36,7 @@ defmodule Juvet.ControllerTest do
 
     test "supports an optional suffix" do
       assert Juvet.Controller.controller_prefix(MyController, suffix: ".") ==
-               "Juvet.ControllerTest.Controllers."
+               "Juvet.ControllerTest.Controllers.My."
     end
 
     test "returns an empty string when nil is provided with a suffix" do
@@ -100,8 +100,10 @@ defmodule Juvet.ControllerTest do
       end
     end
 
-    test "sends a message via a default view based on the template", %{context: context} do
-      expected_view = "Juvet.ControllerTest.Views.MeetingReminderView"
+    test "sends a message via a default view based on the template and controller", %{
+      context: context
+    } do
+      expected_view = "Juvet.ControllerTest.Views.My.MeetingReminderView"
 
       with_mock Juvet.View,
                 [:passthrough],
