@@ -32,6 +32,20 @@ defmodule Juvet.Controller do
     end
   end
 
+  def controller_prefix(controller, opts \\ []) do
+    suffix = Keyword.get(opts, :suffix)
+
+    controller
+    |> to_string()
+    |> String.replace_leading("Elixir.", "")
+    |> String.replace_trailing("Controller", "")
+    |> maybe_append_suffix(suffix)
+  end
+
+  defp maybe_append_suffix(prefix, nil), do: prefix
+  defp maybe_append_suffix("", _suffix), do: ""
+  defp maybe_append_suffix(prefix, suffix), do: prefix <> suffix
+
   @spec clear_view(map()) :: map()
   def clear_view(context), do: Map.delete(context, @view_context_key)
 

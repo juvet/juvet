@@ -23,6 +23,25 @@ defmodule Juvet.ControllerTest do
     def update_response_test(context, response), do: update_response(context, response)
   end
 
+  describe "controller_prefix/1" do
+    test "returns the module name without controller suffix" do
+      assert Juvet.Controller.controller_prefix(MyController) == "Juvet.ControllerTest.My"
+    end
+
+    test "returns an empty string if nil is provided" do
+      assert Juvet.Controller.controller_prefix(nil) == ""
+    end
+
+    test "supports an optional suffix" do
+      assert Juvet.Controller.controller_prefix(MyController, suffix: ".") ==
+               "Juvet.ControllerTest.My."
+    end
+
+    test "returns an empty string when nil is provided with a suffix" do
+      assert Juvet.Controller.controller_prefix(nil, suffix: ".") == ""
+    end
+  end
+
   describe "update_response/2" do
     setup do
       context = %{
