@@ -45,16 +45,20 @@ defmodule Juvet.Controller do
   @spec clear_view(map()) :: map()
   def clear_view(context), do: Map.delete(context, @view_context_key)
 
+  def default_view_module(controller, template) do
+    view_prefix = controller |> controller_prefix() |> String.replace(".Controllers.", ".Views.")
+
+    View.default_view(template, prefix: view_prefix)
+  end
+
   @spec put_view(map(), String.t() | atom()) :: map()
   def put_view(context, view), do: Map.put(context, @view_context_key, view)
 
   def send_message_from(controller, context, template, assigns \\ []) do
     case view_module(context) do
       nil ->
-        view_prefix =
-          controller |> controller_prefix() |> String.replace(".Controllers.", ".Views.")
-
-        View.default_view(template, prefix: view_prefix)
+        controller
+        |> default_view_module(template)
         |> View.send_message(template, assigns |> Enum.into(%{}) |> Map.merge(context))
 
       view ->
