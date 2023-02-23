@@ -42,10 +42,6 @@ defmodule Juvet.Controller do
     |> maybe_append_suffix(suffix)
   end
 
-  defp maybe_append_suffix(prefix, nil), do: prefix
-  defp maybe_append_suffix("", _suffix), do: ""
-  defp maybe_append_suffix(prefix, suffix), do: prefix <> suffix
-
   @spec clear_view(map()) :: map()
   def clear_view(context), do: Map.delete(context, @view_context_key)
 
@@ -55,7 +51,9 @@ defmodule Juvet.Controller do
   def send_message_from(controller, context, template, assigns \\ []) do
     case view_module(context) do
       nil ->
-        View.default_view(template, prefix: controller_prefix(controller))
+        view_prefix = controller |> controller_prefix()
+
+        View.default_view(template, prefix: view_prefix)
         |> View.send_message(template, assigns |> Enum.into(%{}) |> Map.merge(context))
 
       view ->
@@ -90,19 +88,9 @@ defmodule Juvet.Controller do
   @spec view_module(map()) :: String.t() | atom() | nil
   def view_module(context), do: Map.get(context, @view_context_key)
 
-  defp send_url_response(url, %Response{body: body}), do: send_url_response(url, body)
-
-  defp send_url_response(url, response) when is_map(response),
-    do: send_url_response(url, response |> Poison.encode!())
-
-  defp send_url_response(url, response) when is_binary(response) do
-    HTTPoison.post!(url, response, [{"Content-Type", "application/json"}])
-  end
-
-  defp send_the_response(context) do
-    conn = Conn.send_resp(context)
-    Map.put(context, :conn, conn)
-  end
+  defp maybe_append_suffix(prefix, nil), do: prefix
+  defp maybe_append_suffix("", _suffix), do: ""
+  defp maybe_append_suffix(prefix, suffix), do: prefix <> suffix
 
   defp maybe_clear_view({:ok, context}) when is_map(context) do
     context_key = @view_context_key
@@ -120,4 +108,18 @@ defmodule Juvet.Controller do
 
   defp maybe_update_response(context, %Response{} = response),
     do: Map.put(context, :response, response)
+
+  defp send_url_response(url, %Response{body: body}), do: send_url_response(url, body)
+
+  defp send_url_response(url, response) when is_map(response),
+    do: send_url_response(url, response |> Poison.encode!())
+
+  defp send_url_response(url, response) when is_binary(response) do
+    HTTPoison.post!(url, response, [{"Content-Type", "application/json"}])
+  end
+
+  defp send_the_response(context) do
+    conn = Conn.send_resp(context)
+    Map.put(context, :conn, conn)
+  end
 end
