@@ -18,14 +18,19 @@ defmodule Juvet.View do
     end
   end
 
-  def default_view(template),
-    do:
-      template
-      |> to_string()
-      |> String.replace_trailing("_view", "")
-      |> Kernel.<>("_view")
-      |> Macro.camelize()
-      |> String.to_atom()
+  def default_view(template, opts \\ []) do
+    prefix = Keyword.get(opts, :prefix)
+
+    template
+    |> to_string()
+    |> String.replace_trailing("_view", "")
+    |> Kernel.<>("_view")
+    |> Macro.camelize()
+    |> maybe_prepend_prefix(prefix)
+  end
+
+  defp maybe_prepend_prefix(suffix, nil), do: suffix
+  defp maybe_prepend_prefix(suffix, prefix), do: prefix <> suffix
 
   def send_message(view, template, assigns),
     do:

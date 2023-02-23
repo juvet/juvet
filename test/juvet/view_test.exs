@@ -64,11 +64,20 @@ defmodule Juvet.ViewTest do
 
   describe "default_view/1" do
     test "returns the module named after the template" do
-      assert View.default_view(:meeting_reminder) == :MeetingReminderView
+      assert View.default_view(:meeting_reminder) == "MeetingReminderView"
     end
 
     test "does not append a duplicate view suffix" do
-      assert View.default_view(:meeting_reminder_view) == :MeetingReminderView
+      assert View.default_view(:meeting_reminder_view) == "MeetingReminderView"
+    end
+
+    test "returns simply View if nil is provided" do
+      assert View.default_view(nil) == "View"
+    end
+
+    test "supports an optional prefix" do
+      assert View.default_view(:meeting_reminder_view, prefix: "Prefix.") ==
+               "Prefix.MeetingReminderView"
     end
   end
 
