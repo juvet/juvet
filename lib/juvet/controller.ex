@@ -28,6 +28,9 @@ defmodule Juvet.Controller do
       def send_message(context, template, assigns \\ []),
         do: send_message_from(__MODULE__, context, template, assigns)
 
+      def send_messages(context, templates, assigns \\ []),
+        do: send_messages_from(__MODULE__, context, templates, assigns)
+
       def view_state, do: unquote(view_state_manager)
     end
   end
@@ -57,17 +60,17 @@ defmodule Juvet.Controller do
   @spec put_view(map(), String.t() | atom()) :: map()
   def put_view(context, view), do: Map.put(context, @view_context_key, view)
 
-  def send_message_from(controller, context, template, assigns \\ []) do
-    case view_module(context) do
-      nil ->
-        controller
-        |> default_view_module(template)
-        |> View.send_message(template, assigns |> Enum.into(%{}) |> Map.merge(context))
+  def send_message_from(controller, context, template, assigns \\ []),
+    do: send_message_from(controller, context, template, assigns, [])
 
-      view ->
-        View.send_message(view, template, assigns |> Enum.into(%{}) |> Map.merge(context))
-    end
-    |> maybe_clear_view()
+  # Support: send_messages(context, [:template1, {:template2, :view2}])
+  # Support: send_messages(context, [{:view1 %{} = assigns_only_for_view1}, :view2], %{} = assigns_for_all_messages)
+  def send_messages_from(controller, context, templates, assigns \\ []) do
+    Enum.reduce(templates, {:ok, %{}}, fn template, result ->
+      send_message_from(controller, context, template, assigns, clear_view: false)
+      |> merge_send_message_result(result)
+    end)
+    |> maybe_clear_view(true)
   end
 
   @spec send_response(map() | String.t(), Response.t() | String.t() | map() | nil) :: map()
@@ -100,7 +103,7 @@ defmodule Juvet.Controller do
   defp maybe_append_suffix("", _suffix), do: ""
   defp maybe_append_suffix(prefix, suffix), do: prefix <> suffix
 
-  defp maybe_clear_view({:ok, context}) when is_map(context) do
+  defp maybe_clear_view({:ok, context}, true) when is_map(context) do
     context_key = @view_context_key
 
     case context do
@@ -112,10 +115,37 @@ defmodule Juvet.Controller do
     end
   end
 
-  defp maybe_clear_view(response), do: response
+  defp maybe_clear_view(response, _clear), do: response
 
   defp maybe_update_response(context, %Response{} = response),
     do: Map.put(context, :response, response)
+
+  defp merge_send_message_result({:ok, result}, {:ok, acc}),
+    do: {:ok, Map.merge(acc, result)}
+
+  defp merge_send_message_result({:ok, result}, {:error, error, acc}),
+    do: {:error, error, Map.merge(acc, result)}
+
+  defp merge_send_message_result({:error, error}, {:ok, acc}),
+    do: {:error, error, acc}
+
+  defp merge_send_message_result({:error, error}, {:error, _error, acc}),
+    do: {:error, error, acc}
+
+  defp send_message_from(controller, context, template, assigns, opts) do
+    clear_view = Keyword.get(opts, :clear_view, true)
+
+    case view_module(context) do
+      nil ->
+        controller
+        |> default_view_module(template)
+        |> View.send_message(template, assigns |> Enum.into(%{}) |> Map.merge(context))
+
+      view ->
+        View.send_message(view, template, assigns |> Enum.into(%{}) |> Map.merge(context))
+    end
+    |> maybe_clear_view(clear_view)
+  end
 
   defp send_url_response(url, %Response{body: body}), do: send_url_response(url, body)
 

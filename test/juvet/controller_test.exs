@@ -13,6 +13,12 @@ defmodule Juvet.ControllerTest do
       |> send_message(template, assigns)
     end
 
+    def send_messages_test(context, templates, assigns \\ []) do
+      context
+      |> put_view(MyView)
+      |> send_messages(templates, assigns)
+    end
+
     def send_message_with_default_view_test(context, template, assigns \\ []),
       do: context |> send_message(template, assigns)
 
@@ -112,6 +118,7 @@ defmodule Juvet.ControllerTest do
                   {:ok, Response.new(body: "ok")}
                 end do
         MyController.send_message_with_default_view_test(context, :meeting_reminder)
+
         assert_called(Juvet.View.send_message(expected_view, :meeting_reminder, context))
       end
     end
@@ -123,6 +130,20 @@ defmodule Juvet.ControllerTest do
           {:ok, new_context}
         end do
         MyController.send_message_test(context, :meeting_reminder, newkey: :newvalue)
+      end
+    end
+  end
+
+  describe "send_messages/2" do
+    test "sends one or more messages within the same context" do
+      with_mocks [
+        {Juvet.View, [],
+         [send_message: fn _view, template, _context -> {:ok, %{template: template}} end]}
+      ] do
+        MyController.send_messages_test(%{}, [:meeting_reminder, :another_reminder])
+
+        assert_called(Juvet.View.send_message(MyView, :meeting_reminder, %{}))
+        assert_called(Juvet.View.send_message(MyView, :another_reminder, %{}))
       end
     end
   end
