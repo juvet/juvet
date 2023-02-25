@@ -18,7 +18,7 @@ defmodule Juvet.Runner do
     default_configuration(configuration)
     |> Map.merge(%{path: path})
     |> Map.merge(context)
-    |> Map.merge(%{middleware: Middleware.group(:partial)})
+    |> merge_middleware()
     |> MiddlewareProcessor.process()
   end
 
@@ -33,7 +33,7 @@ defmodule Juvet.Runner do
     default_configuration(configuration)
     |> Map.merge(%{conn: conn})
     |> Map.merge(context)
-    |> Map.merge(%{middleware: Middleware.group(:all)})
+    |> merge_middleware()
     |> MiddlewareProcessor.process()
   end
 
@@ -41,5 +41,11 @@ defmodule Juvet.Runner do
 
   defp default_configuration(configuration) do
     %{configuration: Keyword.merge(Juvet.configuration(), configuration)}
+  end
+
+  defp merge_middleware(context) do
+    group = if Map.has_key?(context, :conn), do: :all, else: :partial
+
+    Map.merge(context, %{middleware: Middleware.group(group)})
   end
 end
