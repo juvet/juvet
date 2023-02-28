@@ -1,12 +1,21 @@
 defmodule Juvet.Router.State do
   @moduledoc false
 
-  alias Juvet.Router.{Platform, RouteError}
+  alias Juvet.Router.{Middleware, Platform, RouteError}
 
+  @middlewares :juvet_middlewares
   @platforms :juvet_platforms
 
   @spec init(module()) :: :ok
-  def init(module), do: put_platforms(module, [])
+  def init(module) do
+    put_middlewares(module, Middleware.system())
+    put_platforms(module, [])
+  end
+
+  @spec get_middlewares(module()) :: list(Juvet.Router.Middleware.t())
+  def get_middlewares(module) do
+    Module.get_attribute(module, @middlewares)
+  end
 
   @spec get_platforms(module()) :: list(Juvet.Router.Platform.t())
   def get_platforms(module) do
@@ -75,6 +84,9 @@ defmodule Juvet.Router.State do
 
     route
   end
+
+  defp put_middlewares(module, middlewares),
+    do: Module.put_attribute(module, @middlewares, middlewares)
 
   defp put_platforms(module, platforms), do: Module.put_attribute(module, @platforms, platforms)
 end

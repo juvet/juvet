@@ -37,6 +37,14 @@ defmodule Juvet.RouterTest do
     end
   end
 
+  describe "middlewares/1" do
+    test "accumulates all the middleware that can run" do
+      default_middleware = Juvet.Router.middlewares(MyRouter)
+
+      assert Enum.count(default_middleware) == 9
+    end
+  end
+
   describe "platform/2" do
     test "accumulates the platforms within the router" do
       platforms = Juvet.Router.platforms(MyRouter)

@@ -19,10 +19,12 @@ defmodule Juvet.Router do
 
   @doc false
   defmacro __before_compile__(env) do
+    middlewares = env.module |> Router.State.get_middlewares()
     platforms = env.module |> Router.State.get_platforms()
 
     quote do
       def __platforms__, do: unquote(Macro.escape(platforms))
+      def __middlewares__, do: unquote(Macro.escape(middlewares))
     end
   end
 
@@ -86,6 +88,10 @@ defmodule Juvet.Router do
 
   def find_route(router, request) do
     RouteFinder.find(platforms(router), request)
+  end
+
+  def middlewares(router) do
+    router.__middlewares__()
   end
 
   def platforms(router) do
