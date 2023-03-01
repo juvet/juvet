@@ -3,13 +3,19 @@ defmodule Juvet.ConfigTest do
 
   import Juvet.ConfigurationHelpers
 
-  describe "Juvet.Config.bot/1" do
+  describe "bot/1" do
     test "returns the value specified in the config" do
       assert Juvet.Config.bot(bot: HelloWorld) == HelloWorld
     end
   end
 
-  describe "Juvet.Config.slack/0" do
+  describe "router/1" do
+    test "returns the value specified in the config" do
+      assert Juvet.Config.router(router: MyRouter) == MyRouter
+    end
+  end
+
+  describe "slack/1" do
     test "returns a map containing the Slack configuration" do
       assert Juvet.Config.slack(slack: [actions_endpoint_path: ""]) == %{
                actions_endpoint_path: ""
@@ -21,7 +27,7 @@ defmodule Juvet.ConfigTest do
     end
   end
 
-  describe "Juvet.Config.slack_configured?/0" do
+  describe "slack_configured?/1" do
     test "returns true if Slack is configured" do
       assert Juvet.Config.slack_configured?(slack: [actions_endpoint_path: ""])
     end
@@ -31,7 +37,7 @@ defmodule Juvet.ConfigTest do
     end
   end
 
-  describe "Juvet.Config.valid?/0" do
+  describe "valid?/1" do
     setup do
       {:ok, config: default_config()}
     end

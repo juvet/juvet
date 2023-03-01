@@ -10,6 +10,7 @@ defmodule Juvet.Config do
   ```
   config :juvet,
     bot: MyBot,
+    router: MyRouter,
     slack: [
       actions_endpoint: "/slack/actions",
       commands_endpoint: "/slack/commands",
@@ -21,6 +22,7 @@ defmodule Juvet.Config do
 
   @defaults [
     bot: MyBot,
+    router: nil,
     slack: nil
   ]
 
@@ -37,6 +39,12 @@ defmodule Juvet.Config do
   def invalid?(config) do
     bot(config) |> to_string() |> String.trim() == ""
   end
+
+  @doc """
+  Returns the module that defines your router.
+  """
+  @spec router(Keyword.t()) :: module() | nil
+  def router(config), do: Keyword.get(config, :router, @defaults[:router])
 
   @doc """
   Returns all of the configuration for the Slack service.
