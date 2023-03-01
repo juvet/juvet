@@ -60,5 +60,5 @@ defmodule Juvet.Runner do
     end
   end
 
-  defp merge_middleware(context), do: Map.merge(context, %{middleware: []})
+  defp merge_middleware(context) when is_map(context), do: Map.merge(context, %{middleware: []})
 end
