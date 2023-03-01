@@ -19,6 +19,20 @@ defmodule Juvet.Router.Middleware do
     %__MODULE__{module: module, partial: partial, platform: platform}
   end
 
+  @spec put_middleware(list(Juvet.Router.Middleware.t()), Juvet.Router.Middleware.t()) ::
+          list(Juvet.Router.Middleware.t())
+  def put_middleware(middlewares, middleware) do
+    middlewares
+    |> Enum.find_index(fn %{module: module} -> module == Juvet.Middleware.ActionGenerator end)
+    |> case do
+      nil ->
+        raise ArgumentError, message: "Middleware incorrectly compiled."
+
+      index ->
+        List.insert_at(middlewares, index, middleware)
+    end
+  end
+
   @spec system() :: list(Juvet.Router.Middleware.t())
   def system do
     [

@@ -3,8 +3,21 @@ defmodule Juvet.RouterTest do
 
   alias Juvet.Router.{Request, RouteError}
 
+  defmodule MoreMiddleware do
+    def call(context), do: {:ok, context}
+  end
+
+  defmodule MyMiddleware do
+    def call(context), do: {:ok, context}
+  end
+
   defmodule MyRouter do
     use Juvet.Router
+
+    middleware do
+      include(MyMiddleware)
+      include(MoreMiddleware)
+    end
 
     platform :slack do
       action("test_action_id", to: "controller#action")
@@ -38,10 +51,24 @@ defmodule Juvet.RouterTest do
   end
 
   describe "middlewares/1" do
-    test "accumulates all the middleware that can run" do
-      default_middleware = Juvet.Router.middlewares(MyRouter)
+    test "accumulates all the system middleware and router middleware that can run" do
+      middleware = Juvet.Router.middlewares(MyRouter)
 
-      assert Enum.count(default_middleware) == 9
+      assert Enum.count(middleware) == 11
+
+      assert Enum.map(middleware, & &1.module) == [
+               Juvet.Middleware.ParseRequest,
+               Juvet.Middleware.IdentifyRequest,
+               Juvet.Middleware.Slack.VerifyRequest,
+               Juvet.Middleware.DecodeRequestParams,
+               Juvet.Middleware.NormalizeRequestParams,
+               Juvet.Middleware.BuildDefaultResponse,
+               Juvet.Middleware.RouteRequest,
+               Juvet.RouterTest.MyMiddleware,
+               Juvet.RouterTest.MoreMiddleware,
+               Juvet.Middleware.ActionGenerator,
+               Juvet.Middleware.ActionRunner
+             ]
     end
   end
 

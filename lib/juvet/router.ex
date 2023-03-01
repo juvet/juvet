@@ -1,6 +1,6 @@
 defmodule Juvet.Router do
   alias Juvet.Router
-  alias Juvet.Router.{Route, RouteFinder}
+  alias Juvet.Router.{Middleware, Route, RouteFinder}
 
   defmacro __using__(_opts) do
     quote do
@@ -46,12 +46,27 @@ defmodule Juvet.Router do
     end
   end
 
+  defmacro include(module, options \\ []) do
+    quote do
+      Router.State.put_middleware!(
+        __MODULE__,
+        Middleware.new(unquote(module), unquote(options))
+      )
+    end
+  end
+
   defmacro option_load(action_id, options \\ []) do
     quote do
       Router.State.put_route_on_top!(
         __MODULE__,
         Route.new(:option_load, unquote(action_id), unquote(options))
       )
+    end
+  end
+
+  defmacro middleware(do: block) do
+    quote do
+      unquote(block)
     end
   end
 
