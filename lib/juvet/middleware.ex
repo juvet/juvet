@@ -5,18 +5,18 @@ defmodule Juvet.Middleware do
 
   @spec group(atom()) :: list({module()})
   def group(:partial) do
-    [{Juvet.Middleware.ActionGenerator}, {Juvet.Middleware.ActionRunner}]
+    [Juvet.Middleware.ActionGenerator, Juvet.Middleware.ActionRunner]
   end
 
   def group(:all) do
     [
-      {Juvet.Middleware.ParseRequest},
-      {Juvet.Middleware.IdentifyRequest},
-      {Juvet.Middleware.Slack.VerifyRequest},
-      {Juvet.Middleware.DecodeRequestParams},
-      {Juvet.Middleware.NormalizeRequestParams},
-      {Juvet.Middleware.BuildDefaultResponse},
-      {Juvet.Middleware.RouteRequest}
+      Juvet.Middleware.ParseRequest,
+      Juvet.Middleware.IdentifyRequest,
+      Juvet.Middleware.Slack.VerifyRequest,
+      Juvet.Middleware.DecodeRequestParams,
+      Juvet.Middleware.NormalizeRequestParams,
+      Juvet.Middleware.BuildDefaultResponse,
+      Juvet.Middleware.RouteRequest
     ] ++ group(:partial)
   end
 end
