@@ -52,14 +52,15 @@ defmodule Juvet.RunnerTest do
     end
 
     test "adds the route to the context based on the path", %{path: path} do
-      {:ok, context} = Juvet.Runner.route(path)
+      {:ok, context} = Juvet.Runner.route(path, %{configuration: [router: MyRouter]})
 
       assert Map.fetch!(context, :action) ==
                {:"Elixir.Juvet.RunnerTest.TestController", :action}
     end
 
     test "calls the controller module and action from the path", %{path: path} do
-      {:ok, _context} = Juvet.Runner.route(path, %{pid: self()})
+      {:ok, _context} =
+        Juvet.Runner.route(path, %{pid: self(), configuration: [router: MyRouter]})
 
       assert_received :called_controller
     end

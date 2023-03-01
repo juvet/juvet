@@ -124,7 +124,10 @@ defmodule Juvet.Router do
   end
 
   def middlewares(router) do
-    router.__middlewares__()
+    case Code.ensure_compiled(router) do
+      {:module, _} -> router.__middlewares__()
+      {:error, _} -> []
+    end
   end
 
   def platforms(router) do
