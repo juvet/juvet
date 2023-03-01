@@ -101,6 +101,24 @@ defmodule Juvet.Router do
     UndefinedFunctionError -> false
   end
 
+  def find_middleware(middlewares, opts \\ [])
+
+  def find_middleware(middlewares, partial: true) do
+    middlewares
+    |> Enum.filter(fn %{partial: partial} -> partial != false end)
+    |> case do
+      [_ | _] = partial_middleware -> {:ok, partial_middleware}
+      [] -> {:error, :no_middleware}
+    end
+  end
+
+  def find_middleware(middlewares, _opts) do
+    case middlewares do
+      [_ | _] = middlwares -> {:ok, middlwares}
+      [] -> {:error, :no_middleware}
+    end
+  end
+
   def find_route(router, request) do
     RouteFinder.find(platforms(router), request)
   end

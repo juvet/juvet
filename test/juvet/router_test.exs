@@ -1,7 +1,7 @@
 defmodule Juvet.RouterTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Router.{Request, RouteError}
+  alias Juvet.Router.{Middleware, Request, RouteError}
 
   defmodule MoreMiddleware do
     def call(context), do: {:ok, context}
@@ -87,6 +87,32 @@ defmodule Juvet.RouterTest do
       assert Enum.at(List.first(platforms).routes, 0).route == "test_action_id"
       assert Enum.at(List.first(platforms).routes, 1).route == "/test"
       assert Enum.at(List.first(platforms).routes, 2).route == "test_callback_id"
+    end
+  end
+
+  describe "find_middleware/2" do
+    setup do
+      [middlewares: Juvet.Router.middlewares(MyRouter)]
+    end
+
+    test "returns an ok tuple with a list of middleware if they were found", %{
+      middlewares: middlewares
+    } do
+      assert {:ok, middleware} = Juvet.Router.find_middleware(middlewares)
+      assert Enum.count(middleware) == 11
+    end
+
+    test "returns an ok tuple with a list of partial middleware", %{middlewares: middlewares} do
+      assert {:ok, middleware} = Juvet.Router.find_middleware(middlewares, partial: true)
+      assert Enum.count(middleware) == 4
+    end
+
+    test "returns an error tuple if none were found" do
+      assert {:error, :no_middleware} =
+               Juvet.Router.find_middleware(
+                 [Middleware.new(Juvet.Middleware.ParseRequest, partial: false)],
+                 partial: true
+               )
     end
   end
 

@@ -6,10 +6,10 @@ defmodule Juvet.Router.Middleware do
   @type t :: %__MODULE__{
           module: module(),
           platform: atom() | nil,
-          partial: boolean()
+          partial: boolean() | nil
         }
   @enforce_keys [:module]
-  defstruct [:module, partial: false, platform: nil]
+  defstruct [:module, partial: nil, platform: nil]
 
   @spec new(module(), keyword()) :: Juvet.Router.Middleware.t()
   def new(module, opts \\ []) do
@@ -36,15 +36,15 @@ defmodule Juvet.Router.Middleware do
   @spec system() :: list(Juvet.Router.Middleware.t())
   def system do
     [
-      new(Juvet.Middleware.ParseRequest),
-      new(Juvet.Middleware.IdentifyRequest),
-      new(Juvet.Middleware.Slack.VerifyRequest),
-      new(Juvet.Middleware.DecodeRequestParams),
-      new(Juvet.Middleware.NormalizeRequestParams),
-      new(Juvet.Middleware.BuildDefaultResponse),
-      new(Juvet.Middleware.RouteRequest),
-      new(Juvet.Middleware.ActionGenerator, partial: true),
-      new(Juvet.Middleware.ActionRunner, partial: true)
+      new(Juvet.Middleware.ParseRequest, partial: false),
+      new(Juvet.Middleware.IdentifyRequest, partial: false),
+      new(Juvet.Middleware.Slack.VerifyRequest, partial: false),
+      new(Juvet.Middleware.DecodeRequestParams, partial: false),
+      new(Juvet.Middleware.NormalizeRequestParams, partial: false),
+      new(Juvet.Middleware.BuildDefaultResponse, partial: false),
+      new(Juvet.Middleware.RouteRequest, partial: false),
+      new(Juvet.Middleware.ActionGenerator),
+      new(Juvet.Middleware.ActionRunner)
     ]
   end
 
