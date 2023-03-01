@@ -4,7 +4,7 @@ defmodule Juvet.Runner do
   collection of middleware.
   """
 
-  alias Juvet.{Middleware, MiddlewareProcessor}
+  alias Juvet.{Config, MiddlewareProcessor, Router}
 
   @doc """
   Gathers the configuration along with the specified `Context`, uses the specified
@@ -18,7 +18,7 @@ defmodule Juvet.Runner do
     default_configuration(configuration)
     |> Map.merge(%{path: path})
     |> Map.merge(context)
-    |> Map.merge(%{middleware: Middleware.group(:partial)})
+    |> merge_middleware()
     |> MiddlewareProcessor.process()
   end
 
@@ -33,7 +33,7 @@ defmodule Juvet.Runner do
     default_configuration(configuration)
     |> Map.merge(%{conn: conn})
     |> Map.merge(context)
-    |> Map.merge(%{middleware: Middleware.group(:all)})
+    |> merge_middleware()
     |> MiddlewareProcessor.process()
   end
 
@@ -41,5 +41,22 @@ defmodule Juvet.Runner do
 
   defp default_configuration(configuration) do
     %{configuration: Keyword.merge(Juvet.configuration(), configuration)}
+  end
+
+  defp merge_middleware(%{configuration: configuration} = context) do
+    partial = !Map.has_key?(context, :conn)
+
+    configuration
+    |> Config.router()
+    |> Router.middlewares()
+    |> Router.find_middleware(partial: partial)
+    |> case do
+      {:ok, middleware} ->
+        middleware = middleware |> Enum.map(& &1.module)
+        Map.merge(context, %{middleware: middleware})
+
+      _ ->
+        Map.merge(context, %{middleware: []})
+    end
   end
 end

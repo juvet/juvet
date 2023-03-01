@@ -22,9 +22,8 @@ defmodule Juvet.MiddlewareProcessor do
   @doc """
   Processes a single piece of `Middleware` and returns the result.
   """
-  @spec process(tuple(), map()) :: {:ok, map()} | {:error, any()}
+  @spec process(module(), map()) :: {:ok, map()} | {:error, any()}
   def process(middleware, context) do
-    mod = elem(middleware, 0)
-    mod.call(context)
+    middleware.call(context)
   end
 end

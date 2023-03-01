@@ -1,6 +1,6 @@
 defmodule Juvet.Router do
   alias Juvet.Router
-  alias Juvet.Router.{Route, RouteFinder}
+  alias Juvet.Router.{Middleware, Route, RouteFinder}
 
   defmacro __using__(_opts) do
     quote do
@@ -19,10 +19,12 @@ defmodule Juvet.Router do
 
   @doc false
   defmacro __before_compile__(env) do
+    middlewares = env.module |> Router.State.get_middlewares()
     platforms = env.module |> Router.State.get_platforms()
 
     quote do
       def __platforms__, do: unquote(Macro.escape(platforms))
+      def __middlewares__, do: unquote(Macro.escape(middlewares))
     end
   end
 
@@ -44,12 +46,27 @@ defmodule Juvet.Router do
     end
   end
 
+  defmacro include(module, options \\ []) do
+    quote do
+      Router.State.put_middleware!(
+        __MODULE__,
+        Middleware.new(unquote(module), unquote(options))
+      )
+    end
+  end
+
   defmacro option_load(action_id, options \\ []) do
     quote do
       Router.State.put_route_on_top!(
         __MODULE__,
         Route.new(:option_load, unquote(action_id), unquote(options))
       )
+    end
+  end
+
+  defmacro middleware(do: block) do
+    quote do
+      unquote(block)
     end
   end
 
@@ -84,8 +101,33 @@ defmodule Juvet.Router do
     UndefinedFunctionError -> false
   end
 
+  def find_middleware(middlewares, opts \\ [])
+
+  def find_middleware(middlewares, partial: true) do
+    middlewares
+    |> Enum.filter(fn %{partial: partial} -> partial != false end)
+    |> case do
+      [_ | _] = partial_middleware -> {:ok, partial_middleware}
+      [] -> {:error, :no_middleware}
+    end
+  end
+
+  def find_middleware(middlewares, _opts) do
+    case middlewares do
+      [_ | _] = middlwares -> {:ok, middlwares}
+      [] -> {:error, :no_middleware}
+    end
+  end
+
   def find_route(router, request) do
     RouteFinder.find(platforms(router), request)
+  end
+
+  def middlewares(router) do
+    case Code.ensure_compiled(router) do
+      {:module, _} -> router.__middlewares__()
+      {:error, _} -> []
+    end
   end
 
   def platforms(router) do
