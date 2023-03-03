@@ -46,6 +46,13 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   def find_route(
+        %Juvet.Router.Route{type: :event, route: event} = route,
+        request
+      ) do
+    if event_request?(request, event), do: route
+  end
+
+  def find_route(
         %Juvet.Router.Route{type: :option_load, route: action_id} = route,
         request
       ) do
@@ -84,6 +91,14 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :command} = route,
+        _options
+      ),
+      do: {:ok, route}
+
+  @impl Juvet.Router
+  def validate_route(
+        _router,
+        %Juvet.Router.Route{type: :event} = route,
         _options
       ),
       do: {:ok, route}
@@ -145,6 +160,12 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   defp command_without_slash(command), do: String.trim_leading(command, "/")
+
+  defp event_request?(%{raw_params: %{"event" => %{"type" => event_type}}}, event) do
+    normalized_value(event_type) == normalized_value(event)
+  end
+
+  defp event_request?(_payload, _event), do: false
 
   defp normalized_command(nil), do: nil
 

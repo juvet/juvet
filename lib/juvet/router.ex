@@ -46,6 +46,15 @@ defmodule Juvet.Router do
     end
   end
 
+  defmacro event(event, options \\ []) do
+    quote do
+      Router.State.put_route_on_top!(
+        __MODULE__,
+        Route.new(:event, unquote(event), unquote(options))
+      )
+    end
+  end
+
   defmacro include(module, options \\ []) do
     quote do
       Router.State.put_middleware!(
