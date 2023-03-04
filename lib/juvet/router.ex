@@ -82,6 +82,8 @@ defmodule Juvet.Router do
   defmacro platform(platform, do: block) do
     quote do
       Router.State.put_platform!(__MODULE__, unquote(platform))
+      Router.State.put_default_routes_on_top!(__MODULE__, unquote(platform))
+
       unquote(block)
     end
   end

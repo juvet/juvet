@@ -53,13 +53,18 @@ defmodule Juvet.Router.State do
     end
   end
 
-  @spec put_platform(module(), Juvet.Router.Platform.t()) :: :ok
+  @spec put_platform(module(), Juvet.Router.Platform.t()) :: Juvet.Router.Platform.t()
   def put_platform(module, platform) do
     platforms = get_platforms(module)
 
     platforms = [platform | platforms]
 
     put_platforms(module, platforms)
+
+    platform
+  end
+
+  def put_default_routes_on_top!(module, platform) do
   end
 
   @spec put_route_on_top!(module(), Juvet.Router.Route.t()) :: Juvet.Router.Route.t() | nil
