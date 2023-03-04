@@ -5,26 +5,36 @@ defmodule Juvet.Middleware.ActionRunner do
   """
 
   @spec call(map()) :: {:ok, map()} | {:error, any()}
-  def call(%{action: action} = context) do
-    m = elem(action, 0)
-    f = elem(action, 1)
-
+  def call(%{action: {m, f}} = context) do
     try do
       case apply(m, f, [context]) do
-        {:ok, ctx} when is_map(ctx) ->
-          {:ok, ctx}
-
-        {:error, error} ->
-          {:error, error}
-
-        _ ->
-          {:error,
-           "`#{f}/1` is required to return the `context` in an `:ok` tuple or an `:error` tuple"}
+        {:ok, ctx} when is_map(ctx) -> {:ok, ctx}
+        {:error, error} -> {:error, error}
+        _ -> {:error, invalid_return_error("#{f}/1")}
       end
     rescue
-      UndefinedFunctionError -> {:error, "`#{m}.#{f}/1` is not defined"}
+      UndefinedFunctionError -> {:error, not_defined_error("#{m}.#{f}/1")}
+    end
+  end
+
+  def call(%{action: fun} = context) do
+    try do
+      case fun.(context) do
+        {:ok, ctx} when is_map(ctx) -> {:ok, ctx}
+        {:error, error} -> {:error, error}
+        _ -> {:error, invalid_return_error(inspect(fun))}
+      end
+    rescue
+      e in BadArityError -> {:error, e.function}
+      UndefinedFunctionError -> {:error, not_defined_error(inspect(fun))}
     end
   end
 
   def call(_context), do: {:error, "`action` missing in the `context`"}
+
+  defp invalid_return_error(function_name),
+    do:
+      "`#{function_name}` is required to return the `context` in an `:ok` tuple or an `:error` tuple"
+
+  defp not_defined_error(function_name), do: "`#{function_name}` is not defined"
 end
