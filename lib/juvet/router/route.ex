@@ -5,13 +5,13 @@ defmodule Juvet.Router.Route do
 
   @type t :: %__MODULE__{
           type: atom(),
-          route: String.t(),
+          route: String.t() | nil,
           options: keyword()
         }
   defstruct type: nil, route: nil, options: []
 
   @spec new(atom(), String.t(), keyword()) :: Juvet.Router.Route.t()
-  def new(type, route, options \\ []) do
+  def new(type, route \\ nil, options \\ []) do
     %__MODULE__{type: type, route: route, options: options}
   end
 
