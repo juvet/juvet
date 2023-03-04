@@ -15,7 +15,7 @@ defmodule Juvet.Router.Route do
     %__MODULE__{type: type, route: route, options: options}
   end
 
-  @spec path(map()) :: String.t()
+  @spec path(map()) :: String.t() | function()
   def path(%{options: options}) do
     Keyword.get(options, :to)
   end
