@@ -51,6 +51,16 @@ defmodule Juvet.PlugHelpers do
         |> from_set_to_sent()
       end
 
+      def json_response(conn, status) do
+        if conn.status !== status,
+          do:
+            raise(ArgumentError,
+              message: "Response status of #{conn.status} does not match #{status}"
+            )
+
+        conn.resp_body |> Poison.decode!()
+      end
+
       defp ensure_encodable(map) do
         map
         |> Enum.reduce(%{}, fn {key, value}, encoded ->
