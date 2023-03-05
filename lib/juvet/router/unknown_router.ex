@@ -21,6 +21,12 @@ defmodule Juvet.Router.UnknownRouter do
     do: {:error, {:unknown_route, [platform: platform, request: request]}}
 
   @impl Juvet.Router
+  def get_default_routes, do: {:error, :unknown_platform}
+
+  @impl Juvet.Router
+  def handle_route(_context), do: {:error, :unknown_platform}
+
+  @impl Juvet.Router
   def validate(_platform), do: {:error, :unknown_platform}
 
   @impl Juvet.Router

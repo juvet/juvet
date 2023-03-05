@@ -3,6 +3,26 @@ defmodule Juvet.Router.PlatformTest do
 
   alias Juvet.Router.{Platform, Route, SlackRouter}
 
+  describe "put_default_routes/1" do
+    setup do
+      platform = Platform.new(:slack)
+
+      [platform: platform]
+    end
+
+    test "returns an ok tuple with the default routes added to the returnning platform", %{
+      platform: platform
+    } do
+      assert {:ok, platform} = Platform.put_default_routes(platform)
+      assert Enum.count(platform.routes) == 1
+      assert List.first(platform.routes).type == :url_verification
+    end
+
+    test "returns an error tuple if the platform is unknown" do
+      assert {:error, _error} = Platform.put_default_routes(Platform.new(:blah))
+    end
+  end
+
   describe "put_route/3" do
     setup do
       platform = Platform.new(:slack)
