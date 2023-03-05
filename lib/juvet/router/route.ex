@@ -10,7 +10,7 @@ defmodule Juvet.Router.Route do
         }
   defstruct type: nil, route: nil, options: []
 
-  @spec new(atom(), String.t(), keyword()) :: Juvet.Router.Route.t()
+  @spec new(atom(), String.t() | nil, keyword()) :: Juvet.Router.Route.t()
   def new(type, route \\ nil, options \\ []) do
     %__MODULE__{type: type, route: route, options: options}
   end
