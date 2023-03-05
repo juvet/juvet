@@ -40,7 +40,7 @@ defmodule Juvet.Router.State do
     put_middlewares(module, middlewares)
   end
 
-  @spec put_platform!(module(), atom()) :: :ok
+  @spec put_platform!(module(), atom()) :: Juvet.Router.Platform.t()
   def put_platform!(module, platform) when is_atom(platform) do
     case Platform.new(platform) |> Platform.validate() do
       {:ok, platform} ->
