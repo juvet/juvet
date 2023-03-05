@@ -29,6 +29,7 @@ defmodule Juvet.SlackRequestHelpers do
             timestamp \\ NaiveDateTime.utc_now()
           ) do
         params
+        |> ensure_encodable()
         |> URI.encode_query()
         |> Juvet.SlackSigningSecret.generate(signing_secret, timestamp)
       end

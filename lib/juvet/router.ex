@@ -46,6 +46,15 @@ defmodule Juvet.Router do
     end
   end
 
+  defmacro event(event, options \\ []) do
+    quote do
+      Router.State.put_route_on_top!(
+        __MODULE__,
+        Route.new(:event, unquote(event), unquote(options))
+      )
+    end
+  end
+
   defmacro include(module, options \\ []) do
     quote do
       Router.State.put_middleware!(
@@ -72,7 +81,9 @@ defmodule Juvet.Router do
 
   defmacro platform(platform, do: block) do
     quote do
-      Router.State.put_platform!(__MODULE__, unquote(platform))
+      platform = Router.State.put_platform!(__MODULE__, unquote(platform))
+      Router.State.put_default_routes_on_top!(__MODULE__, platform)
+
       unquote(block)
     end
   end
@@ -138,6 +149,11 @@ defmodule Juvet.Router do
   @callback new(atom()) :: struct()
 
   @callback find_route(%{platform: Juvet.Router.Platform.t()}, Juvet.Router.Request.t()) ::
+              {:ok, Juvet.Router.Route.t()} | {:error, term()}
+
+  @callback get_default_routes() :: {:ok, [Juvet.Router.Route.t()]} | {:error, term()}
+
+  @callback handle_route(%{platform: Juvet.Router.Platform.t()}) ::
               {:ok, Juvet.Router.Route.t()} | {:error, term()}
 
   @callback validate(Juvet.Router.Platform.t()) ::

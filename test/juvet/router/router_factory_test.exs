@@ -45,6 +45,25 @@ defmodule Juvet.Router.RouterFactoryTest do
     end
   end
 
+  describe "get_default_routes/1" do
+    setup do
+      platform = Platform.new(:slack)
+
+      [platform: platform]
+    end
+
+    test "returns an ok tuple with the default routes", %{platform: platform} do
+      assert {:ok, [route]} = RouterFactory.get_default_routes(platform)
+      assert route.type == :url_verification
+    end
+
+    test "returns an error if the platform is not valid" do
+      unknown_platform = Platform.new(:blah)
+
+      assert {:error, :unknown_platform} = RouterFactory.get_default_routes(unknown_platform)
+    end
+  end
+
   describe "validate_route/3" do
     setup do
       route = Route.new(:command, "/test", to: "controller#action")

@@ -16,6 +16,19 @@ defmodule Juvet.Router.Platform do
     %__MODULE__{platform: platform}
   end
 
+  @spec put_default_routes(Juvet.Router.Platform.t()) ::
+          {:ok, Juvet.Router.Platform.t()} | {:error, any()}
+  def put_default_routes(platform) do
+    case RouterFactory.get_default_routes(platform) do
+      {:ok, routes} ->
+        current_routes = platform.routes
+        {:ok, %{platform | routes: current_routes ++ routes}}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   @spec put_route(Juvet.Router.Platform.t(), Juvet.Router.Route.t(), map()) ::
           {:ok, Juvet.Router.Platform.t()} | {:error, any()}
   def put_route(%Juvet.Router.Platform{} = platform, route, options \\ %{}) do

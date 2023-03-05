@@ -5,6 +5,8 @@ defmodule Juvet.Router.SlackRouter do
 
   @behaviour Juvet.Router
 
+  alias Juvet.Router.{Conn, Response, Route}
+
   @type t :: %__MODULE__{
           platform: Juvet.Router.Platform.t()
         }
@@ -31,40 +33,55 @@ defmodule Juvet.Router.SlackRouter do
     end
   end
 
-  def find_route(
-        %Juvet.Router.Route{type: :action, route: action_id} = route,
-        request
-      ) do
+  def find_route(%Route{type: :action, route: action_id} = route, request) do
     if action_request?(request, action_id), do: route
   end
 
-  def find_route(
-        %Juvet.Router.Route{type: :command, route: command_text} = route,
-        request
-      ) do
+  def find_route(%Route{type: :command, route: command_text} = route, request) do
     if command_request?(request, command_text), do: route
   end
 
-  def find_route(
-        %Juvet.Router.Route{type: :option_load, route: action_id} = route,
-        request
-      ) do
+  def find_route(%Route{type: :event, route: event} = route, request) do
+    if event_request?(request, event), do: route
+  end
+
+  def find_route(%Route{type: :option_load, route: action_id} = route, request) do
     if option_load_request?(request, action_id), do: route
   end
 
-  def find_route(
-        %Juvet.Router.Route{type: :view_closed, route: callback_id} = route,
-        request
-      ) do
+  def find_route(%Route{type: :url_verification} = route, request) do
+    if url_verification_request?(request), do: route
+  end
+
+  def find_route(%Route{type: :view_closed, route: callback_id} = route, request) do
     if view_closed_request?(request, callback_id), do: route
   end
 
-  def find_route(
-        %Juvet.Router.Route{type: :view_submission, route: callback_id} = route,
-        request
-      ) do
+  def find_route(%Route{type: :view_submission, route: callback_id} = route, request) do
     if view_submission_request?(request, callback_id), do: route
   end
+
+  @impl Juvet.Router
+  def get_default_routes do
+    {:ok, [Route.new(:url_verification, nil, to: &__MODULE__.handle_route/1)]}
+  end
+
+  @impl Juvet.Router
+  def handle_route(
+        %{request: %{raw_params: %{"challenge" => challenge, "type" => "url_verification"}}} =
+          context
+      ) do
+    conn =
+      context
+      |> Map.put(:response, Response.new(status: 200, body: %{challenge: challenge}))
+      |> Conn.send_resp()
+
+    context = Map.put(context, :conn, conn)
+    {:ok, context}
+  end
+
+  @impl Juvet.Router
+  def handle_route(context), do: {:ok, context}
 
   @impl Juvet.Router
   def validate(%{platform: :slack} = platform), do: {:ok, platform}
@@ -91,7 +108,23 @@ defmodule Juvet.Router.SlackRouter do
   @impl Juvet.Router
   def validate_route(
         _router,
+        %Juvet.Router.Route{type: :event} = route,
+        _options
+      ),
+      do: {:ok, route}
+
+  @impl Juvet.Router
+  def validate_route(
+        _router,
         %Juvet.Router.Route{type: :option_load} = route,
+        _options
+      ),
+      do: {:ok, route}
+
+  @impl Juvet.Router
+  def validate_route(
+        _router,
+        %Juvet.Router.Route{type: :url_verification} = route,
         _options
       ),
       do: {:ok, route}
@@ -146,6 +179,12 @@ defmodule Juvet.Router.SlackRouter do
 
   defp command_without_slash(command), do: String.trim_leading(command, "/")
 
+  defp event_request?(%{raw_params: %{"event" => %{"type" => event_type}}}, event) do
+    normalized_value(event_type) == normalized_value(event)
+  end
+
+  defp event_request?(_payload, _event), do: false
+
   defp normalized_command(nil), do: nil
 
   defp normalized_command(command), do: normalized_value(command) |> command_without_slash()
@@ -158,6 +197,13 @@ defmodule Juvet.Router.SlackRouter do
     do: payload |> block_suggestion_payload?(action_id)
 
   defp option_load_request?(_payload, _action_id), do: false
+
+  defp url_verification_request?(%{
+         raw_params: %{"challenge" => _challenge, "type" => "url_verification"}
+       }),
+       do: true
+
+  defp url_verification_request?(_payload), do: false
 
   defp view_closed_payload?(%{"type" => "view_closed"} = payload, callback_id) do
     incoming_callback_id = payload |> callback_id_from_payload

@@ -41,12 +41,30 @@ defmodule Juvet.Middleware.ActionRunnerTest do
       assert result == {:error, "`TestController.action/1` is not defined"}
     end
 
+    test "returns an error if the function action could not be called" do
+      assert {:error, _} = ActionRunner.call(%{action: fn -> nil end})
+    end
+
     test "calls the controller module and action with the context", %{
       context: context
     } do
       assert {:ok, _ctx} = ActionRunner.call(Map.merge(context, %{pid: self()}))
 
       assert_received :called_controller
+    end
+
+    test "calls the function action with the context" do
+      context = %{
+        pid: self(),
+        action: fn %{pid: pid} = context ->
+          send(pid, :called_function)
+          {:ok, context}
+        end
+      }
+
+      assert {:ok, _ctx} = ActionRunner.call(context)
+
+      assert_received :called_function
     end
 
     test "returns the updated context from the controller", %{context: context} do

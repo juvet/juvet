@@ -9,12 +9,14 @@ defmodule Juvet.Middleware.ActionGeneratorTest do
     end
 
     test "returns an error if the context does not contain a path" do
-      result = ActionGenerator.call(%{})
-
-      assert result == {:error, "`path` missing in the `context`"}
+      assert {:error, "`path` missing in the `context`"} = ActionGenerator.call(%{})
     end
 
-    test "returns an endpoint Tuple with the controller and action",
+    test "returns an error if the path is nil" do
+      assert {:error, "`path` missing in the `context`"} = ActionGenerator.call(%{})
+    end
+
+    test "returns an endpoint Tuple with the controller and action when the path is a string",
          %{
            context: context
          } do
@@ -29,6 +31,13 @@ defmodule Juvet.Middleware.ActionGeneratorTest do
                })
 
       assert context[:action] == {:"Elixir.Namespace.TestController", :action}
+    end
+
+    test "returns the path when the path is a function" do
+      fun = &Kernel.is_struct/1
+
+      assert {:ok, ctx} = ActionGenerator.call(%{path: fun})
+      assert ctx[:action] == fun
     end
   end
 end

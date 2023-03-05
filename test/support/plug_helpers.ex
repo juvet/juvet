@@ -14,7 +14,7 @@ defmodule Juvet.PlugHelpers do
 
       def put_raw_body(%{params: params} = conn) do
         Plug.Conn.put_private(conn, :juvet, %{
-          raw_body: params |> URI.encode_query()
+          raw_body: params |> ensure_encodable() |> URI.encode_query()
         })
       end
 
@@ -50,6 +50,26 @@ defmodule Juvet.PlugHelpers do
         |> Juvet.Plug.call(Juvet.Plug.init(init_opts))
         |> from_set_to_sent()
       end
+
+      def json_response(conn, status) do
+        if conn.status !== status,
+          do:
+            raise(ArgumentError,
+              message: "Response status of #{conn.status} does not match #{status}"
+            )
+
+        conn.resp_body |> Poison.decode!()
+      end
+
+      defp ensure_encodable(map) do
+        map
+        |> Enum.reduce(%{}, fn {key, value}, encoded ->
+          Map.merge(encoded, %{key => encode_value(value)})
+        end)
+      end
+
+      defp encode_value(value) when is_map(value), do: URI.encode_query(value)
+      defp encode_value(value), do: value
 
       defp from_set_to_sent(%Conn{state: :set} = conn), do: Conn.send_resp(conn)
 

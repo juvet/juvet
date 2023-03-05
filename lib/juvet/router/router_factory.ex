@@ -11,6 +11,12 @@ defmodule Juvet.Router.RouterFactory do
     router(platform).find_route(to_router(platform), request)
   end
 
+  @spec get_default_routes(Juvet.Router.Platform.t()) ::
+          {:ok, list(Juvet.Router.Route.t())} | {:error, any()}
+  def get_default_routes(platform) do
+    router(platform).get_default_routes()
+  end
+
   @spec router(Juvet.Router.Platform.t()) :: module()
   def router(%Juvet.Router.Platform{platform: platform}) do
     String.to_existing_atom("Elixir.Juvet.Router.#{Macro.camelize(to_string(platform))}Router")

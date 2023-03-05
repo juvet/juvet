@@ -41,8 +41,8 @@ defmodule Juvet.Router.Middleware do
       new(Juvet.Middleware.Slack.VerifyRequest, partial: false),
       new(Juvet.Middleware.DecodeRequestParams, partial: false),
       new(Juvet.Middleware.NormalizeRequestParams, partial: false),
-      new(Juvet.Middleware.BuildDefaultResponse, partial: false),
       new(Juvet.Middleware.RouteRequest, partial: false),
+      new(Juvet.Middleware.BuildDefaultResponse, partial: false),
       new(Juvet.Middleware.ActionGenerator),
       new(Juvet.Middleware.ActionRunner)
     ]
