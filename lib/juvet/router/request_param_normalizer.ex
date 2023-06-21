@@ -20,10 +20,12 @@ defmodule Juvet.Router.RequestParamNormalizer do
       %{request | params: normalized_payload(payload)}
     end
 
-    def normalize(%Request{raw_params: _raw_params} = request), do: request
+    def normalize(%Request{raw_params: raw_params} = request),
+      do: %{request | params: normalized_payload(raw_params)}
 
     defp channel_id(%{"channel" => %{"id" => channel_id}}), do: channel_id
     defp channel_id(%{"channel" => channel_id}), do: channel_id
+    defp channel_id(%{"channel_id" => channel_id}), do: channel_id
     defp channel_id(_payload), do: nil
 
     defp team_id(%{"team" => %{"id" => team_id}}), do: team_id
@@ -32,6 +34,7 @@ defmodule Juvet.Router.RequestParamNormalizer do
 
     defp user_id(%{"user" => %{"id" => user_id}}), do: user_id
     defp user_id(%{"user" => user_id}), do: user_id
+    defp user_id(%{"user_id" => user_id}), do: user_id
     defp user_id(_payload), do: nil
 
     defp normalized_event(%{"event" => event} = params),

@@ -5,6 +5,9 @@ defmodule Juvet.GregorianDateTime do
 
   @unix_gregorian_offset 62_167_219_200
 
+  @doc """
+  This calculates the number of seconds for a specific `NaiveDateTime`.
+  """
   @spec to_seconds(NaiveDateTime.t()) :: integer()
   def to_seconds(date_time \\ NaiveDateTime.utc_now()) do
     timestamp =
