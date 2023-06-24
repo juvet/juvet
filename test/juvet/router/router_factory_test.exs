@@ -64,6 +64,18 @@ defmodule Juvet.Router.RouterFactoryTest do
     end
   end
 
+  describe "router/1" do
+    test "returns a module based on the platform" do
+      platform = Platform.new(:slack)
+
+      assert SlackRouter == RouterFactory.router(platform)
+    end
+
+    test "returns a module based on the platform as an atom" do
+      assert SlackRouter == RouterFactory.router(:slack)
+    end
+  end
+
   describe "validate_route/3" do
     setup do
       route = Route.new(:command, "/test", to: "controller#action")
