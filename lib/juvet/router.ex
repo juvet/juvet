@@ -156,7 +156,10 @@ defmodule Juvet.Router do
   @callback handle_route(%{platform: Juvet.Router.Platform.t()}) ::
               {:ok, Juvet.Router.Route.t()} | {:error, term()}
 
-  @callback request_format(%{platform: Juvet.Router.Platform.t() | atom()}) ::
+  @callback request_format(%{
+              platform: Juvet.Router.Platform.t() | atom(),
+              request: Juvet.Router.Request.t()
+            }) ::
               {:ok, atom()} | {:error, term()}
 
   @callback validate(Juvet.Router.Platform.t()) ::
