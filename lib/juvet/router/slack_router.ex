@@ -84,6 +84,14 @@ defmodule Juvet.Router.SlackRouter do
   def handle_route(context), do: {:ok, context}
 
   @impl Juvet.Router
+  def request_format(%{request: %{raw_params: %{"event" => event}}}),
+    do: request_format_from_event(event)
+
+  @impl Juvet.Router
+  def request_format(%{request: %{raw_params: %{"payload" => payload}}}),
+    do: request_format_from_payload(payload)
+
+  @impl Juvet.Router
   def validate(%{platform: :slack} = platform), do: {:ok, platform}
 
   @impl Juvet.Router
@@ -197,6 +205,19 @@ defmodule Juvet.Router.SlackRouter do
     do: payload |> block_suggestion_payload?(action_id)
 
   defp option_load_request?(_payload, _action_id), do: false
+
+  defp request_format_from_event(%{"type" => "app_home_opened", "view" => _}),
+    do: {:ok, :page}
+
+  defp request_format_from_event(_event), do: {:ok, :none}
+
+  defp request_format_from_payload(%{"message" => %{"ts" => _}, "response_url" => _}),
+    do: {:ok, :message}
+
+  defp request_format_from_payload(%{"container" => %{"type" => "view"}, "view" => _}),
+    do: {:ok, :modal}
+
+  defp request_format_from_payload(_payload), do: {:ok, :none}
 
   defp url_verification_request?(%{
          raw_params: %{"challenge" => _challenge, "type" => "url_verification"}
