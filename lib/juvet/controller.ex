@@ -5,7 +5,7 @@ defmodule Juvet.Controller do
 
   @view_context_key :juvet_view
 
-  alias Juvet.Router.{Conn, Response}
+  alias Juvet.Router.{Conn, Request, Response, RouterFactory}
   alias Juvet.{View, ViewStateManager}
 
   defmacro __using__(opts) do
@@ -59,6 +59,13 @@ defmodule Juvet.Controller do
 
   @spec put_view(map(), String.t() | atom()) :: map()
   def put_view(context, view), do: Map.put(context, @view_context_key, view)
+
+  def request_format(%{request: %Request{platform: platform}} = context) do
+    case RouterFactory.router(platform).request_format(context) do
+      {:ok, format} -> format
+      {:error, error} -> error
+    end
+  end
 
   def send_message_from(controller, context, template, assigns \\ []),
     do: send_message_from(controller, context, template, assigns, [])

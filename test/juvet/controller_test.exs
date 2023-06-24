@@ -28,7 +28,7 @@ defmodule Juvet.ControllerTest do
   end
 
   alias Controllers.MyController
-  alias Juvet.Router.Response
+  alias Juvet.Router.{Request, Response}
 
   describe "controller_prefix/1" do
     test "returns the module name without controller suffix" do
@@ -47,6 +47,22 @@ defmodule Juvet.ControllerTest do
 
     test "returns an empty string when nil is provided with a suffix" do
       assert Juvet.Controller.controller_prefix(nil, suffix: ".") == ""
+    end
+  end
+
+  describe "request_format/1" do
+    test "returns :message if the request is from a Slack message" do
+      payload = %{
+        "message" => %{
+          "ts" => "1234567890.123456"
+        },
+        "response_url" => "https://hooks.slack.com/commands/1234/5678"
+      }
+
+      request = %Request{platform: :slack, raw_params: %{"payload" => payload}}
+      context = %{request: request}
+
+      assert Juvet.Controller.request_format(context) == :message
     end
   end
 
