@@ -18,7 +18,10 @@ defmodule Juvet.Router.RouterFactory do
   end
 
   @spec router(Juvet.Router.Platform.t()) :: module()
-  def router(%Juvet.Router.Platform{platform: platform}) do
+  def router(%Juvet.Router.Platform{platform: platform}), do: router(platform)
+
+  @spec router(atom()) :: module()
+  def router(platform) do
     String.to_existing_atom("Elixir.Juvet.Router.#{Macro.camelize(to_string(platform))}Router")
   rescue
     _ in ArgumentError -> UnknownRouter

@@ -50,4 +50,52 @@ defmodule Juvet.Router.SlackRouterTest do
                SlackRouter.find_route(router, request)
     end
   end
+
+  describe "request_format/1" do
+    test "returns :message when the payload has a message request" do
+      payload = %{
+        "message" => %{"ts" => "1234567890.123456"},
+        "response_url" => "https://example.com"
+      }
+
+      request = %Request{platform: :slack, raw_params: %{"payload" => payload}}
+      context = %{request: request}
+
+      assert SlackRouter.request_format(context) == {:ok, :message}
+    end
+
+    test "returns :modal when the payload has a modal request" do
+      payload = %{
+        "container" => %{"type" => "view"},
+        "view" => %{"id" => "V12345"}
+      }
+
+      request = %Request{platform: :slack, raw_params: %{"payload" => payload}}
+      context = %{request: request}
+
+      assert SlackRouter.request_format(context) == {:ok, :modal}
+    end
+
+    test "returns :page when the params has a home tab request" do
+      raw_params = %{
+        "event" => %{"type" => "app_home_opened", "view" => %{"id" => "V12345"}}
+      }
+
+      request = %Request{platform: :slack, raw_params: raw_params}
+      context = %{request: request}
+
+      assert SlackRouter.request_format(context) == {:ok, :page}
+    end
+
+    test "returns :none when the params has any other event request" do
+      raw_params = %{
+        "event" => %{"type" => "channel_rename", "channel" => %{"id" => "C12345"}}
+      }
+
+      request = %Request{platform: :slack, raw_params: raw_params}
+      context = %{request: request}
+
+      assert SlackRouter.request_format(context) == {:ok, :none}
+    end
+  end
 end
