@@ -7,6 +7,8 @@ defmodule Juvet.ControllerTest do
   defmodule Controllers.MyController do
     use Juvet.Controller
 
+    def request_format_test(context), do: request_format(context)
+
     def send_message_test(context, template, assigns \\ []) do
       context
       |> put_view(MyView)
@@ -51,6 +53,20 @@ defmodule Juvet.ControllerTest do
   end
 
   describe "request_format/1" do
+    test "returns :modal if the request is from a Slack message" do
+      payload = %{
+        "view" => %{"id" => "V12345"},
+        "container" => %{"type" => "view"}
+      }
+
+      request = %Request{platform: :slack, raw_params: %{"payload" => payload}}
+      context = %{request: request}
+
+      assert MyController.request_format_test(context) == :modal
+    end
+  end
+
+  describe "request_format_from/1" do
     test "returns :message if the request is from a Slack message" do
       payload = %{
         "message" => %{
@@ -60,9 +76,8 @@ defmodule Juvet.ControllerTest do
       }
 
       request = %Request{platform: :slack, raw_params: %{"payload" => payload}}
-      context = %{request: request}
 
-      assert Juvet.Controller.request_format(context) == :message
+      assert Juvet.Controller.request_format_from(request) == :message
     end
   end
 

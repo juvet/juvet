@@ -25,6 +25,8 @@ defmodule Juvet.Controller do
     view_state_manager = Keyword.get(opts, :view_state_manager, ViewStateManager)
 
     quote do
+      def request_format(%{request: request}), do: request_format_from(request)
+
       def send_message(context, template, assigns \\ []),
         do: send_message_from(__MODULE__, context, template, assigns)
 
@@ -60,8 +62,8 @@ defmodule Juvet.Controller do
   @spec put_view(map(), String.t() | atom()) :: map()
   def put_view(context, view), do: Map.put(context, @view_context_key, view)
 
-  def request_format(%{request: %Request{platform: platform}} = context) do
-    case RouterFactory.router(platform).request_format(context) do
+  def request_format_from(%Request{platform: platform} = request) do
+    case RouterFactory.router(platform).request_format(request) do
       {:ok, format} -> format
       {:error, error} -> error
     end

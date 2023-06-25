@@ -59,9 +59,8 @@ defmodule Juvet.Router.SlackRouterTest do
       }
 
       request = %Request{platform: :slack, raw_params: %{"payload" => payload}}
-      context = %{request: request}
 
-      assert SlackRouter.request_format(context) == {:ok, :message}
+      assert SlackRouter.request_format(request) == {:ok, :message}
     end
 
     test "returns :modal when the payload has a modal request" do
@@ -71,9 +70,8 @@ defmodule Juvet.Router.SlackRouterTest do
       }
 
       request = %Request{platform: :slack, raw_params: %{"payload" => payload}}
-      context = %{request: request}
 
-      assert SlackRouter.request_format(context) == {:ok, :modal}
+      assert SlackRouter.request_format(request) == {:ok, :modal}
     end
 
     test "returns :page when the params has a home tab request" do
@@ -82,9 +80,8 @@ defmodule Juvet.Router.SlackRouterTest do
       }
 
       request = %Request{platform: :slack, raw_params: raw_params}
-      context = %{request: request}
 
-      assert SlackRouter.request_format(context) == {:ok, :page}
+      assert SlackRouter.request_format(request) == {:ok, :page}
     end
 
     test "returns :none when the params has any other event request" do
@@ -93,9 +90,8 @@ defmodule Juvet.Router.SlackRouterTest do
       }
 
       request = %Request{platform: :slack, raw_params: raw_params}
-      context = %{request: request}
 
-      assert SlackRouter.request_format(context) == {:ok, :none}
+      assert SlackRouter.request_format(request) == {:ok, :none}
     end
   end
 end
