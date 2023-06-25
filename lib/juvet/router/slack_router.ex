@@ -84,11 +84,11 @@ defmodule Juvet.Router.SlackRouter do
   def handle_route(context), do: {:ok, context}
 
   @impl Juvet.Router
-  def request_format(%{request: %{raw_params: %{"event" => event}}}),
+  def request_format(%{raw_params: %{"event" => event}}),
     do: request_format_from_event(event)
 
   @impl Juvet.Router
-  def request_format(%{request: %{raw_params: %{"payload" => payload}}}),
+  def request_format(%{raw_params: %{"payload" => payload}}),
     do: request_format_from_payload(payload)
 
   @impl Juvet.Router
