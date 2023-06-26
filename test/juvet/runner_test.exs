@@ -51,6 +51,12 @@ defmodule Juvet.RunnerTest do
       assert Map.fetch!(context, :path) == path
     end
 
+    test "overrides the path if there is one in the context", %{path: path} do
+      {:ok, context} = Juvet.Runner.route(path, %{path: "juvet.runner_test_two.test#some_action"})
+
+      assert Map.fetch!(context, :path) == path
+    end
+
     test "adds the route to the context based on the path", %{path: path} do
       {:ok, context} = Juvet.Runner.route(path, %{configuration: [router: MyRouter]})
 
