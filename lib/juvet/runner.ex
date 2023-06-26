@@ -18,6 +18,7 @@ defmodule Juvet.Runner do
     default_configuration(configuration)
     |> Map.merge(%{path: path})
     |> Map.merge(context)
+    |> Map.delete(:conn)
     |> merge_middleware()
     |> MiddlewareProcessor.process()
   end
