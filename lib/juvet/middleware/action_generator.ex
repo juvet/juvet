@@ -5,7 +5,7 @@ defmodule Juvet.Middleware.ActionGenerator do
   """
   @spec call(map()) :: {:ok, map()} | {:error, any()}
   def call(%{path: path} = context) do
-    {:ok, Map.put_new(context, :action, generate_action(path))}
+    {:ok, Map.put(context, :action, generate_action(path))}
   end
 
   def call(_context), do: path_missing()
