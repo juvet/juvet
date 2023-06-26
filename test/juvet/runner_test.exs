@@ -51,11 +51,23 @@ defmodule Juvet.RunnerTest do
       assert Map.fetch!(context, :path) == path
     end
 
+    test "overrides the path if there is one in the context", %{path: path} do
+      {:ok, context} = Juvet.Runner.route(path, %{path: "juvet.runner_test_two.test#some_action"})
+
+      assert Map.fetch!(context, :path) == path
+    end
+
     test "adds the route to the context based on the path", %{path: path} do
       {:ok, context} = Juvet.Runner.route(path, %{configuration: [router: MyRouter]})
 
       assert Map.fetch!(context, :action) ==
                {:"Elixir.Juvet.RunnerTest.TestController", :action}
+    end
+
+    test "removes the conn from the context", %{path: path} do
+      {:ok, context} = Juvet.Runner.route(path, %{conn: %Plug.Conn{}})
+
+      refute Map.has_key?(context, :conn)
     end
 
     test "calls the controller module and action from the path", %{path: path} do

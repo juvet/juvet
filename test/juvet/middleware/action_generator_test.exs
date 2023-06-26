@@ -24,6 +24,18 @@ defmodule Juvet.Middleware.ActionGeneratorTest do
       assert ctx[:action] == {:"Elixir.TestController", :action}
     end
 
+    test "overrides an existing action",
+         %{
+           context: context
+         } do
+      assert {:ok, ctx} =
+               ActionGenerator.call(
+                 Map.merge(context, %{action: {:BlahController, :other_action}})
+               )
+
+      assert ctx[:action] == {:"Elixir.TestController", :action}
+    end
+
     test "handle namespacing in the controller path" do
       assert {:ok, context} =
                ActionGenerator.call(%{
