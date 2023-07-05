@@ -86,4 +86,32 @@ defmodule Juvet.Router.RequestTest do
       assert Request.get_header(request, "blah") == []
     end
   end
+
+  describe "put_platform/1" do
+    test "returns slack for a slack request with a header" do
+      request =
+        Request.new(%{
+          req_headers: [{"x-slack-signature", "blah"}]
+        })
+
+      assert %Request{platform: :slack} = Request.put_platform(request)
+    end
+
+    test "returns slack for a slack oauth request" do
+      request =
+        Request.new(%{
+          method: "GET",
+          host: "slack.com",
+          path: "/auth/slack"
+        })
+
+      assert %Request{platform: :slack} = Request.put_platform(request)
+    end
+
+    test "returns the request if it cannot be identified" do
+      request = Request.new(%{platform: :slack})
+
+      assert %Request{platform: :unknown} = Request.put_platform(request)
+    end
+  end
 end

@@ -8,14 +8,9 @@ defmodule Juvet.Middleware.IdentifyRequest do
 
   @spec call(map()) :: {:ok, map()} | {:error, any()}
   def call(%{request: request} = context) do
-    case Request.get_header(request, "x-slack-signature") do
-      [] ->
-        {:ok, context}
+    request = Request.put_platform(request)
 
-      [_] ->
-        request = %{request | platform: :slack}
-        {:ok, %{context | request: request}}
-    end
+    {:ok, %{context | request: request}}
   end
 
   def call(context), do: {:ok, context}
