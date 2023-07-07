@@ -4,11 +4,11 @@ defmodule Juvet.Middleware.IdentifyRequest do
   `platform` to the `request`.
   """
 
-  alias Juvet.Router.Request
+  alias Juvet.Router.RequestIdentifier
 
   @spec call(map()) :: {:ok, map()} | {:error, any()}
-  def call(%{request: request} = context) do
-    request = Request.put_platform(request)
+  def call(%{configuration: configuration, request: request} = context) do
+    request = %{request | platform: RequestIdentifier.platform(request, configuration)}
 
     {:ok, %{context | request: request}}
   end
