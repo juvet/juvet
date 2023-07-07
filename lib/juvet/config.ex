@@ -41,6 +41,15 @@ defmodule Juvet.Config do
   end
 
   @doc """
+  Returns a map for each configured platform and their type and path.
+  """
+  @spec oauth_paths(Keyword.t()) :: map()
+  def oauth_paths(config) do
+    slack(config)
+    |> oauth_slack_paths()
+  end
+
+  @doc """
   Returns the module that defines your router.
   """
   @spec router(Keyword.t()) :: module() | nil
@@ -64,6 +73,31 @@ defmodule Juvet.Config do
   """
   @spec valid?(Keyword.t()) :: boolean()
   def valid?(config), do: !__MODULE__.invalid?(config)
+
+  defp oauth_slack_paths(nil), do: %{}
+
+  defp oauth_slack_paths(config) do
+    config
+    |> Enum.map(fn {slack_config_key, path} ->
+      case oauth_type(slack_config_key) do
+        nil -> nil
+        type -> [type: type, path: path]
+      end
+    end)
+    |> Enum.filter(fn value -> !is_nil(value) end)
+    |> oauth_paths_for(:slack)
+  end
+
+  defp oauth_paths_for(paths, platform), do: %{platform => paths}
+
+  defp oauth_type(oauth_key),
+    do:
+      Regex.named_captures(~r/^oauth_(?<type>\w+)_endpoint$/, to_string(oauth_key))
+      |> oauth_type_capture()
+
+  defp oauth_type_capture(%{"type" => type}), do: type |> String.to_atom()
+
+  defp oauth_type_capture(_), do: nil
 
   defp slack_config(nil), do: nil
   defp slack_config(list), do: Enum.into(list, %{})
