@@ -3,7 +3,7 @@ defmodule Juvet.Router.Request do
   Represents a single request from a platform.
   """
 
-  alias Juvet.Router.{RequestIdentifier, RequestParamDecoder}
+  alias Juvet.Router.RequestParamDecoder
 
   @type t :: %__MODULE__{
           host: String.t(),
@@ -65,9 +65,6 @@ defmodule Juvet.Router.Request do
 
   def decode_raw_params(%__MODULE__{} = request), do: RequestParamDecoder.decode(request)
 
-  @spec from_host?(Juvet.Router.Request.t(), String.t()) :: boolean()
-  def from_host?(%__MODULE__{host: host}, from), do: String.match?(host, ~r/#{from}$/i)
-
   @spec get_header(Juvet.Router.Request.t(), String.t()) :: list(String.t())
   def get_header(%__MODULE__{headers: nil}, _header), do: []
 
@@ -80,10 +77,10 @@ defmodule Juvet.Router.Request do
 
   def get?(%__MODULE__{method: method}), do: method |> String.downcase() == "get"
 
-  @spec put_platform(Juvet.Router.Request.t()) :: Juvet.Router.Request.t()
-  def put_platform(%__MODULE__{} = request) do
-    %{request | platform: RequestIdentifier.platform(request)}
-  end
+  @spec match_path?(Juvet.Router.Request.t(), String.t()) :: boolean()
+  def match_path?(%__MODULE__{path: nil}, match), do: !is_nil(match)
+  def match_path?(%__MODULE__{path: path}, nil), do: !is_nil(path)
+  def match_path?(%__MODULE__{path: path}, match), do: Regex.match?(~r/^#{match}/, path)
 
   defp base_url_port(:http, 80), do: ""
   defp base_url_port(:https, 443), do: ""

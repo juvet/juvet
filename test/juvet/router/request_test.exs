@@ -87,31 +87,17 @@ defmodule Juvet.Router.RequestTest do
     end
   end
 
-  describe "put_platform/1" do
-    test "returns slack for a slack request with a header" do
-      request =
-        Request.new(%{
-          req_headers: [{"x-slack-signature", "blah"}]
-        })
-
-      assert %Request{platform: :slack} = Request.put_platform(request)
+  describe "match_path?/2" do
+    setup %{conn: conn} do
+      [request: Request.new(conn)]
     end
 
-    test "returns slack for a slack oauth request" do
-      request =
-        Request.new(%{
-          method: "GET",
-          host: "slack.com",
-          path: "/auth/slack"
-        })
-
-      assert %Request{platform: :slack} = Request.put_platform(request)
+    test "returns true if the path matches", %{request: request} do
+      assert Request.match_path?(request, "/slack/commands")
     end
 
-    test "returns the request if it cannot be identified" do
-      request = Request.new(%{platform: :slack})
-
-      assert %Request{platform: :unknown} = Request.put_platform(request)
+    test "returns false if the path does not match", %{request: request} do
+      refute Request.match_path?(request, "/slack/blah")
     end
   end
 end

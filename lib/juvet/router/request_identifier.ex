@@ -10,17 +10,14 @@ defmodule Juvet.Router.RequestIdentifier do
     Identifies requests from Slack.
     """
 
-    @host "slack.com"
-
-    def host, do: @host
-
-    @spec platform(Juvet.Router.Request.t()) :: atom() | nil
-    def platform(%Request{} = request) do
-      if from_platform?(request) || oauth?(request), do: :slack
+    @spec platform(Juvet.Router.Request.t(), Keyword.t()) :: atom() | nil
+    def platform(%Request{} = request, configuration) do
+      if from_platform?(request) || oauth?(request, configuration), do: :slack
     end
 
-    defp oauth?(request) do
-      Request.get?(request) && Request.from_host?(request, host())
+    defp oauth?(request, configuration) do
+      Request.get?(request) &&
+        match_oauth_paths?(request, Juvet.Config.oauth_paths(configuration)[:slack])
     end
 
     defp from_platform?(request) do
@@ -28,10 +25,17 @@ defmodule Juvet.Router.RequestIdentifier do
       |> Enum.empty?()
       |> Kernel.not()
     end
+
+    defp match_oauth_paths?(request, paths) do
+      paths
+      |> Enum.any?(fn path ->
+        Request.match_path?(request, path[:path])
+      end)
+    end
   end
 
-  @spec platform(Juvet.Router.Request.t()) :: atom()
-  def platform(%Request{} = request) do
-    SlackRequestIdentifier.platform(request) || :unknown
+  @spec platform(Juvet.Router.Request.t(), Keyword.t()) :: atom()
+  def platform(%Request{} = request, configuration) do
+    SlackRequestIdentifier.platform(request, configuration) || :unknown
   end
 end
