@@ -16,7 +16,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
       ),
       do: request_verified!(context)
 
-  def call(%{request: %{platform: :slack}} = context),
+  def call(%{request: %{platform: :slack, verified?: false}} = context),
     do: verify_request(context)
 
   def call(context), do: {:ok, context}
