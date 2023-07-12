@@ -38,7 +38,7 @@ defmodule Juvet.Router.Middleware do
     [
       new(Juvet.Middleware.ParseRequest, partial: false),
       new(Juvet.Middleware.IdentifyRequest, partial: false),
-      new(Juvet.Middleware.Slack.VerifyRequest, partial: false),
+      new(Juvet.Middleware.Slack.VerifyRequest, partial: false, platform: :slack),
       new(Juvet.Middleware.DecodeRequestParams, partial: false),
       new(Juvet.Middleware.NormalizeRequestParams, partial: false),
       new(Juvet.Middleware.RouteRequest, partial: false),
