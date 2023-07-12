@@ -15,7 +15,8 @@ defmodule Juvet.Router.RequestIdentifier do
       if from_platform?(request) || oauth?(request, configuration), do: :slack
     end
 
-    defp oauth?(request, configuration) do
+    @spec oauth?(Juvet.Router.Request.t(), Keyword.t()) :: boolean()
+    def oauth?(request, configuration) do
       Request.get?(request) &&
         match_oauth_paths?(request, Juvet.Config.oauth_paths(configuration)[:slack])
     end
@@ -33,6 +34,13 @@ defmodule Juvet.Router.RequestIdentifier do
       end)
     end
   end
+
+  @spec oauth?(Juvet.Router.Request.t(), Keyword.t()) :: boolean()
+  def oauth?(%Request{platform: :slack} = request, configuration) do
+    SlackRequestIdentifier.oauth?(request, configuration)
+  end
+
+  def oauth?(%Request{platform: :unknown}, _configuration), do: false
 
   @spec platform(Juvet.Router.Request.t(), Keyword.t()) :: atom()
   def platform(%Request{} = request, configuration) do

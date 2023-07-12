@@ -18,7 +18,7 @@ defmodule Juvet.Router.RequestIdentifierTest do
     assert :slack = RequestIdentifier.platform(request, configuration)
   end
 
-  test "returns slack for a slack oauth request", %{configuration: configuration} do
+  test "platform/2 returns slack for a slack oauth request", %{configuration: configuration} do
     request =
       Request.new(%{
         method: "GET",
@@ -28,7 +28,7 @@ defmodule Juvet.Router.RequestIdentifierTest do
     assert :slack = RequestIdentifier.platform(request, configuration)
   end
 
-  test "returns unknown if the oauth request does not match any request in config", %{
+  test "platform/2 returns unknown if the oauth request does not match any request in config", %{
     configuration: configuration
   } do
     request =
@@ -40,9 +40,43 @@ defmodule Juvet.Router.RequestIdentifierTest do
     assert :unknown = RequestIdentifier.platform(request, configuration)
   end
 
-  test "returns unknown if the request cannot be identified", %{configuration: configuration} do
+  test "platform/2 returns unknown if the request cannot be identified", %{
+    configuration: configuration
+  } do
     request = Request.new(%{platform: :slack})
 
     assert :unknown = RequestIdentifier.platform(request, configuration)
+  end
+
+  test "oauth?/2 returns true for a slack oauth request", %{configuration: configuration} do
+    request =
+      Request.new(%{
+        method: "GET",
+        request_path: "/auth/slack?code=blah"
+      })
+
+    assert RequestIdentifier.oauth?(%{request | platform: :slack}, configuration)
+  end
+
+  test "oauth?/2 returns false for a slack oauth request with a different request path", %{
+    configuration: configuration
+  } do
+    request =
+      Request.new(%{
+        method: "GET",
+        request_path: "/oauth/slack"
+      })
+
+    refute RequestIdentifier.oauth?(%{request | platform: :slack}, configuration)
+  end
+
+  test "oauth?/2 returns false for an unknown oauth request", %{configuration: configuration} do
+    request =
+      Request.new(%{
+        method: "GET",
+        request_path: "/oauth/slack"
+      })
+
+    refute RequestIdentifier.oauth?(request, configuration)
   end
 end
