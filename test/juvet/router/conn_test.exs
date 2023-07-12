@@ -54,5 +54,19 @@ defmodule Juvet.Router.ConnTest do
 
       refute conn.halted
     end
+
+    test "will perform a redirect if the status is 302", %{
+      context: %{response: response} = context
+    } do
+      response = %{response | body: "https://juvet.io", status: 302}
+
+      conn = Conn.send_resp(%{context | response: response})
+
+      assert conn.status == 302
+      assert conn.halted
+
+      assert conn.resp_body ==
+               "<html><body>You are being <a href=\"https://juvet.io\">redirected</a>.</body></html>"
+    end
   end
 end
