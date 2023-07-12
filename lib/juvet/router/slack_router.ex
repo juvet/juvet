@@ -45,6 +45,10 @@ defmodule Juvet.Router.SlackRouter do
     if event_request?(request, event), do: route
   end
 
+  def find_route(%Route{type: :oauth, route: phase} = route, request) do
+    if oauth_request?(request, phase), do: route
+  end
+
   def find_route(%Route{type: :option_load, route: action_id} = route, request) do
     if option_load_request?(request, action_id), do: route
   end
@@ -117,6 +121,14 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :event} = route,
+        _options
+      ),
+      do: {:ok, route}
+
+  @impl Juvet.Router
+  def validate_route(
+        _router,
+        %Juvet.Router.Route{type: :oauth} = route,
         _options
       ),
       do: {:ok, route}
@@ -200,6 +212,10 @@ defmodule Juvet.Router.SlackRouter do
   defp normalized_value(nil), do: nil
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
+
+  defp oauth_request?(%{verified?: true}, _phase), do: true
+
+  defp oauth_request?(_request, _phase), do: false
 
   defp option_load_request?(%{raw_params: %{"payload" => payload}}, action_id),
     do: payload |> block_suggestion_payload?(action_id)

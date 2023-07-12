@@ -64,6 +64,15 @@ defmodule Juvet.Router do
     end
   end
 
+  defmacro oauth(phase, options \\ []) do
+    quote do
+      Router.State.put_route_on_top!(
+        __MODULE__,
+        Route.new(:oauth, unquote(phase), unquote(options))
+      )
+    end
+  end
+
   defmacro option_load(action_id, options \\ []) do
     quote do
       Router.State.put_route_on_top!(
