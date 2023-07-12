@@ -5,7 +5,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   """
 
   alias Juvet.{ConfigurationError, GregorianDateTime, InvalidRequestError}
-  alias Juvet.Router.{Conn, Request}
+  alias Juvet.Router.{Conn, Request, RequestIdentifier}
 
   @spec call(map()) :: {:ok, map()} | {:error, any()}
   def call(
@@ -22,6 +22,12 @@ defmodule Juvet.Middleware.Slack.VerifyRequest do
   def call(context), do: {:ok, context}
 
   defp verify_request(%{configuration: configuration, request: request} = context) do
+    if RequestIdentifier.oauth?(request, configuration),
+      do: request_verified!(context),
+      else: verify_request_via_header(context)
+  end
+
+  defp verify_request_via_header(%{configuration: configuration, request: request} = context) do
     with {:ok, slack_timestamp} <-
            get_request_header(request, "x-slack-request-timestamp"),
          {:ok, slack_signature} <-
