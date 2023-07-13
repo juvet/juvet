@@ -9,7 +9,11 @@ defmodule Juvet.Router.OAuthRouter do
   def url_for(platform, phase, configuration, params \\ [])
 
   def url_for(:slack, :request, configuration, params) do
-    OAuth.Slack.authorize_url!(slack_request_params(configuration) |> Keyword.merge(params))
+    configuration
+    |> Juvet.Config.slack()
+    |> slack_request_params()
+    |> Keyword.merge(params)
+    |> OAuth.Slack.authorize_url!()
   end
 
   def url_for(_platform, _phase, _configuration, _params), do: nil
@@ -20,7 +24,9 @@ defmodule Juvet.Router.OAuthRouter do
     |> Keyword.new()
   end
 
-  defp slack_request_params(slack: slack_config),
+  defp slack_request_params(nil), do: []
+
+  defp slack_request_params(slack_config),
     do:
       slack_config
       |> params_from_config([
@@ -31,6 +37,4 @@ defmodule Juvet.Router.OAuthRouter do
         :user_scope,
         :redirect_uri
       ])
-
-  defp slack_request_params(_configuration), do: []
 end

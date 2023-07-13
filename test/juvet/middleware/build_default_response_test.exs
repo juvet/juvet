@@ -35,7 +35,7 @@ defmodule Juvet.Middleware.BuildDefaultResponseTest do
       assert response.status == 302
 
       assert response.body =~
-               ~r{https://slack.com/oauth/v2/authorize\?client_id=.*&redirect_uri=.*}
+               ~r{https://slack.com/oauth/v2/authorize\?app_id=.*client_id=.*&client_secret=.*redirect_uri=.*+}
     end
   end
 end
