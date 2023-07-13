@@ -34,7 +34,9 @@ defmodule Juvet.Router.Conn do
   end
 
   @spec send_resp(map(), keyword()) :: Plug.Conn.t()
-  def send_resp(%{conn: conn, response: response}, options \\ []) do
+  def send_resp(context, options \\ [])
+
+  def send_resp(%{conn: conn, response: response}, options) do
     case already_sent?(conn) do
       true ->
         conn
@@ -47,6 +49,8 @@ defmodule Juvet.Router.Conn do
         |> maybe_halt(halt)
     end
   end
+
+  def send_resp(%{conn: conn}, _options), do: conn
 
   defp send_response_or_redirect(%Plug.Conn{} = conn, %{body: location, status: 302}) do
     conn
