@@ -5,7 +5,7 @@ defmodule Juvet.Router.SlackRouter do
 
   @behaviour Juvet.Router
 
-  alias Juvet.Router.{Conn, RequestIdentifier, Response, Route}
+  alias Juvet.Router.{Conn, Request, RequestIdentifier, Response, Route}
 
   @type t :: %__MODULE__{
           platform: Juvet.Router.Platform.t()
@@ -221,7 +221,7 @@ defmodule Juvet.Router.SlackRouter do
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
 
-  defp oauth_request?(%{verified?: true} = request, phase, configuration),
+  defp oauth_request?(%Request{verified?: true} = request, phase, configuration),
     do: RequestIdentifier.oauth_path(request, configuration) == phase
 
   defp oauth_request?(_request, _phase, _configuration), do: false
