@@ -9,7 +9,7 @@ defmodule Juvet.ConfigTest do
     end
   end
 
-  describe "oauth_paths" do
+  describe "oauth_paths/2" do
     test "returns a map of the configured oauth paths for each platform" do
       assert Juvet.Config.oauth_paths(
                slack: [
@@ -27,6 +27,27 @@ defmodule Juvet.ConfigTest do
 
     test "returns an empty map if no oauth paths are configured" do
       assert Juvet.Config.oauth_paths(slack: nil) == %{}
+    end
+  end
+
+  describe "oauth_paths_for/2" do
+    test "returns a list of the configured oauth paths for a specific platform" do
+      assert Juvet.Config.oauth_paths_for(:slack,
+               slack: [
+                 actions_endpoint_path: "/slack/actions",
+                 oauth_callback_endpoint: "/auth/slack/callback",
+                 oauth_request_endpoint: "/auth/slack"
+               ]
+             ) ==
+               [
+                 [type: :callback, path: "/auth/slack/callback"],
+                 [type: :request, path: "/auth/slack"]
+               ]
+    end
+
+    test "returns an empty list if no oauth paths are configured" do
+      assert Juvet.Config.oauth_paths_for(:blah, slack: [oauth_request_endpoint: "/auth/slack"]) ==
+               []
     end
   end
 
