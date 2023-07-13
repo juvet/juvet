@@ -56,6 +56,9 @@ defmodule Juvet.Integration.SlackOauthTest do
                user_scope=USER_SCOPE\
                \">redirected</a>.</body></html>\
                """
+
+      assert conn.halted
+      assert_received :called_controller
     end
   end
 end
