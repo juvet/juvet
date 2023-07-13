@@ -75,7 +75,10 @@ defmodule Juvet.Router.SlackRouter do
 
   @impl Juvet.Router
   def get_default_routes do
-    {:ok, [Route.new(:url_verification, nil, to: &SlackRouteHandler.handle_route/1)]}
+    {:ok,
+     [
+       Route.new(:url_verification, nil, to: &SlackRouteHandler.handle_route/1)
+     ]}
   end
 
   @impl Juvet.Router
@@ -206,6 +209,8 @@ defmodule Juvet.Router.SlackRouter do
   defp normalized_value(nil), do: nil
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
+
+  defp oauth_request?(%Request{verified?: true}, _phase, nil), do: false
 
   defp oauth_request?(%Request{verified?: true} = request, phase, configuration),
     do: RequestIdentifier.oauth_path(request, configuration) == phase

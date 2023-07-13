@@ -18,12 +18,12 @@ defmodule Juvet.Router.RequestIdentifier do
     @spec oauth?(Juvet.Router.Request.t(), Keyword.t()) :: boolean()
     def oauth?(request, configuration) do
       Request.get?(request) &&
-        match_oauth_paths?(request, Juvet.Config.oauth_paths(configuration)[:slack])
+        match_oauth_paths?(request, Juvet.Config.oauth_paths_for(:slack, configuration))
     end
 
     @spec oauth_path(Juvet.Router.Request.t(), Keyword.t()) :: atom()
     def oauth_path(request, configuration) do
-      Juvet.Config.oauth_paths(configuration)[:slack]
+      Juvet.Config.oauth_paths_for(:slack, configuration)
       |> Enum.find_value(fn path ->
         if Request.match_path?(request, path[:path]), do: path[:type]
       end)
