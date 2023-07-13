@@ -21,6 +21,14 @@ defmodule Juvet.Router.RequestIdentifier do
         match_oauth_paths?(request, Juvet.Config.oauth_paths(configuration)[:slack])
     end
 
+    @spec oauth_path(Juvet.Router.Request.t(), Keyword.t()) :: atom()
+    def oauth_path(request, configuration) do
+      Juvet.Config.oauth_paths(configuration)[:slack]
+      |> Enum.find_value(fn path ->
+        if Request.match_path?(request, path[:path]), do: path[:type]
+      end)
+    end
+
     defp from_platform?(request) do
       Request.get_header(request, "x-slack-signature")
       |> Enum.empty?()
@@ -36,11 +44,16 @@ defmodule Juvet.Router.RequestIdentifier do
   end
 
   @spec oauth?(Juvet.Router.Request.t(), Keyword.t()) :: boolean()
-  def oauth?(%Request{platform: :slack} = request, configuration) do
-    SlackRequestIdentifier.oauth?(request, configuration)
-  end
+  def oauth?(%Request{platform: :slack} = request, configuration),
+    do: SlackRequestIdentifier.oauth?(request, configuration)
 
   def oauth?(%Request{platform: :unknown}, _configuration), do: false
+
+  @spec oauth_path(Juvet.Router.Request.t(), Keyword.t()) :: atom()
+  def oauth_path(%Request{platform: :slack} = request, configuration),
+    do: SlackRequestIdentifier.oauth_path(request, configuration)
+
+  def oauth_path(%Request{platform: :unknown} = request, _configuration), do: nil
 
   @spec platform(Juvet.Router.Request.t(), Keyword.t()) :: atom()
   def platform(%Request{} = request, configuration) do

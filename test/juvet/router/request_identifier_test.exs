@@ -50,8 +50,8 @@ defmodule Juvet.Router.RequestIdentifierTest do
     end
   end
 
-  describe "oauth/2" do
-    test "oauth?/2 returns true for a slack oauth request", %{configuration: configuration} do
+  describe "oauth?/2" do
+    test "returns true for a slack oauth request", %{configuration: configuration} do
       request =
         Request.new(%{
           method: "GET",
@@ -77,7 +77,57 @@ defmodule Juvet.Router.RequestIdentifierTest do
       request =
         Request.new(%{
           method: "GET",
-          request_path: "/oauth/slack"
+          request_path: "/auth/slack"
+        })
+
+      refute RequestIdentifier.oauth?(request, configuration)
+    end
+  end
+
+  describe "oauth_phase/2" do
+    test "returns request for a slack oauth request", %{
+      configuration: configuration
+    } do
+      request =
+        Request.new(%{
+          method: "GET",
+          request_path: "/auth/slack?code=blah"
+        })
+
+      assert RequestIdentifier.oauth_path(%{request | platform: :slack}, configuration) ==
+               :request
+    end
+
+    test "returns callback for a slack oauth callback request", %{
+      configuration: configuration
+    } do
+      request =
+        Request.new(%{
+          method: "GET",
+          request_path: "/auth/slack/callback?code=blah"
+        })
+
+      assert RequestIdentifier.oauth_path(%{request | platform: :slack}, configuration) ==
+               :callback
+    end
+
+    test "returns nil for a slack oauth request with a different request path", %{
+      configuration: configuration
+    } do
+      request =
+        Request.new(%{
+          method: "GET",
+          request_path: "/oauth/slack/callback"
+        })
+
+      refute RequestIdentifier.oauth_path(%{request | platform: :slack}, configuration)
+    end
+
+    test "returns nil for an unknown oauth request", %{configuration: configuration} do
+      request =
+        Request.new(%{
+          method: "GET",
+          request_path: "/auth/slack"
         })
 
       refute RequestIdentifier.oauth?(request, configuration)
