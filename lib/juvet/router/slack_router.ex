@@ -19,49 +19,55 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   @impl Juvet.Router
-  def find_route(router, %{verified?: false} = request),
-    do: {:error, {:unverified_route, [router: router, request: request]}}
+  def find_route(router, request, opts \\ [])
 
-  @impl Juvet.Router
+  def find_route(router, %{verified?: false} = request, opts),
+    do: {:error, {:unverified_route, [router: router, request: request, opts: opts]}}
+
   def find_route(
         %{platform: %{routes: routes}} = router,
-        %{platform: :slack, verified?: true} = request
+        %{platform: :slack, verified?: true} = request,
+        opts
       ) do
-    case Enum.find(routes, &(!is_nil(find_route(&1, request)))) do
+    case Enum.find(routes, &(!is_nil(find_slack_route(&1, request, opts)))) do
       nil -> {:error, {:unknown_route, [router: router, request: request]}}
       route -> {:ok, route}
     end
   end
 
-  def find_route(%Route{type: :action, route: action_id} = route, request) do
+  defp find_slack_route(%Route{type: :action, route: action_id} = route, request, _opts) do
     if action_request?(request, action_id), do: route
   end
 
-  def find_route(%Route{type: :command, route: command_text} = route, request) do
+  defp find_slack_route(%Route{type: :command, route: command_text} = route, request, _opts) do
     if command_request?(request, command_text), do: route
   end
 
-  def find_route(%Route{type: :event, route: event} = route, request) do
+  defp find_slack_route(%Route{type: :event, route: event} = route, request, _opts) do
     if event_request?(request, event), do: route
   end
 
-  def find_route(%Route{type: :oauth, route: phase} = route, request) do
+  defp find_slack_route(%Route{type: :oauth, route: phase} = route, request, _opts) do
     if oauth_request?(request, phase), do: route
   end
 
-  def find_route(%Route{type: :option_load, route: action_id} = route, request) do
+  defp find_slack_route(%Route{type: :option_load, route: action_id} = route, request, _opts) do
     if option_load_request?(request, action_id), do: route
   end
 
-  def find_route(%Route{type: :url_verification} = route, request) do
+  defp find_slack_route(%Route{type: :url_verification} = route, request, _opts) do
     if url_verification_request?(request), do: route
   end
 
-  def find_route(%Route{type: :view_closed, route: callback_id} = route, request) do
+  defp find_slack_route(%Route{type: :view_closed, route: callback_id} = route, request, _opts) do
     if view_closed_request?(request, callback_id), do: route
   end
 
-  def find_route(%Route{type: :view_submission, route: callback_id} = route, request) do
+  defp find_slack_route(
+         %Route{type: :view_submission, route: callback_id} = route,
+         request,
+         _opts
+       ) do
     if view_submission_request?(request, callback_id), do: route
   end
 
@@ -105,7 +111,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :action} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -113,7 +119,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :command} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -121,7 +127,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :event} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -129,7 +135,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :oauth} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -137,7 +143,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :option_load} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -145,7 +151,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :url_verification} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -153,7 +159,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :view_closed} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -161,13 +167,13 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :view_submission} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
   @impl Juvet.Router
-  def validate_route(router, %Juvet.Router.Route{} = route, options),
-    do: {:error, {:unknown_route, [router: router, route: route, options: options]}}
+  def validate_route(router, %Juvet.Router.Route{} = route, opts),
+    do: {:error, {:unknown_route, [router: router, route: route, opts: opts]}}
 
   defp action_from_payload(%{"actions" => actions}), do: List.first(actions)
   defp action_from_payload(_payload), do: %{}

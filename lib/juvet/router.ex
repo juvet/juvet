@@ -139,8 +139,8 @@ defmodule Juvet.Router do
     end
   end
 
-  def find_route(router, request) do
-    RouteFinder.find(platforms(router), request)
+  def find_route(router, request, opts \\ []) do
+    RouteFinder.find(platforms(router), request, opts)
   end
 
   def middlewares(router) do
@@ -157,7 +157,11 @@ defmodule Juvet.Router do
   # Behaviour
   @callback new(atom()) :: struct()
 
-  @callback find_route(%{platform: Juvet.Router.Platform.t()}, Juvet.Router.Request.t()) ::
+  @callback find_route(
+              %{platform: Juvet.Router.Platform.t()},
+              Juvet.Router.Request.t(),
+              keyword()
+            ) ::
               {:ok, Juvet.Router.Route.t()} | {:error, term()}
 
   @callback get_default_routes() :: {:ok, [Juvet.Router.Route.t()]} | {:error, term()}
@@ -170,6 +174,10 @@ defmodule Juvet.Router do
   @callback validate(Juvet.Router.Platform.t()) ::
               {:ok, Juvet.Router.Platform.t()} | {:error, term()}
 
-  @callback validate_route(%{platform: Juvet.Router.Platform.t()}, Juvet.Router.Route.t(), map()) ::
+  @callback validate_route(
+              %{platform: Juvet.Router.Platform.t()},
+              Juvet.Router.Route.t(),
+              keyword()
+            ) ::
               {:ok, Juvet.Router.Route.t()} | {:error, term()}
 end

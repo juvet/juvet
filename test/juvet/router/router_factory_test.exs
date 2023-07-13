@@ -115,7 +115,7 @@ defmodule Juvet.Router.RouterFactoryTest do
                [
                  router: %SlackRouter{platform: %Platform{platform: :slack}},
                  route: error_route,
-                 options: %{}
+                 opts: []
                ]}} ==
                RouterFactory.validate_route(platform, error_route)
     end
@@ -125,7 +125,7 @@ defmodule Juvet.Router.RouterFactoryTest do
 
       assert {:error,
               {:unknown_platform,
-               [router: %UnknownRouter{platform: ^unknown_platform}, route: ^route, options: %{}]}} =
+               [router: %UnknownRouter{platform: ^unknown_platform}, route: ^route, opts: []]}} =
                RouterFactory.validate_route(
                  unknown_platform,
                  route

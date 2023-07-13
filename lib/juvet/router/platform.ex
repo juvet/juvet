@@ -29,10 +29,10 @@ defmodule Juvet.Router.Platform do
     end
   end
 
-  @spec put_route(Juvet.Router.Platform.t(), Juvet.Router.Route.t(), map()) ::
+  @spec put_route(Juvet.Router.Platform.t(), Juvet.Router.Route.t(), keyword()) ::
           {:ok, Juvet.Router.Platform.t()} | {:error, any()}
-  def put_route(%Juvet.Router.Platform{} = platform, route, options \\ %{}) do
-    case RouterFactory.validate_route(platform, route, options) do
+  def put_route(%Juvet.Router.Platform{} = platform, route, opts \\ []) do
+    case RouterFactory.validate_route(platform, route, opts) do
       {:ok, route} ->
         routes = platform.routes
         {:ok, %{platform | routes: routes ++ [route]}}

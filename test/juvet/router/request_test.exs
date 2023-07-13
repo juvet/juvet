@@ -96,6 +96,10 @@ defmodule Juvet.Router.RequestTest do
       assert Request.match_path?(request, "/slack/commands")
     end
 
+    test "returns false if the path matches has extra path segments", %{request: request} do
+      refute Request.match_path?(request, "/slack/commands/callback")
+    end
+
     test "returns false if the path does not match", %{request: request} do
       refute Request.match_path?(request, "/slack/blah")
     end

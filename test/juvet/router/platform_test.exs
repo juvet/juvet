@@ -50,7 +50,7 @@ defmodule Juvet.Router.PlatformTest do
                 [
                   router: %SlackRouter{platform: platform},
                   route: error_route,
-                  options: %{}
+                  opts: []
                 ]}
     end
   end
