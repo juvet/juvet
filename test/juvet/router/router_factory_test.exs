@@ -40,7 +40,8 @@ defmodule Juvet.Router.RouterFactoryTest do
                {:unknown_route,
                 [
                   router: %SlackRouter{platform: platform},
-                  request: request
+                  request: request,
+                  opts: []
                 ]}
     end
   end

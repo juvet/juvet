@@ -5,7 +5,7 @@ defmodule Juvet.Router.SlackRouter do
 
   @behaviour Juvet.Router
 
-  alias Juvet.Router.{Conn, Response, Route}
+  alias Juvet.Router.{Conn, RequestIdentifier, Response, Route}
 
   @type t :: %__MODULE__{
           platform: Juvet.Router.Platform.t()
@@ -30,7 +30,7 @@ defmodule Juvet.Router.SlackRouter do
         opts
       ) do
     case Enum.find(routes, &(!is_nil(find_slack_route(&1, request, opts)))) do
-      nil -> {:error, {:unknown_route, [router: router, request: request]}}
+      nil -> {:error, {:unknown_route, [router: router, request: request, opts: opts]}}
       route -> {:ok, route}
     end
   end
@@ -47,8 +47,10 @@ defmodule Juvet.Router.SlackRouter do
     if event_request?(request, event), do: route
   end
 
-  defp find_slack_route(%Route{type: :oauth, route: phase} = route, request, _opts) do
-    if oauth_request?(request, phase), do: route
+  defp find_slack_route(%Route{type: :oauth, route: phase} = route, request, opts) do
+    configuration = Keyword.get(opts, :configuration)
+
+    if oauth_request?(request, phase, configuration), do: route
   end
 
   defp find_slack_route(%Route{type: :option_load, route: action_id} = route, request, _opts) do
@@ -219,9 +221,10 @@ defmodule Juvet.Router.SlackRouter do
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
 
-  defp oauth_request?(%{verified?: true}, _phase), do: true
+  defp oauth_request?(%{verified?: true} = request, phase, configuration),
+    do: RequestIdentifier.oauth_path(request, configuration) == phase
 
-  defp oauth_request?(_request, _phase), do: false
+  defp oauth_request?(_request, _phase, _configuration), do: false
 
   defp option_load_request?(%{raw_params: %{"payload" => payload}}, action_id),
     do: payload |> block_suggestion_payload?(action_id)
