@@ -83,11 +83,12 @@ defmodule Juvet.RouterTest do
     test "accumulates the routes within the router" do
       platforms = Juvet.Router.platforms(MyRouter)
 
-      assert Enum.count(List.first(platforms).routes) == 4
-      assert is_nil(Enum.at(List.first(platforms).routes, 0).route)
-      assert Enum.at(List.first(platforms).routes, 1).route == "test_action_id"
-      assert Enum.at(List.first(platforms).routes, 2).route == "/test"
-      assert Enum.at(List.first(platforms).routes, 3).route == "test_callback_id"
+      assert Enum.count(List.first(platforms).routes) == 5
+      refute Enum.at(List.first(platforms).routes, 0).route
+      assert Enum.at(List.first(platforms).routes, 1).route == :callback
+      assert Enum.at(List.first(platforms).routes, 2).route == "test_action_id"
+      assert Enum.at(List.first(platforms).routes, 3).route == "/test"
+      assert Enum.at(List.first(platforms).routes, 4).route == "test_callback_id"
     end
   end
 

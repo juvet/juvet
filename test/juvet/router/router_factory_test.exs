@@ -54,8 +54,8 @@ defmodule Juvet.Router.RouterFactoryTest do
     end
 
     test "returns an ok tuple with the default routes", %{platform: platform} do
-      assert {:ok, [route]} = RouterFactory.get_default_routes(platform)
-      assert route.type == :url_verification
+      assert {:ok, routes} = RouterFactory.get_default_routes(platform)
+      assert Enum.count(routes) == 2
     end
 
     test "returns an error if the platform is not valid" do

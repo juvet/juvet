@@ -77,7 +77,8 @@ defmodule Juvet.Router.SlackRouter do
   def get_default_routes do
     {:ok,
      [
-       Route.new(:url_verification, nil, to: &SlackRouteHandler.handle_route/1)
+       Route.new(:url_verification, nil, to: &SlackRouteHandler.handle_route/1),
+       Route.new(:oauth, :callback, to: &SlackRouteHandler.handle_route/1)
      ]}
   end
 
