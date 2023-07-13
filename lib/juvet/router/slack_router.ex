@@ -5,7 +5,7 @@ defmodule Juvet.Router.SlackRouter do
 
   @behaviour Juvet.Router
 
-  alias Juvet.Router.{Conn, Request, RequestIdentifier, Response, Route}
+  alias Juvet.Router.{Request, RequestIdentifier, Route, SlackRouteHandler}
 
   @type t :: %__MODULE__{
           platform: Juvet.Router.Platform.t()
@@ -75,21 +75,7 @@ defmodule Juvet.Router.SlackRouter do
 
   @impl Juvet.Router
   def get_default_routes do
-    {:ok, [Route.new(:url_verification, nil, to: &__MODULE__.handle_route/1)]}
-  end
-
-  @impl Juvet.Router
-  def handle_route(
-        %{request: %{raw_params: %{"challenge" => challenge, "type" => "url_verification"}}} =
-          context
-      ) do
-    conn =
-      context
-      |> Map.put(:response, Response.new(status: 200, body: %{challenge: challenge}))
-      |> Conn.send_resp()
-
-    context = Map.put(context, :conn, conn)
-    {:ok, context}
+    {:ok, [Route.new(:url_verification, nil, to: &SlackRouteHandler.handle_route/1)]}
   end
 
   @impl Juvet.Router
@@ -188,7 +174,7 @@ defmodule Juvet.Router.SlackRouter do
 
   defp action_payload?(_payload, _action_id), do: false
 
-  defp action_request?(%{raw_params: %{"payload" => payload}}, action_id),
+  defp action_request?(%Request{raw_params: %{"payload" => payload}}, action_id),
     do: payload |> action_payload?(action_id)
 
   defp action_request?(_request, _action_id), do: false
@@ -201,13 +187,13 @@ defmodule Juvet.Router.SlackRouter do
   defp callback_id_from_payload(%{"view" => %{"callback_id" => callback_id}}), do: callback_id
   defp callback_id_from_payload(_payload), do: nil
 
-  defp command_request?(%{raw_params: raw_params}, command) do
+  defp command_request?(%Request{raw_params: raw_params}, command) do
     normalized_command(raw_params["command"]) == normalized_command(command)
   end
 
   defp command_without_slash(command), do: String.trim_leading(command, "/")
 
-  defp event_request?(%{raw_params: %{"event" => %{"type" => event_type}}}, event) do
+  defp event_request?(%Request{raw_params: %{"event" => %{"type" => event_type}}}, event) do
     normalized_value(event_type) == normalized_value(event)
   end
 
@@ -226,7 +212,7 @@ defmodule Juvet.Router.SlackRouter do
 
   defp oauth_request?(_request, _phase, _configuration), do: false
 
-  defp option_load_request?(%{raw_params: %{"payload" => payload}}, action_id),
+  defp option_load_request?(%Request{raw_params: %{"payload" => payload}}, action_id),
     do: payload |> block_suggestion_payload?(action_id)
 
   defp option_load_request?(_payload, _action_id), do: false
