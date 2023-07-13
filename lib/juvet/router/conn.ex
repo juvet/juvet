@@ -43,6 +43,7 @@ defmodule Juvet.Router.Conn do
         halt = Keyword.get(options, :halt, true)
 
         send_response_or_redirect(conn, response)
+        |> set_sent()
         |> maybe_halt(halt)
     end
   end
@@ -58,7 +59,6 @@ defmodule Juvet.Router.Conn do
     conn
     |> put_headers(body)
     |> Plug.Conn.send_resp(status, response_body)
-    |> set_sent()
   end
 
   defp redirect(conn, location) do
@@ -68,7 +68,6 @@ defmodule Juvet.Router.Conn do
     conn
     |> Plug.Conn.put_resp_header("location", location)
     |> Plug.Conn.send_resp(302, body)
-    |> set_sent()
   end
 
   defp already_sent?(%Plug.Conn{} = conn) do
