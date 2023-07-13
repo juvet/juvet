@@ -43,6 +43,7 @@ defmodule Juvet.Mixfile do
       {:exvcr, "~> 0.13", only: [:dev, :test]},
       {:httpoison, "~> 1.0"},
       {:mock, "~> 0.3.0", only: :test},
+      {:oauth2, "~> 2.1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:poison, "~> 4.0"},
       {:websockex, "~> 0.4.0"}
