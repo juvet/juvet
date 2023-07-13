@@ -5,7 +5,7 @@ defmodule Juvet.Router.OAuthRouter do
 
   alias Juvet.OAuth
 
-  @spec url_for(atom(), atom(), map(), Keyword.t()) :: String.t() | nil
+  @spec url_for(atom(), atom(), Keyword.t(), Keyword.t()) :: String.t() | nil
   def url_for(platform, phase, configuration, params \\ [])
 
   def url_for(:slack, :request, configuration, params) do
