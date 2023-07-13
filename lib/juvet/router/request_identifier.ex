@@ -53,7 +53,7 @@ defmodule Juvet.Router.RequestIdentifier do
   def oauth_path(%Request{platform: :slack} = request, configuration),
     do: SlackRequestIdentifier.oauth_path(request, configuration)
 
-  def oauth_path(%Request{platform: :unknown} = request, _configuration), do: nil
+  def oauth_path(%Request{platform: :unknown}, _configuration), do: nil
 
   @spec platform(Juvet.Router.Request.t(), Keyword.t()) :: atom()
   def platform(%Request{} = request, configuration) do
