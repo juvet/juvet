@@ -1,0 +1,50 @@
+[
+  {
+    "request": {
+      "body": "client_id=&client_secret=&code=CODE&grant_type=authorization_code&redirect_uri=",
+      "headers": {
+        "content-type": "application/x-www-form-urlencoded",
+        "accept": "application/json",
+        "authorization": "Basic Og=="
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/oauth.v2.access?"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":false,\"error\":\"invalid_code\"}",
+      "headers": {
+        "date": "Fri, 14 Jul 2023 19:45:48 GMT",
+        "server": "Apache",
+        "vary": "Accept-Encoding",
+        "x-slack-req-id": "bc6219836f0bbd561e911f4fa5488248",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "0",
+        "x-robots-tag": "noindex,nofollow",
+        "pragma": "no-cache",
+        "cache-control": "private, no-cache, no-store, must-revalidate",
+        "expires": "Sat, 26 Jul 1997 05:00:00 GMT",
+        "content-type": "application/json; charset=utf-8",
+        "access-control-expose-headers": "x-slack-req-id, retry-after",
+        "access-control-allow-headers": "slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "x-slack-unique-id": "ZLGl7MLUOYqOHvec7C4YkQAAMCg",
+        "x-slack-backend": "r",
+        "referrer-policy": "no-referrer",
+        "access-control-allow-origin": "*",
+        "content-length": "35",
+        "via": "1.1 slack-prod.tinyspeck.com, envoy-www-iad-zkhezizs, envoy-edge-dub-hyzvkyqb",
+        "x-envoy-upstream-service-time": "80",
+        "x-backend": "main_normal main_canary_with_overflow main_control_with_overflow",
+        "x-server": "slack-www-hhvm-main-iad-kmgz",
+        "x-slack-shared-secret-outcome": "no-match",
+        "x-edge-backend": "envoy-www",
+        "x-slack-edge-shared-secret-outcome": "no-match"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

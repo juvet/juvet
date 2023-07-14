@@ -15,6 +15,14 @@ defmodule Juvet.OAuth.Slack do
     |> Client.put_serializer("application/json", Poison)
   end
 
+  @spec get_token!(params :: keyword()) :: OAuth2.Client.t()
+  def get_token!(params \\ []) do
+    OAuth2.Client.get_token!(
+      client(),
+      params
+    )
+  end
+
   # Strategy callbacks
 
   def authorize_url(client, params), do: Strategy.AuthCode.authorize_url(client, params)
