@@ -69,5 +69,6 @@ defmodule Juvet.Router.OAuthRouter do
   defp to_tuple(%{strategy: Juvet.OAuth.Slack, token: %{access_token: nil}} = response),
     do: slack_strategy_error_tuple(response)
 
-  defp to_tuple(%{token: %{access_token: _}} = response), do: {:ok, response}
+  defp to_tuple(%{strategy: Juvet.OAuth.Slack, token: %{access_token: _}} = response),
+    do: {:ok, response}
 end
