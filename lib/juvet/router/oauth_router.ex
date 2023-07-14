@@ -5,6 +5,7 @@ defmodule Juvet.Router.OAuthRouter do
 
   alias Juvet.OAuth
 
+  @spec auth_for(atom(), Keyword.t(), Keyword.t()) :: {:ok, map()} | {:error, term(), map()}
   def auth_for(platform, configuration, params \\ [])
 
   def auth_for(:slack, configuration, params) do
