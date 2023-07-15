@@ -12,19 +12,9 @@ defmodule Juvet.Middleware.BuildDefaultResponse do
   def call(context), do: {:ok, context}
 
   defp maybe_put_response(context) do
-    case request_type(context) do
-      :oauth_request_phase -> Map.put_new(context, :response, default_oauth_response(context))
-      :oauth_callback_phase -> context
-      _ -> Map.put_new(context, :response, Response.new(status: 200))
-    end
-  end
-
-  defp request_type(context) do
-    cond do
-      oauth_request_phase?(context) -> :oauth_request_phase
-      oauth_request?(context) -> :oauth_callback_phase
-      true -> :platform
-    end
+    if oauth_request_phase?(context),
+      do: Map.put_new(context, :response, default_oauth_response(context)),
+      else: Map.put_new(context, :response, Response.new(status: 200))
   end
 
   defp oauth_request?(%{configuration: configuration, request: request}),

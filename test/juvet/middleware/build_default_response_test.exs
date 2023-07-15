@@ -38,17 +38,17 @@ defmodule Juvet.Middleware.BuildDefaultResponseTest do
                ~r{https://slack.com/oauth/v2/authorize\?app_id=.*client_id=.*&client_secret=.*redirect_uri=.*+}
     end
 
-    test "does not add the default response if the request is an oauth Slack in the callback phase",
+    test "adds the default response if the request is an oauth Slack in the callback phase",
          %{
            context: %{request: request, route: route} = context
          } do
       request = %{request | platform: :slack, method: "GET", path: "/auth/slack/callback"}
       route = %{route | type: :oauth, route: :callback}
 
-      assert {:ok, context} =
+      assert {:ok, %{response: response}} =
                BuildDefaultResponse.call(%{context | request: request, route: route})
 
-      refute Map.get(context, :response)
+      assert response.status == 200
     end
   end
 end
