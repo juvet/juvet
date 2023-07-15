@@ -95,7 +95,7 @@ defmodule Juvet.Router.RequestIdentifierTest do
         })
 
       assert RequestIdentifier.oauth_path(%{request | platform: :slack}, configuration) ==
-               :request
+               "request"
     end
 
     test "returns callback for a slack oauth callback request", %{
@@ -108,7 +108,7 @@ defmodule Juvet.Router.RequestIdentifierTest do
         })
 
       assert RequestIdentifier.oauth_path(%{request | platform: :slack}, configuration) ==
-               :callback
+               "callback"
     end
 
     test "returns nil for a slack oauth request with a different request path", %{

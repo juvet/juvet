@@ -30,7 +30,7 @@ defmodule Juvet.Middleware.BuildDefaultResponse do
   defp oauth_request?(%{configuration: configuration, request: request}),
     do: RequestIdentifier.oauth?(request, configuration)
 
-  defp oauth_request_phase?(%{route: %{route: :request}} = context), do: oauth_request?(context)
+  defp oauth_request_phase?(%{route: %{route: "request"}} = context), do: oauth_request?(context)
   defp oauth_request_phase?(_context), do: false
 
   defp default_oauth_response(%{

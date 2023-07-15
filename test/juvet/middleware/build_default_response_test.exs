@@ -27,7 +27,7 @@ defmodule Juvet.Middleware.BuildDefaultResponseTest do
       context: %{request: request, route: route} = context
     } do
       request = %{request | platform: :slack, method: "GET", path: "/auth/slack"}
-      route = %{route | type: :oauth, route: :request}
+      route = %{route | type: :oauth, route: "request"}
 
       assert {:ok, %{response: response}} =
                BuildDefaultResponse.call(%{context | request: request, route: route})

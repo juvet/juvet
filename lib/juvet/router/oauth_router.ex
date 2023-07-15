@@ -19,10 +19,10 @@ defmodule Juvet.Router.OAuthRouter do
 
   def auth_for(_provider, _configuration, _params), do: {:error, :invalid_platform, %{}}
 
-  @spec url_for(atom(), atom(), Keyword.t(), Keyword.t()) :: String.t() | nil
+  @spec url_for(atom(), binary(), Keyword.t(), Keyword.t()) :: String.t() | nil
   def url_for(platform, phase, configuration, params \\ [])
 
-  def url_for(:slack, :request, configuration, params) do
+  def url_for(:slack, "request", configuration, params) do
     configuration
     |> Juvet.Config.slack()
     |> slack_request_params()
