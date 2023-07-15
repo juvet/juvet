@@ -167,7 +167,7 @@ defmodule Juvet.Router do
   @callback get_default_routes() :: {:ok, list(Juvet.Router.Route.t())} | {:error, term()}
 
   @callback handle_route(%{platform: Juvet.Router.Platform.t()}) ::
-              {:ok, Juvet.Router.Route.t()} | {:error, term()}
+              {:ok, map()} | {:error, term() | map()}
 
   @callback request_format(Juvet.Router.Request.t()) :: {:ok, atom()} | {:error, term()}
 

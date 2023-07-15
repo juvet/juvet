@@ -17,7 +17,7 @@ defmodule Juvet.Router.OAuthRouter do
     |> to_tuple()
   end
 
-  def auth_for(_provider, _configuration, _params), do: nil
+  def auth_for(_provider, _configuration, _params), do: {:error, :invalid_platform, %{}}
 
   @spec url_for(atom(), atom(), Keyword.t(), Keyword.t()) :: String.t() | nil
   def url_for(platform, phase, configuration, params \\ [])
@@ -62,12 +62,14 @@ defmodule Juvet.Router.OAuthRouter do
         :redirect_uri
       ])
 
-  defp slack_strategy_error_tuple(%{token: %{other_params: %{"error" => error}}} = response),
-    do: {:error, error, response}
+  defp to_tuple(
+         %{
+           strategy: Juvet.OAuth.Slack,
+           token: %{other_params: %{"error" => error}}
+         } = response
+       ),
+       do: {:error, error, response}
 
-  defp to_tuple(%{strategy: Juvet.OAuth.Slack, token: %{access_token: nil}} = response),
-    do: slack_strategy_error_tuple(response)
-
-  defp to_tuple(%{strategy: Juvet.OAuth.Slack, token: %{access_token: _}} = response),
+  defp to_tuple(%{strategy: Juvet.OAuth.Slack, token: %{access_token: _access_token}} = response),
     do: {:ok, response}
 end
