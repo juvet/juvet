@@ -25,11 +25,8 @@ defmodule Juvet.Router.Conn do
     context = get_context(conn)
 
     case Juvet.Runner.run(conn, Map.merge(%{configuration: config}, context)) do
-      {:ok, context} ->
-        maybe_send_response(context)
-
-      {:error, error} ->
-        send_error(conn, error)
+      {:ok, context} -> maybe_send_response(context)
+      {:error, error} -> send_error(conn, error)
     end
   end
 

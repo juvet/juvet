@@ -17,9 +17,8 @@ defmodule Juvet.Runner do
 
     default_configuration(configuration)
     |> Map.merge(context)
-    |> Map.delete(:conn)
     |> Map.merge(%{path: path})
-    |> merge_middleware()
+    |> merge_middleware(partial: true)
     |> MiddlewareProcessor.process()
   end
 
@@ -44,8 +43,8 @@ defmodule Juvet.Runner do
     %{configuration: Keyword.merge(Juvet.configuration(), configuration)}
   end
 
-  defp merge_middleware(%{configuration: configuration} = context) do
-    partial = !Map.has_key?(context, :conn)
+  defp merge_middleware(%{configuration: configuration} = context, opts \\ []) do
+    partial = Keyword.get(opts, :partial, false)
 
     configuration
     |> Config.router()
