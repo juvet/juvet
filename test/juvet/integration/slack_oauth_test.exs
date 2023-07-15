@@ -6,7 +6,7 @@ defmodule Juvet.Integration.SlackOauthTest do
     use Juvet.Router
 
     platform :slack do
-      oauth(:request, to: "juvet.integration.slack_oauth_test.test#oauth_request")
+      oauth("request", to: "juvet.integration.slack_oauth_test.test#oauth_request")
     end
   end
 
