@@ -1,5 +1,5 @@
 defmodule Juvet.Router do
-  alias Juvet.Router
+  alias Juvet.{Router, Runner}
   alias Juvet.Router.{Middleware, Route, RouteFinder}
 
   defmacro __using__(_opts) do
@@ -142,6 +142,8 @@ defmodule Juvet.Router do
   def find_route(router, request, opts \\ []) do
     RouteFinder.find(platforms(router), request, opts)
   end
+
+  defdelegate route(path, context), to: Runner
 
   def middlewares(router) do
     case Code.ensure_compiled(router) do
