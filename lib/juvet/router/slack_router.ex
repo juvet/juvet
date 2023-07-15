@@ -79,7 +79,7 @@ defmodule Juvet.Router.SlackRouter do
       {:ok,
        [
          Route.new(:url_verification, nil, to: &SlackRouteHandler.handle_route/1),
-         Route.new(:oauth, :callback, to: &SlackRouteHandler.handle_route/1)
+         Route.new(:oauth, "callback", to: &SlackRouteHandler.handle_route/1)
        ]}
 
   @impl Juvet.Router
