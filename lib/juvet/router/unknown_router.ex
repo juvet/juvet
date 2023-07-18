@@ -17,6 +17,10 @@ defmodule Juvet.Router.UnknownRouter do
   end
 
   @impl Juvet.Router
+  def find_path(router, type, route),
+    do: {:error, {:unknown_path, [router: router, type: type, route: route]}}
+
+  @impl Juvet.Router
   def find_route(platform, request, opts \\ []),
     do: {:error, {:unknown_route, [platform: platform, request: request, opts: opts]}}
 

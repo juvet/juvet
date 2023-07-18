@@ -19,6 +19,14 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   @impl Juvet.Router
+  def find_path(%{platform: %{routes: routes}} = router, type, route) do
+    case Enum.find(routes, &Route.match?(&1, type, route)) do
+      nil -> {:error, {:unknown_path, [router: router, type: type, route: route]}}
+      route -> {:ok, Route.path(route)}
+    end
+  end
+
+  @impl Juvet.Router
   def find_route(router, request, opts \\ [])
 
   def find_route(router, %{verified?: false} = request, opts),

@@ -11,6 +11,14 @@ defmodule Juvet.Router.RouterFactory do
     router(platform).find_route(to_router(platform), request, opts)
   end
 
+  @spec find_path(Juvet.Router.Platform.t() | nil, term(), term()) ::
+          {:ok, binary()} | {:error, any()}
+  def find_path(nil, _type, _route), do: {:error, :not_found}
+
+  def find_path(platform, type, route) do
+    router(platform).find_path(to_router(platform), type, route)
+  end
+
   @spec get_default_routes(Juvet.Router.Platform.t()) ::
           {:ok, list(Juvet.Router.Route.t())} | {:error, any()}
   def get_default_routes(platform) do

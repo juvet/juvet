@@ -1,6 +1,6 @@
 defmodule Juvet.Router do
   alias Juvet.{Router, Runner}
-  alias Juvet.Router.{Middleware, Route, RouteFinder}
+  alias Juvet.Router.{Middleware, Route, RouteFinder, RouterFactory}
 
   defmacro __using__(_opts) do
     quote do
@@ -139,6 +139,12 @@ defmodule Juvet.Router do
     end
   end
 
+  def find_path(router, platform, type, route) do
+    router
+    |> find_platform(platform)
+    |> RouterFactory.find_path(type, route)
+  end
+
   def find_route(router, request, opts \\ []) do
     RouteFinder.find(platforms(router), request, opts)
   end
@@ -156,8 +162,17 @@ defmodule Juvet.Router do
     router.__platforms__()
   end
 
+  def find_platform(router, platform) do
+    router
+    |> platforms()
+    |> Enum.find(fn %Juvet.Router.Platform{platform: p} -> p == platform end)
+  end
+
   # Behaviour
   @callback new(atom()) :: struct()
+
+  @callback find_path(%{platform: Juvet.Router.Platform.t()}, term(), term()) ::
+              {:ok, binary()} | {:error, term()}
 
   @callback find_route(
               %{platform: Juvet.Router.Platform.t()},
