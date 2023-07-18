@@ -12,7 +12,7 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
       body = params |> URI.encode_query()
 
       signing_secret = generate_slack_signing_secret()
-      config = [slack: [signing_secret: signing_secret]]
+      config = [slack: [oauth_request_endpoint: "/auth/slack", signing_secret: signing_secret]]
 
       timestamp = generate_slack_timestamp()
       signature = generate_slack_signature(params, signing_secret, timestamp)
@@ -51,6 +51,15 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
                  | configuration: config
                })
 
+      assert ctx[:request].verified?
+    end
+
+    test "returns the context for a valid oauth request", %{
+      context: %{request: request} = context
+    } do
+      request = %{request | method: "GET", path: "/auth/slack?scopes=chat:write", headers: []}
+
+      assert {:ok, ctx} = VerifyRequest.call(%{context | request: request})
       assert ctx[:request].verified?
     end
 
@@ -148,6 +157,25 @@ defmodule Juvet.Middleware.Slack.VerifyRequestTest do
                  context
                  | request: request
                })
+    end
+
+    test "returns an error for an oauth request that is not configured", %{
+      context: %{configuration: configuration, request: request} = context
+    } do
+      config = Keyword.merge(configuration, slack: [])
+
+      request = %{request | method: "GET", path: "/auth/slack?scopes=chat:write", headers: []}
+
+      assert {:error, _error} =
+               VerifyRequest.call(%{context | configuration: config, request: request})
+    end
+
+    test "returns an error for an oauth request that does not match the configured endpoint", %{
+      context: %{request: request} = context
+    } do
+      request = %{request | method: "GET", path: "/oauth/slack?scopes=chat:write", headers: []}
+
+      assert {:error, _error} = VerifyRequest.call(%{context | request: request})
     end
   end
 end

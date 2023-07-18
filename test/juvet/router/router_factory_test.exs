@@ -40,7 +40,8 @@ defmodule Juvet.Router.RouterFactoryTest do
                {:unknown_route,
                 [
                   router: %SlackRouter{platform: platform},
-                  request: request
+                  request: request,
+                  opts: []
                 ]}
     end
   end
@@ -53,8 +54,8 @@ defmodule Juvet.Router.RouterFactoryTest do
     end
 
     test "returns an ok tuple with the default routes", %{platform: platform} do
-      assert {:ok, [route]} = RouterFactory.get_default_routes(platform)
-      assert route.type == :url_verification
+      assert {:ok, routes} = RouterFactory.get_default_routes(platform)
+      assert Enum.count(routes) == 2
     end
 
     test "returns an error if the platform is not valid" do
@@ -115,7 +116,7 @@ defmodule Juvet.Router.RouterFactoryTest do
                [
                  router: %SlackRouter{platform: %Platform{platform: :slack}},
                  route: error_route,
-                 options: %{}
+                 opts: []
                ]}} ==
                RouterFactory.validate_route(platform, error_route)
     end
@@ -125,7 +126,7 @@ defmodule Juvet.Router.RouterFactoryTest do
 
       assert {:error,
               {:unknown_platform,
-               [router: %UnknownRouter{platform: ^unknown_platform}, route: ^route, options: %{}]}} =
+               [router: %UnknownRouter{platform: ^unknown_platform}, route: ^route, opts: []]}} =
                RouterFactory.validate_route(
                  unknown_platform,
                  route

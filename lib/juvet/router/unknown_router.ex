@@ -17,8 +17,12 @@ defmodule Juvet.Router.UnknownRouter do
   end
 
   @impl Juvet.Router
-  def find_route(platform, request),
-    do: {:error, {:unknown_route, [platform: platform, request: request]}}
+  def find_path(router, type, route),
+    do: {:error, {:unknown_path, [router: router, type: type, route: route]}}
+
+  @impl Juvet.Router
+  def find_route(platform, request, opts \\ []),
+    do: {:error, {:unknown_route, [platform: platform, request: request, opts: opts]}}
 
   @impl Juvet.Router
   def get_default_routes, do: {:error, :unknown_platform}
@@ -33,7 +37,7 @@ defmodule Juvet.Router.UnknownRouter do
   def validate(_platform), do: {:error, :unknown_platform}
 
   @impl Juvet.Router
-  def validate_route(router, route, options \\ %{}) do
-    {:error, {:unknown_platform, [router: router, route: route, options: options]}}
+  def validate_route(router, route, opts \\ []) do
+    {:error, {:unknown_platform, [router: router, route: route, opts: opts]}}
   end
 end

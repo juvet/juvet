@@ -33,7 +33,7 @@ defmodule Juvet.Router.SlackRouterTest do
     } do
       request = %{request | verified?: false}
 
-      assert {:error, {:unverified_route, [router: ^router, request: ^request]}} =
+      assert {:error, {:unverified_route, [router: ^router, request: ^request, opts: []]}} =
                SlackRouter.find_route(router, request)
     end
 
@@ -46,7 +46,7 @@ defmodule Juvet.Router.SlackRouterTest do
         | raw_params: Map.merge(request.raw_params, %{"command" => "/blah"})
       }
 
-      assert {:error, {:unknown_route, [router: ^router, request: ^request]}} =
+      assert {:error, {:unknown_route, [router: ^router, request: ^request, opts: []]}} =
                SlackRouter.find_route(router, request)
     end
   end

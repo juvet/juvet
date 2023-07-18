@@ -72,6 +72,16 @@ defmodule Juvet.Router.Request do
     for {^header, value} <- headers, do: value
   end
 
+  @spec get?(Juvet.Router.Request.t()) :: boolean()
+  def get?(%__MODULE__{method: nil}), do: false
+
+  def get?(%__MODULE__{method: method}), do: method |> String.downcase() == "get"
+
+  @spec match_path?(Juvet.Router.Request.t(), String.t()) :: boolean()
+  def match_path?(%__MODULE__{path: nil}, match), do: !is_nil(match)
+  def match_path?(%__MODULE__{path: path}, nil), do: !is_nil(path)
+  def match_path?(%__MODULE__{path: path}, match), do: Regex.match?(~r/^#{match}/, path)
+
   defp base_url_port(:http, 80), do: ""
   defp base_url_port(:https, 443), do: ""
   defp base_url_port(_, port), do: [?:, Integer.to_string(port)]

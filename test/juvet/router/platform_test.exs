@@ -14,8 +14,9 @@ defmodule Juvet.Router.PlatformTest do
       platform: platform
     } do
       assert {:ok, platform} = Platform.put_default_routes(platform)
-      assert Enum.count(platform.routes) == 1
+      assert Enum.count(platform.routes) == 2
       assert List.first(platform.routes).type == :url_verification
+      assert List.last(platform.routes).type == :oauth
     end
 
     test "returns an error tuple if the platform is unknown" do
@@ -50,7 +51,7 @@ defmodule Juvet.Router.PlatformTest do
                 [
                   router: %SlackRouter{platform: platform},
                   route: error_route,
-                  options: %{}
+                  opts: []
                 ]}
     end
   end

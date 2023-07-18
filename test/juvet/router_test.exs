@@ -1,6 +1,7 @@
 defmodule Juvet.RouterTest do
   use ExUnit.Case, async: true
 
+  alias Juvet.Router
   alias Juvet.Router.{Middleware, Request, RouteError}
 
   defmodule MoreMiddleware do
@@ -12,7 +13,7 @@ defmodule Juvet.RouterTest do
   end
 
   defmodule MyRouter do
-    use Juvet.Router
+    use Router
 
     middleware do
       include(MyMiddleware)
@@ -20,6 +21,7 @@ defmodule Juvet.RouterTest do
     end
 
     platform :slack do
+      oauth("success", to: "auth_controller#success")
       action("test_action_id", to: "controller#action")
       command("/test", to: "controller#action")
       view_submission("test_callback_id", to: "controller#action")
@@ -32,7 +34,7 @@ defmodule Juvet.RouterTest do
                    "Platform `blah` is not valid.",
                    fn ->
                      defmodule MyBadRouter do
-                       use Juvet.Router
+                       use Router
 
                        platform(:blah, do: nil)
                      end
@@ -42,17 +44,17 @@ defmodule Juvet.RouterTest do
 
   describe "exists?/1" do
     test "returns true if the router is defined" do
-      assert Juvet.Router.exists?(MyRouter)
+      assert Router.exists?(MyRouter)
     end
 
     test "returns false if the router is defined" do
-      refute Juvet.Router.exists?(Blah)
+      refute Router.exists?(Blah)
     end
   end
 
   describe "middlewares/1" do
     test "accumulates all the system middleware and router middleware that can run" do
-      middleware = Juvet.Router.middlewares(MyRouter)
+      middleware = Router.middlewares(MyRouter)
 
       assert Enum.count(middleware) == 11
 
@@ -74,43 +76,45 @@ defmodule Juvet.RouterTest do
 
   describe "platform/2" do
     test "accumulates the platforms within the router" do
-      platforms = Juvet.Router.platforms(MyRouter)
+      platforms = Router.platforms(MyRouter)
 
       assert Enum.count(platforms) == 1
       assert List.first(platforms).platform == :slack
     end
 
     test "accumulates the routes within the router" do
-      platforms = Juvet.Router.platforms(MyRouter)
+      platforms = Router.platforms(MyRouter)
 
-      assert Enum.count(List.first(platforms).routes) == 4
-      assert is_nil(Enum.at(List.first(platforms).routes, 0).route)
-      assert Enum.at(List.first(platforms).routes, 1).route == "test_action_id"
-      assert Enum.at(List.first(platforms).routes, 2).route == "/test"
-      assert Enum.at(List.first(platforms).routes, 3).route == "test_callback_id"
+      assert Enum.count(List.first(platforms).routes) == 6
+      refute Enum.at(List.first(platforms).routes, 0).route
+      assert Enum.at(List.first(platforms).routes, 1).route == "callback"
+      assert Enum.at(List.first(platforms).routes, 2).route == "success"
+      assert Enum.at(List.first(platforms).routes, 3).route == "test_action_id"
+      assert Enum.at(List.first(platforms).routes, 4).route == "/test"
+      assert Enum.at(List.first(platforms).routes, 5).route == "test_callback_id"
     end
   end
 
   describe "find_middleware/2" do
     setup do
-      [middlewares: Juvet.Router.middlewares(MyRouter)]
+      [middlewares: Router.middlewares(MyRouter)]
     end
 
     test "returns an ok tuple with a list of middleware if they were found", %{
       middlewares: middlewares
     } do
-      assert {:ok, middleware} = Juvet.Router.find_middleware(middlewares)
+      assert {:ok, middleware} = Router.find_middleware(middlewares)
       assert Enum.count(middleware) == 11
     end
 
     test "returns an ok tuple with a list of partial middleware", %{middlewares: middlewares} do
-      assert {:ok, middleware} = Juvet.Router.find_middleware(middlewares, partial: true)
+      assert {:ok, middleware} = Router.find_middleware(middlewares, partial: true)
       assert Enum.count(middleware) == 4
     end
 
     test "returns an error tuple if none were found" do
       assert {:error, :no_middleware} =
-               Juvet.Router.find_middleware(
+               Router.find_middleware(
                  [Middleware.new(Juvet.Middleware.ParseRequest, partial: false)],
                  partial: true
                )
@@ -122,7 +126,7 @@ defmodule Juvet.RouterTest do
       request = Request.new(%{params: %{"command" => "/test"}})
       request = %{request | platform: :slack, verified?: true}
 
-      assert {:ok, route} = Juvet.Router.find_route(MyRouter, request)
+      assert {:ok, route} = Router.find_route(MyRouter, request)
       assert route.options == [to: "controller#action"]
     end
 
@@ -130,7 +134,22 @@ defmodule Juvet.RouterTest do
       request = Request.new(%{params: %{"command" => "/blah"}})
       request = %{request | platform: :slack, verified?: true}
 
-      assert {:error, :not_found} = Juvet.Router.find_route(MyRouter, request)
+      assert {:error, :not_found} = Router.find_route(MyRouter, request)
+    end
+  end
+
+  describe "find_path/3" do
+    test "returns an ok tuple with the path for a Slack oauth success parts" do
+      assert {:ok, path} = Router.find_path(MyRouter, :slack, :oauth, "success")
+      assert path == "auth_controller#success"
+    end
+
+    test "returns an error tuple for an unknown platform" do
+      assert {:error, :not_found} = Router.find_path(MyRouter, :blah, :oauth, "success")
+    end
+
+    test "returns an error tuple for an unknown route" do
+      assert {:error, {:unknown_path, _}} = Router.find_path(MyRouter, :slack, :oauth, :failure)
     end
   end
 end

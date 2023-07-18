@@ -20,3 +20,5 @@ config :exvcr,
 
 config :juvet,
   bot: MyBot
+
+config :oauth2, adapter: Tesla.Adapter.Hackney

@@ -25,16 +25,15 @@ defmodule Juvet.Router.Conn do
     context = get_context(conn)
 
     case Juvet.Runner.run(conn, Map.merge(%{configuration: config}, context)) do
-      {:ok, context} ->
-        maybe_send_response(context)
-
-      {:error, error} ->
-        send_error(conn, error)
+      {:ok, context} -> maybe_send_response(context)
+      {:error, error} -> send_error(conn, error)
     end
   end
 
   @spec send_resp(map(), keyword()) :: Plug.Conn.t()
-  def send_resp(%{conn: conn, response: %{body: body, status: status}}, options \\ []) do
+  def send_resp(context, options \\ [])
+
+  def send_resp(%{conn: conn, response: response}, options) do
     case already_sent?(conn) do
       true ->
         conn
@@ -42,14 +41,34 @@ defmodule Juvet.Router.Conn do
       false ->
         halt = Keyword.get(options, :halt, true)
 
-        response_body = format_response_body(body)
-
-        conn
-        |> put_headers(body)
-        |> Plug.Conn.send_resp(status, response_body)
+        send_response_or_redirect(conn, response)
         |> set_sent()
         |> maybe_halt(halt)
     end
+  end
+
+  def send_resp(%{conn: conn}, _options), do: conn
+
+  defp send_response_or_redirect(%Plug.Conn{} = conn, %{body: location, status: 302}) do
+    conn
+    |> redirect(location)
+  end
+
+  defp send_response_or_redirect(%Plug.Conn{} = conn, %{body: body, status: status}) do
+    response_body = format_response_body(body)
+
+    conn
+    |> put_headers(body)
+    |> Plug.Conn.send_resp(status, response_body)
+  end
+
+  defp redirect(conn, location) do
+    html = Plug.HTML.html_escape(location)
+    body = "<html><body>You are being <a href=\"#{html}\">redirected</a>.</body></html>"
+
+    conn
+    |> Plug.Conn.put_resp_header("location", location)
+    |> Plug.Conn.send_resp(302, body)
   end
 
   defp already_sent?(%Plug.Conn{} = conn) do

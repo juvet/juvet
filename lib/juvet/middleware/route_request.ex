@@ -24,7 +24,7 @@ defmodule Juvet.Middleware.RouteRequest do
       ) do
     case get_router(configuration) do
       {:ok, router} ->
-        case Router.find_route(router, request) do
+        case Router.find_route(router, request, configuration: configuration) do
           {:ok, route} ->
             {:ok,
              Map.merge(context, %{

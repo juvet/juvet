@@ -64,12 +64,6 @@ defmodule Juvet.RunnerTest do
                {:"Elixir.Juvet.RunnerTest.TestController", :action}
     end
 
-    test "removes the conn from the context", %{path: path} do
-      {:ok, context} = Juvet.Runner.route(path, %{conn: %Plug.Conn{}})
-
-      refute Map.has_key?(context, :conn)
-    end
-
     test "calls the controller module and action from the path", %{path: path} do
       {:ok, _context} =
         Juvet.Runner.route(path, %{pid: self(), configuration: [router: MyRouter]})

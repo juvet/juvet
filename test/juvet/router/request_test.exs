@@ -86,4 +86,22 @@ defmodule Juvet.Router.RequestTest do
       assert Request.get_header(request, "blah") == []
     end
   end
+
+  describe "match_path?/2" do
+    setup %{conn: conn} do
+      [request: Request.new(conn)]
+    end
+
+    test "returns true if the path matches", %{request: request} do
+      assert Request.match_path?(request, "/slack/commands")
+    end
+
+    test "returns false if the path matches has extra path segments", %{request: request} do
+      refute Request.match_path?(request, "/slack/commands/callback")
+    end
+
+    test "returns false if the path does not match", %{request: request} do
+      refute Request.match_path?(request, "/slack/blah")
+    end
+  end
 end

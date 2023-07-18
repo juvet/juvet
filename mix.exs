@@ -4,7 +4,7 @@ defmodule Juvet.Mixfile do
   def project do
     [
       app: :juvet,
-      version: "0.5.4",
+      version: "0.6.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "Juvet",
@@ -43,6 +43,7 @@ defmodule Juvet.Mixfile do
       {:exvcr, "~> 0.13", only: [:dev, :test]},
       {:httpoison, "~> 1.0"},
       {:mock, "~> 0.3.0", only: :test},
+      {:oauth2, "~> 2.1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:poison, "~> 4.0"},
       {:websockex, "~> 0.4.0"}

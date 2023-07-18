@@ -1,6 +1,6 @@
 defmodule Juvet.Router do
-  alias Juvet.Router
-  alias Juvet.Router.{Middleware, Route, RouteFinder}
+  alias Juvet.{Router, Runner}
+  alias Juvet.Router.{Middleware, Route, RouteFinder, RouterFactory}
 
   defmacro __using__(_opts) do
     quote do
@@ -60,6 +60,15 @@ defmodule Juvet.Router do
       Router.State.put_middleware!(
         __MODULE__,
         Middleware.new(unquote(module), unquote(options))
+      )
+    end
+  end
+
+  defmacro oauth(phase, options \\ []) do
+    quote do
+      Router.State.put_route_on_top!(
+        __MODULE__,
+        Route.new(:oauth, unquote(phase), unquote(options))
       )
     end
   end
@@ -130,9 +139,17 @@ defmodule Juvet.Router do
     end
   end
 
-  def find_route(router, request) do
-    RouteFinder.find(platforms(router), request)
+  def find_path(router, platform, type, route) do
+    router
+    |> find_platform(platform)
+    |> RouterFactory.find_path(type, route)
   end
+
+  def find_route(router, request, opts \\ []) do
+    RouteFinder.find(platforms(router), request, opts)
+  end
+
+  defdelegate route(path, context), to: Runner
 
   def middlewares(router) do
     case Code.ensure_compiled(router) do
@@ -145,22 +162,39 @@ defmodule Juvet.Router do
     router.__platforms__()
   end
 
+  def find_platform(router, platform) do
+    router
+    |> platforms()
+    |> Enum.find(fn %Juvet.Router.Platform{platform: p} -> p == platform end)
+  end
+
   # Behaviour
   @callback new(atom()) :: struct()
 
-  @callback find_route(%{platform: Juvet.Router.Platform.t()}, Juvet.Router.Request.t()) ::
+  @callback find_path(%{platform: Juvet.Router.Platform.t()}, term(), term()) ::
+              {:ok, binary()} | {:error, term()}
+
+  @callback find_route(
+              %{platform: Juvet.Router.Platform.t()},
+              Juvet.Router.Request.t(),
+              keyword()
+            ) ::
               {:ok, Juvet.Router.Route.t()} | {:error, term()}
 
-  @callback get_default_routes() :: {:ok, [Juvet.Router.Route.t()]} | {:error, term()}
+  @callback get_default_routes() :: {:ok, list(Juvet.Router.Route.t())} | {:error, term()}
 
   @callback handle_route(%{platform: Juvet.Router.Platform.t()}) ::
-              {:ok, Juvet.Router.Route.t()} | {:error, term()}
+              {:ok, map()} | {:error, term() | map()}
 
   @callback request_format(Juvet.Router.Request.t()) :: {:ok, atom()} | {:error, term()}
 
   @callback validate(Juvet.Router.Platform.t()) ::
               {:ok, Juvet.Router.Platform.t()} | {:error, term()}
 
-  @callback validate_route(%{platform: Juvet.Router.Platform.t()}, Juvet.Router.Route.t(), map()) ::
+  @callback validate_route(
+              %{platform: Juvet.Router.Platform.t()},
+              Juvet.Router.Route.t(),
+              keyword()
+            ) ::
               {:ok, Juvet.Router.Route.t()} | {:error, term()}
 end

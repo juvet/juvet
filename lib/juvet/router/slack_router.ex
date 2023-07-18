@@ -5,7 +5,7 @@ defmodule Juvet.Router.SlackRouter do
 
   @behaviour Juvet.Router
 
-  alias Juvet.Router.{Conn, Response, Route}
+  alias Juvet.Router.{Request, RequestIdentifier, Route, SlackRouteHandler}
 
   @type t :: %__MODULE__{
           platform: Juvet.Router.Platform.t()
@@ -19,66 +19,76 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   @impl Juvet.Router
-  def find_route(router, %{verified?: false} = request),
-    do: {:error, {:unverified_route, [router: router, request: request]}}
+  def find_path(%{platform: %{routes: routes}} = router, type, route) do
+    case Enum.find(routes, &Route.match?(&1, type, route)) do
+      nil -> {:error, {:unknown_path, [router: router, type: type, route: route]}}
+      route -> {:ok, Route.path(route)}
+    end
+  end
 
   @impl Juvet.Router
+  def find_route(router, request, opts \\ [])
+
+  def find_route(router, %{verified?: false} = request, opts),
+    do: {:error, {:unverified_route, [router: router, request: request, opts: opts]}}
+
   def find_route(
         %{platform: %{routes: routes}} = router,
-        %{platform: :slack, verified?: true} = request
+        %{platform: :slack, verified?: true} = request,
+        opts
       ) do
-    case Enum.find(routes, &(!is_nil(find_route(&1, request)))) do
-      nil -> {:error, {:unknown_route, [router: router, request: request]}}
+    case Enum.find(routes, &(!is_nil(find_slack_route(&1, request, opts)))) do
+      nil -> {:error, {:unknown_route, [router: router, request: request, opts: opts]}}
       route -> {:ok, route}
     end
   end
 
-  def find_route(%Route{type: :action, route: action_id} = route, request) do
+  defp find_slack_route(%Route{type: :action, route: action_id} = route, request, _opts) do
     if action_request?(request, action_id), do: route
   end
 
-  def find_route(%Route{type: :command, route: command_text} = route, request) do
+  defp find_slack_route(%Route{type: :command, route: command_text} = route, request, _opts) do
     if command_request?(request, command_text), do: route
   end
 
-  def find_route(%Route{type: :event, route: event} = route, request) do
+  defp find_slack_route(%Route{type: :event, route: event} = route, request, _opts) do
     if event_request?(request, event), do: route
   end
 
-  def find_route(%Route{type: :option_load, route: action_id} = route, request) do
+  defp find_slack_route(%Route{type: :oauth, route: phase} = route, request, opts) do
+    configuration = Keyword.get(opts, :configuration)
+
+    if oauth_request?(request, phase, configuration), do: route
+  end
+
+  defp find_slack_route(%Route{type: :option_load, route: action_id} = route, request, _opts) do
     if option_load_request?(request, action_id), do: route
   end
 
-  def find_route(%Route{type: :url_verification} = route, request) do
+  defp find_slack_route(%Route{type: :url_verification} = route, request, _opts) do
     if url_verification_request?(request), do: route
   end
 
-  def find_route(%Route{type: :view_closed, route: callback_id} = route, request) do
+  defp find_slack_route(%Route{type: :view_closed, route: callback_id} = route, request, _opts) do
     if view_closed_request?(request, callback_id), do: route
   end
 
-  def find_route(%Route{type: :view_submission, route: callback_id} = route, request) do
+  defp find_slack_route(
+         %Route{type: :view_submission, route: callback_id} = route,
+         request,
+         _opts
+       ) do
     if view_submission_request?(request, callback_id), do: route
   end
 
   @impl Juvet.Router
-  def get_default_routes do
-    {:ok, [Route.new(:url_verification, nil, to: &__MODULE__.handle_route/1)]}
-  end
-
-  @impl Juvet.Router
-  def handle_route(
-        %{request: %{raw_params: %{"challenge" => challenge, "type" => "url_verification"}}} =
-          context
-      ) do
-    conn =
-      context
-      |> Map.put(:response, Response.new(status: 200, body: %{challenge: challenge}))
-      |> Conn.send_resp()
-
-    context = Map.put(context, :conn, conn)
-    {:ok, context}
-  end
+  def get_default_routes,
+    do:
+      {:ok,
+       [
+         Route.new(:url_verification, nil, to: &SlackRouteHandler.handle_route/1),
+         Route.new(:oauth, "callback", to: &SlackRouteHandler.handle_route/1)
+       ]}
 
   @impl Juvet.Router
   def handle_route(context), do: {:ok, context}
@@ -101,7 +111,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :action} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -109,7 +119,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :command} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -117,7 +127,15 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :event} = route,
-        _options
+        _opts
+      ),
+      do: {:ok, route}
+
+  @impl Juvet.Router
+  def validate_route(
+        _router,
+        %Juvet.Router.Route{type: :oauth} = route,
+        _opts
       ),
       do: {:ok, route}
 
@@ -125,7 +143,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :option_load} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -133,7 +151,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :url_verification} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -141,7 +159,7 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :view_closed} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
@@ -149,13 +167,13 @@ defmodule Juvet.Router.SlackRouter do
   def validate_route(
         _router,
         %Juvet.Router.Route{type: :view_submission} = route,
-        _options
+        _opts
       ),
       do: {:ok, route}
 
   @impl Juvet.Router
-  def validate_route(router, %Juvet.Router.Route{} = route, options),
-    do: {:error, {:unknown_route, [router: router, route: route, options: options]}}
+  def validate_route(router, %Juvet.Router.Route{} = route, opts),
+    do: {:error, {:unknown_route, [router: router, route: route, opts: opts]}}
 
   defp action_from_payload(%{"actions" => actions}), do: List.first(actions)
   defp action_from_payload(_payload), do: %{}
@@ -168,7 +186,7 @@ defmodule Juvet.Router.SlackRouter do
 
   defp action_payload?(_payload, _action_id), do: false
 
-  defp action_request?(%{raw_params: %{"payload" => payload}}, action_id),
+  defp action_request?(%Request{raw_params: %{"payload" => payload}}, action_id),
     do: payload |> action_payload?(action_id)
 
   defp action_request?(_request, _action_id), do: false
@@ -181,13 +199,13 @@ defmodule Juvet.Router.SlackRouter do
   defp callback_id_from_payload(%{"view" => %{"callback_id" => callback_id}}), do: callback_id
   defp callback_id_from_payload(_payload), do: nil
 
-  defp command_request?(%{raw_params: raw_params}, command) do
+  defp command_request?(%Request{raw_params: raw_params}, command) do
     normalized_command(raw_params["command"]) == normalized_command(command)
   end
 
   defp command_without_slash(command), do: String.trim_leading(command, "/")
 
-  defp event_request?(%{raw_params: %{"event" => %{"type" => event_type}}}, event) do
+  defp event_request?(%Request{raw_params: %{"event" => %{"type" => event_type}}}, event) do
     normalized_value(event_type) == normalized_value(event)
   end
 
@@ -201,7 +219,14 @@ defmodule Juvet.Router.SlackRouter do
 
   defp normalized_value(value), do: value |> String.trim() |> String.downcase()
 
-  defp option_load_request?(%{raw_params: %{"payload" => payload}}, action_id),
+  defp oauth_request?(%Request{verified?: true}, _phase, nil), do: false
+
+  defp oauth_request?(%Request{verified?: true} = request, phase, configuration),
+    do: RequestIdentifier.oauth_path(request, configuration) == phase
+
+  defp oauth_request?(_request, _phase, _configuration), do: false
+
+  defp option_load_request?(%Request{raw_params: %{"payload" => payload}}, action_id),
     do: payload |> block_suggestion_payload?(action_id)
 
   defp option_load_request?(_payload, _action_id), do: false
