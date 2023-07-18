@@ -15,6 +15,7 @@ defmodule Juvet.Router.RouteFinder do
           {:ok, route} -> route
         end
       end)
+      |> Enum.reject(&is_nil/1)
       |> List.first()
 
     case route do
