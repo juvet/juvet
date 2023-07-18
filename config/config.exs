@@ -1,7 +1,5 @@
 import Config
 
-config :oauth2, adapter: Tesla.Adapter.Hackney
-
 config :juvet,
   slack: [
     actions_endpoint: "/slack/actions",
