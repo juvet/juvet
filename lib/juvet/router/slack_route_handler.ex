@@ -43,6 +43,20 @@ defmodule Juvet.Router.SlackRouteHandler do
     end
   end
 
+  def handle_route(
+        %{
+          route: %{type: :oauth, route: "callback"},
+          request: %{
+            raw_params: %{"error" => error, "error_description" => error_description}
+          }
+        } = context
+      ) do
+    context
+    |> Map.put(:error, error)
+    |> Map.put(:error_description, error_description)
+    |> route_oauth_or_error("error")
+  end
+
   defp route_oauth_or_error(
          %{configuration: configuration, request: %{platform: platform}} = context,
          route
