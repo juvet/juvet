@@ -142,4 +142,35 @@ defmodule Juvet.Integration.SlackOauthTest do
       end
     end
   end
+
+  describe "with a Slack OAuth cancel authorization" do
+    test "it is routed correctly" do
+      conn =
+        request!(
+          :get,
+          "/auth/slack/callback",
+          %{"error" => "access_denied", "error_description" => "The user denied your request"},
+          [{"accept", "text/html"}],
+          context: %{pid: self()},
+          configuration: [
+            router: MyRouter,
+            slack: [
+              oauth_callback_endpoint: "/auth/slack/callback",
+              oauth_request_endpoint: "/auth/slack",
+              app_id: "APP_ID",
+              client_id: "CLIENT_ID",
+              client_secret: "CLIENT_SECRET",
+              redirect_uri: "REDIRECT_URI",
+              scope: "SCOPE",
+              user_scope: "USER_SCOPE"
+            ]
+          ]
+        )
+
+      assert conn.status == 200
+      assert conn.halted
+
+      assert_received :called_error_action
+    end
+  end
 end
