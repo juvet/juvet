@@ -69,5 +69,31 @@ defmodule Juvet.SlackViewStateTest do
                "checkboxes_field" => ["selected_value"]
              }
     end
+
+    test "handles multiple fields under one block" do
+      view_state = %{
+        "block_id_1" => %{
+          "field1" => %{
+            "selected_option" => %{
+              "text" => %{
+                "type" => "plain_text",
+                "text" => "Selected value"
+              },
+              "value" => "selected_value"
+            },
+            "type" => "static_select"
+          },
+          "field2" => %{
+            "selected_date" => "2020-01-04",
+            "type" => "datepicker"
+          }
+        }
+      }
+
+      assert SlackViewState.parse(view_state) == %{
+               "field1" => "selected_value",
+               "field2" => "2020-01-04"
+             }
+    end
   end
 end
