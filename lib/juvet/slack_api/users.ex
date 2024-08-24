@@ -3,7 +3,7 @@ defmodule Juvet.SlackAPI.Users do
   A wrapper around the users methods on the Slack API.
   """
 
-  alias Juvet.SlackAPI
+  use Juvet.SlackAPI.Endpoint
 
   @doc """
   Requests information on a specific user.
@@ -25,4 +25,27 @@ defmodule Juvet.SlackAPI.Users do
     SlackAPI.make_request("users.info", options)
     |> SlackAPI.render_response()
   end
+
+  @doc """
+  Lists all users on a team.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    members: [
+      %{
+        id: "U1234",
+        team_id: "T12345",
+        deleted: false,
+        name: "Jimmy Page",
+        profile: %{}
+      }
+    ]
+  } = Juvet.SlackAPI.Ysers.list(%{token: token, limit: 20})
+  """
+  @spec list(map()) :: {:ok, map()} | {:error, map()}
+  def list(options \\ %{}), do: request_and_render("users.list", options)
 end
