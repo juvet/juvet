@@ -3,7 +3,7 @@ defmodule Juvet.SlackAPI.RTM do
   A wrapper around the rtm methods on the Slack API.
   """
 
-  alias Juvet.SlackAPI
+  use Juvet.SlackAPI.Endpoint
 
   @doc """
   Requests a new connection via websockets for the Slack API
@@ -28,8 +28,5 @@ defmodule Juvet.SlackAPI.RTM do
   } = Juvet.Connection.SlackRTM.connect(%{token: token})
   """
   @spec connect(map()) :: {:ok, map()} | {:error, map()}
-  def connect(options \\ %{}) do
-    SlackAPI.make_request("rtm.connect", options)
-    |> SlackAPI.render_response()
-  end
+  def connect(options \\ %{}), do: request_and_render("rtm.connect", options)
 end

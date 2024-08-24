@@ -3,7 +3,7 @@ defmodule Juvet.SlackAPI.Teams do
   A wrapper around the team methods on the Slack API.
   """
 
-  alias Juvet.SlackAPI
+  use Juvet.SlackAPI.Endpoint
 
   @doc """
   Requests information on a specific team.
@@ -21,8 +21,5 @@ defmodule Juvet.SlackAPI.Teams do
   """
 
   @spec info(map()) :: {:ok, map()} | {:error, map()}
-  def info(options \\ %{}) do
-    SlackAPI.make_request("team.info", options)
-    |> SlackAPI.render_response()
-  end
+  def info(options \\ %{}), do: request_and_render("team.info", options)
 end
