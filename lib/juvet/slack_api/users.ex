@@ -21,10 +21,7 @@ defmodule Juvet.SlackAPI.Users do
   """
 
   @spec info(map()) :: {:ok, map()} | {:error, map()}
-  def info(options \\ %{}) do
-    SlackAPI.make_request("users.info", options)
-    |> SlackAPI.render_response()
-  end
+  def info(options \\ %{}), do: request_and_render("users.info", options)
 
   @doc """
   Lists all users on a team.
