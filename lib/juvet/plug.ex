@@ -6,7 +6,7 @@ defmodule Juvet.Plug do
   resort to return a 404.
   """
 
-  use Plug.Router
+  use Plug.Router, copy_opts_to_assign: :builder_opts
   use Juvet.SlackRoutes
 
   alias Juvet.Router.Conn
@@ -20,7 +20,7 @@ defmodule Juvet.Plug do
   end
 
   unless Mix.env() == :test, do: plug(Plug.Logger)
-  plug(:insert_juvet_options, builder_opts())
+  plug(:insert_juvet_options)
   plug(:match)
 
   plug(Plug.Parsers,
@@ -34,5 +34,10 @@ defmodule Juvet.Plug do
 
   match(_, do: conn)
 
-  defp insert_juvet_options(conn, opts), do: Conn.put_private(conn, %{options: opts})
+  def dispatch(conn, _) do
+    super(conn, conn.assigns.builder_opts)
+  end
+
+  defp insert_juvet_options(conn, _),
+    do: Conn.put_private(conn, %{options: conn.assigns.builder_opts})
 end
