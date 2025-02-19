@@ -5,7 +5,7 @@ defmodule Juvet.FakeSlack do
   """
 
   alias Juvet.FakeSlack.Websocket
-  alias Plug.Adapters.Cowboy
+  alias Plug.Cowboy
 
   def start_link(url \\ "http://localhost:51345") do
     # This is used by the application config so it can be pluggable
