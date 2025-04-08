@@ -32,7 +32,7 @@ defmodule Juvet.Plug do
 
   plug(:dispatch)
 
-  match(_, do: conn)
+  match(_, to: Juvet.SlackRoute)
 
   defp insert_juvet_options(conn, opts), do: Conn.put_private(conn, %{options: opts})
 end
