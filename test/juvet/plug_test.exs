@@ -33,7 +33,6 @@ defmodule Juvet.PlugTest do
   end
 
   describe "GET /slack/blah" do
-    @tag skip: "skipping this test for now as all of the reqests are being sent"
     test "returns the conn without sending a response" do
       conn = request!(:post, "/slack/blah", nil, nil, configuration: [router: MyRouter])
 
