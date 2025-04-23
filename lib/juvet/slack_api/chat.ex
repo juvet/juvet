@@ -6,6 +6,25 @@ defmodule Juvet.SlackAPI.Chat do
   alias Juvet.SlackAPI
 
   @doc """
+  Deletes a published message within a given channel.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Chat.delete(%{token: token, channel: channel, ts: message_ts})
+  """
+  @spec delete(map()) :: {:ok, map()} | {:error, map()}
+  def delete(options \\ %{}) do
+    options = options |> transform_options
+
+    SlackAPI.make_request("chat.delete", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Deletes a pending scheduled message.
 
   Returns a map of the Slack response.
