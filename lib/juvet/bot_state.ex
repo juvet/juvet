@@ -11,11 +11,18 @@ defmodule Juvet.BotState do
 
   alias Juvet.BotState.{Platform, Team}
 
+  @doc """
+  Retrieves a list of messages from the `Juvet.BotState`.
+  """
   @spec get_messages(Juvet.BotState.t()) :: list(map())
   def get_messages(state) do
     Enum.flat_map(state.platforms, &Platform.get_messages(&1))
   end
 
+  @doc """
+  Puts a new message into the `Juvet.BotState` for the specified platform and returns a new `Juvet.BotState` with
+  the new message.
+  """
   @spec put_message({Juvet.BotState.t(), Juvet.BotState.Platform.t() | nil}, map()) ::
           {Juvet.BotState.t(), Juvet.BotState.Platform.t() | nil, map() | nil}
   def put_message({state, %{name: platform_name}}, message) do
@@ -36,6 +43,9 @@ defmodule Juvet.BotState do
     end
   end
 
+  @doc """
+  Puts a new platform into the `Juvet.BotState` and returns a new `Juvet.BotState` with the new platform.
+  """
   @spec put_platform(Juvet.BotState.t(), String.t() | atom()) ::
           {Juvet.BotState.t(), Juvet.BotState.Platform.t()}
   def put_platform(state, platform_name) do
@@ -51,6 +61,10 @@ defmodule Juvet.BotState do
     end
   end
 
+  @doc """
+  Puts a new team into the `Juvet.BotState` for the specified platform and returns a new `Juvet.BotState` with
+  the new team.
+  """
   @spec put_team({Juvet.BotState.t(), Juvet.BotState.Platform.t()}, map()) ::
           {Juvet.BotState.t(), Juvet.BotState.Platform.t() | nil, map() | nil}
   def put_team({state, %{name: platform_name}}, team) do
@@ -71,6 +85,10 @@ defmodule Juvet.BotState do
     end
   end
 
+  @doc """
+  Puts a new user into the `Juvet.BotState` for the specified platform and team and returns a new `Juvet.BotState` with
+  the new user.
+  """
   @spec put_user(
           {Juvet.BotState.t(), Juvet.BotState.Platform.t(), Juvet.BotState.User.t()},
           map()
@@ -102,11 +120,17 @@ defmodule Juvet.BotState do
     end
   end
 
+  @doc """
+  Returns a boolean to indiciated if the provided `Juvet.BotState` contains the specified pattern,
+  """
   @spec has_platform?(Juvet.BotState.t(), String.t()) :: boolean()
   def has_platform?(state, platform_name) do
     Enum.any?(state.platforms, &find(&1, platform_name))
   end
 
+  @doc """
+  Returns a `Juvet.BotState.Platform` with the specified name from the `Juvet.BotState.`
+  """
   @spec platform(Juvet.BotState.t(), String.t()) :: Juvet.BotState.Platform.t() | nil
   def platform(state, platform_name) do
     case Enum.find(state.platforms, &find(&1, platform_name)) do
