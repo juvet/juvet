@@ -10,7 +10,7 @@ defmodule Juvet.Template.Tokenizer do
   def tokenize([]), do: []
   def tokenize([h | t]), do: [tokenize_line(h) | tokenize(t)]
 
-  # TODO: This is not too robust. Expand to handle more cases.
+  # TODO: This is not too robust. Expand to handle more cases with white space, etc.
   defp split_lines(template),
     do:
       template
