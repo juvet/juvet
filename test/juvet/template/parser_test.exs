@@ -10,9 +10,19 @@ defmodule Juvet.Template.ParserTest do
     end
 
     test "Slack divider parses correctly" do
-      tokens = [{:slack, :divider, [[blah: "bleh"]]}]
+      tokens = [{:slack, :divider, [blah: "bleh"]}]
 
       assert Parser.parse(tokens) == [%Slack.Divider{}]
+    end
+
+    test "Slack header parses correctly" do
+      tokens = [{:slack, :header, [text: "Hello there <%= salutation %>"]}]
+
+      assert Parser.parse(tokens) == [
+               %Slack.HeaderElement{
+                 text: %Slack.TextElement{text: "Hello there <%= salutation %>"}
+               }
+             ]
     end
   end
 end

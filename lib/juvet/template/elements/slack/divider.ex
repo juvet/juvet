@@ -1,6 +1,6 @@
 defmodule Juvet.Template.Elements.Slack.Divider do
   @moduledoc """
-  Represents a Slack divider element in a Juvet template.
+  Represents a Slack Divider element in a Juvet template.
   """
 
   @type t :: %__MODULE__{}

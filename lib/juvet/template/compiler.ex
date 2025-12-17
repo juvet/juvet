@@ -1,3 +1,5 @@
 defmodule Juvet.Template.Compiler do
-  def compile(ast), do: ast
+  def compile([]), do: ""
+
+  def compile(ast), do: ast |> Enum.join("\n")
 end
