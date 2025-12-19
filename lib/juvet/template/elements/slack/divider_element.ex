@@ -7,5 +7,5 @@ defmodule Juvet.Template.Elements.Slack.DividerElement do
 
   defstruct []
 
-  def new(attrs \\ []), do: %__MODULE__{}
+  def new(_attrs \\ []), do: %__MODULE__{}
 end
