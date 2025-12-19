@@ -1,6 +1,15 @@
 defmodule Juvet.Template.Elements.Slack.TextElement do
   @moduledoc """
   Represents a Text element within another Slack Element context in a Juvet template.
+
+  # TODO: Should `composite` elements be within their own namespace as they are considered 'building blocks'.??
+  # Meaning, they can compose higher level 'block elements'.
+  # TODO: I wonder if we should namespace BlockKit? -> I think that makes the most sense
+  # Juvet.Template.Elements.Slack.Composite.TextElement -> https://docs.slack.dev/reference/block-kit/composition-objects/text-object/
+  # Juvet.Template.Elements.Slack.HeaderElement
+  #
+  # Juvet.Template.Elements.Slack -> Juvet.Templates.Slack.Elements
+  # Juvet.Template.Elements.Slack.HeaderElement -> Juvet.Templates.Slack.Elements.BlockKit.Blocks.Header ???
   """
 
   @type t :: %__MODULE__{
