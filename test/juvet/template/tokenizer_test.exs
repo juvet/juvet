@@ -15,5 +15,16 @@ defmodule Juvet.Template.TokenizerTest do
 
       assert Tokenizer.tokenize(template) == [{:slack, :divider, []}]
     end
+
+    test "Slack header with inline text attribute tokenizes correctly" do
+      # TODO: :slack.header "Welcome <%= name %>!"
+      # TODO: :slack.header
+      #         text: "Welcome <%= name %>!"
+      template = """
+      :slack.header{text: "Welcome <%= name %>!"}
+      """
+
+      assert [{:slack, :header, [{:text, "Welcome <%= name %>!"}]}], Tokenizer.tokenize(template)
+    end
   end
 end
