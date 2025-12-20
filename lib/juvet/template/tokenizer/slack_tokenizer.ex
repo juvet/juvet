@@ -50,10 +50,12 @@ defmodule Juvet.Template.Tokenizer.SlackTokenizer do
 
   # Single attribute without a key, so use a default attribute as the key
   defp tokenize_attributes(attribute_string, default_attribute: default_attribute)
-       when is_binary(attribute_string),
-       do:
-         [[default_attribute, attribute_string |> String.trim()]]
-         |> Enum.map(&tokenize_attribute/1)
+       when is_binary(attribute_string) do
+    case String.trim(attribute_string) do
+      "" -> []
+      trimmed -> [[default_attribute, trimmed]] |> Enum.map(&tokenize_attribute/1)
+    end
+  end
 
   defp tokenize_attributes(_, _opts), do: []
 

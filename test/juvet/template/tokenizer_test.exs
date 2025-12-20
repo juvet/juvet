@@ -36,9 +36,12 @@ defmodule Juvet.Template.TokenizerTest do
              ] = Tokenizer.tokenize(template)
     end
 
-    # TODO: Support multiple lines
-    # How do we design this?
-    # :slack.header
-    #   text: "Welcome <%= name %>!"
+    test "Slack header with empty inline text does not include default attribute" do
+      template = """
+      :slack.header
+      """
+
+      assert [{:slack, :header, []}] = Tokenizer.tokenize(template)
+    end
   end
 end
