@@ -5,7 +5,7 @@ defmodule Juvet.Template.TokenizerTest do
 
   describe "tokenize/1" do
     test "empty template returns empty list" do
-      assert Tokenizer.tokenize("") == []
+      assert [] = assert(Tokenizer.tokenize(""))
     end
 
     test "Slack divider tokenizes correctly" do
@@ -13,18 +13,32 @@ defmodule Juvet.Template.TokenizerTest do
       :slack.divider
       """
 
-      assert Tokenizer.tokenize(template) == [{:slack, :divider, []}]
+      assert [{:slack, :divider, []}] = Tokenizer.tokenize(template)
     end
 
     test "Slack header with inline text attribute tokenizes correctly" do
-      # TODO: :slack.header "Welcome <%= name %>!"
-      # TODO: :slack.header
-      #         text: "Welcome <%= name %>!"
       template = """
       :slack.header{text: "Welcome <%= name %>!"}
       """
 
-      assert [{:slack, :header, [{:text, "Welcome <%= name %>!"}]}], Tokenizer.tokenize(template)
+      assert [{:slack, :header, [{:text, "\"Welcome <%= name %>!\""}]}] =
+               Tokenizer.tokenize(template)
     end
+
+    test "Slack header with inline text tokenizes correctly" do
+      template = """
+      :slack.header "Welcome <%= name %>! Looking good without the attribute."
+      """
+
+      assert [
+               {:slack, :header,
+                [{:text, "\"Welcome <%= name %>! Looking good without the attribute.\""}]}
+             ] = Tokenizer.tokenize(template)
+    end
+
+    # TODO: Support multiple lines
+    # How do we design this?
+    # :slack.header
+    #   text: "Welcome <%= name %>!"
   end
 end
