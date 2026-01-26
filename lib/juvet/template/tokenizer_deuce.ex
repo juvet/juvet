@@ -364,12 +364,23 @@ defmodule Juvet.Template.TokenizerDeuce do
     do_tokenize(rest, {line, col + 1}, [{:dot, ".", {line, col}} | tokens])
   end
 
+  # Newline character
+  defp do_tokenize([?\n | rest], {line, col}, tokens) do
+    do_tokenize(rest, {line + 1, 1}, [{:newline, "\n", {line, col}} | tokens])
+  end
+
   # Keyword (alphanumeric and underscores)
   defp do_tokenize([c | _] = chars, {line, col}, tokens) when c in ?a..?z or c in ?A..?Z or c == ?_ do
     {keyword, rest} = take_keyword(chars, [])
     keyword_str = to_string(keyword)
     new_col = col + length(keyword)
     do_tokenize(rest, {line, new_col}, [{:keyword, keyword_str, {line, col}} | tokens])
+  end
+
+  # Unexpected character - raise error
+  defp do_tokenize([c | _rest], {line, col}, _tokens) do
+    raise Juvet.Template.TokenizerError,
+          "Unexpected character '#{<<c::utf8>>}' at line #{line}, column #{col}"
   end
 
   # Collect keyword characters (alphanumeric and underscores)
