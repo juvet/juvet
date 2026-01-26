@@ -354,9 +354,23 @@ defmodule Juvet.Template.TokenizerDeuce do
     [{:eof, "", pos} | tokens]
   end
 
-  # Colon character
+  # Colon - check if it's an atom (after whitespace/comma) or regular colon
   defp do_tokenize([?: | rest], {line, col}, tokens) do
-    do_tokenize(rest, {line, col + 1}, [{:colon, ":", {line, col}} | tokens])
+    # Check if this is an atom (: followed by identifier, in value position)
+    case {rest, tokens} do
+      {[c | _], [{prev_type, _, _} | _]}
+      when (prev_type == :whitespace or prev_type == :comma) and
+             (c in ?a..?z or c in ?A..?Z or c == ?_) ->
+        # This is an atom - consume the identifier
+        {keyword, remaining} = take_keyword(rest, [])
+        atom_str = ":" <> to_string(keyword)
+        new_col = col + length(keyword) + 1
+        do_tokenize(remaining, {line, new_col}, [{:atom, atom_str, {line, col}} | tokens])
+
+      _ ->
+        # Regular colon
+        do_tokenize(rest, {line, col + 1}, [{:colon, ":", {line, col}} | tokens])
+    end
   end
 
   # Dot character
@@ -398,6 +412,28 @@ defmodule Juvet.Template.TokenizerDeuce do
     whitespace_str = to_string(whitespace)
     new_col = col + length(whitespace)
     do_tokenize(rest, {line, new_col}, [{:whitespace, whitespace_str, {line, col}} | tokens])
+  end
+
+  # Number (digits, optional decimal point)
+  defp do_tokenize([c | _] = chars, {line, col}, tokens) when c in ?0..?9 do
+    {number, rest} = take_number(chars, [])
+    number_str = to_string(number)
+    new_col = col + length(number)
+    do_tokenize(rest, {line, new_col}, [{:number, number_str, {line, col}} | tokens])
+  end
+
+  # Unquoted text - after element name + whitespace (default value position)
+  # Pattern: :whitespace, :keyword, :dot means we just finished element name
+  defp do_tokenize(
+         [c | _] = chars,
+         {line, col},
+         [{:whitespace, _, _}, {:keyword, _, _}, {:dot, _, _} | _] = tokens
+       )
+       when c in ?a..?z or c in ?A..?Z or c == ?_ do
+    {text, rest} = take_unquoted_text(chars, [])
+    text_str = to_string(text)
+    new_col = col + length(text)
+    do_tokenize(rest, {line, new_col}, [{:text, text_str, {line, col}} | tokens])
   end
 
   # Keyword (alphanumeric and underscores) - also handles booleans
@@ -452,5 +488,31 @@ defmodule Juvet.Template.TokenizerDeuce do
 
   defp take_quoted_text([c | rest], acc) do
     take_quoted_text(rest, [c | acc])
+  end
+
+  # Collect number (digits and optional decimal point)
+  defp take_number([c | rest], acc) when c in ?0..?9 do
+    take_number(rest, [c | acc])
+  end
+
+  defp take_number([?. | [c | _] = rest], acc) when c in ?0..?9 do
+    take_number(rest, [?. | acc])
+  end
+
+  defp take_number(rest, acc) do
+    {Enum.reverse(acc), rest}
+  end
+
+  # Collect unquoted text until {, ", :, or newline
+  defp take_unquoted_text([c | _] = rest, acc) when c in [?{, ?", ?:, ?\n] do
+    {Enum.reverse(acc), rest}
+  end
+
+  defp take_unquoted_text([], acc) do
+    {Enum.reverse(acc), []}
+  end
+
+  defp take_unquoted_text([c | rest], acc) do
+    take_unquoted_text(rest, [c | acc])
   end
 end

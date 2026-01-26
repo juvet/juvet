@@ -118,5 +118,67 @@ defmodule Juvet.Template.TokenizerDeuceTest do
                {:eof, "", {1, 20}}
              ] = Tokenizer.tokenize("{a: true, b: false}")
     end
+
+    test "atom value after whitespace" do
+      assert [
+               {:open_brace, "{", {1, 1}},
+               {:keyword, "type", {1, 2}},
+               {:colon, ":", {1, 6}},
+               {:whitespace, " ", {1, 7}},
+               {:atom, ":plain_text", {1, 8}},
+               {:close_brace, "}", {1, 19}},
+               {:eof, "", {1, 20}}
+             ] = Tokenizer.tokenize("{type: :plain_text}")
+    end
+
+    test "integer number" do
+      assert [
+               {:open_brace, "{", {1, 1}},
+               {:keyword, "count", {1, 2}},
+               {:colon, ":", {1, 7}},
+               {:whitespace, " ", {1, 8}},
+               {:number, "42", {1, 9}},
+               {:close_brace, "}", {1, 11}},
+               {:eof, "", {1, 12}}
+             ] = Tokenizer.tokenize("{count: 42}")
+    end
+
+    test "float number" do
+      assert [
+               {:open_brace, "{", {1, 1}},
+               {:keyword, "rate", {1, 2}},
+               {:colon, ":", {1, 6}},
+               {:whitespace, " ", {1, 7}},
+               {:number, "3.14", {1, 8}},
+               {:close_brace, "}", {1, 12}},
+               {:eof, "", {1, 13}}
+             ] = Tokenizer.tokenize("{rate: 3.14}")
+    end
+
+    test "unquoted text as default value" do
+      assert [
+               {:colon, ":", {1, 1}},
+               {:keyword, "slack", {1, 2}},
+               {:dot, ".", {1, 7}},
+               {:keyword, "section", {1, 8}},
+               {:whitespace, " ", {1, 15}},
+               {:text, "Hello world", {1, 16}},
+               {:eof, "", {1, 27}}
+             ] = Tokenizer.tokenize(":slack.section Hello world")
+    end
+
+    test "unquoted text stops at open brace" do
+      assert [
+               {:colon, ":", {1, 1}},
+               {:keyword, "slack", {1, 2}},
+               {:dot, ".", {1, 7}},
+               {:keyword, "section", {1, 8}},
+               {:whitespace, " ", {1, 15}},
+               {:text, "Hello", {1, 16}},
+               {:open_brace, "{", {1, 21}},
+               {:close_brace, "}", {1, 22}},
+               {:eof, "", {1, 23}}
+             ] = Tokenizer.tokenize(":slack.section Hello{}")
+    end
   end
 end
