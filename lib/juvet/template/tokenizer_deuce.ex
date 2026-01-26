@@ -345,17 +345,18 @@ defmodule Juvet.Template.TokenizerDeuce do
   def tokenize(template, _opts \\ []) when is_binary(template) do
     template
     |> String.to_charlist()
-    |> do_tokenize({1, 1}, [])
+    |> do_tokenize({1, 1}, [], [])
     |> Enum.reverse()
   end
 
-  # End of input - emit :eof
-  defp do_tokenize([], pos, tokens) do
-    [{:eof, "", pos} | tokens]
+  # End of input - emit dedents for remaining indent levels, then :eof
+  defp do_tokenize([], pos, tokens, indent_stack) do
+    dedent_tokens = for _ <- indent_stack, do: {:dedent, "", pos}
+    [{:eof, "", pos} | dedent_tokens] ++ tokens
   end
 
   # Colon - check if it's an atom (after whitespace/comma) or regular colon
-  defp do_tokenize([?: | rest], {line, col}, tokens) do
+  defp do_tokenize([?: | rest], {line, col}, tokens, indent_stack) do
     # Check if this is an atom (: followed by identifier, in value position)
     case {rest, tokens} do
       {[c | _], [{prev_type, _, _} | _]}
@@ -365,61 +366,108 @@ defmodule Juvet.Template.TokenizerDeuce do
         {keyword, remaining} = take_keyword(rest, [])
         atom_str = ":" <> to_string(keyword)
         new_col = col + length(keyword) + 1
-        do_tokenize(remaining, {line, new_col}, [{:atom, atom_str, {line, col}} | tokens])
+
+        do_tokenize(
+          remaining,
+          {line, new_col},
+          [{:atom, atom_str, {line, col}} | tokens],
+          indent_stack
+        )
 
       _ ->
         # Regular colon
-        do_tokenize(rest, {line, col + 1}, [{:colon, ":", {line, col}} | tokens])
+        do_tokenize(rest, {line, col + 1}, [{:colon, ":", {line, col}} | tokens], indent_stack)
     end
   end
 
   # Dot character
-  defp do_tokenize([?. | rest], {line, col}, tokens) do
-    do_tokenize(rest, {line, col + 1}, [{:dot, ".", {line, col}} | tokens])
+  defp do_tokenize([?. | rest], {line, col}, tokens, indent_stack) do
+    do_tokenize(rest, {line, col + 1}, [{:dot, ".", {line, col}} | tokens], indent_stack)
   end
 
-  # Newline character
-  defp do_tokenize([?\n | rest], {line, col}, tokens) do
-    do_tokenize(rest, {line + 1, 1}, [{:newline, "\n", {line, col}} | tokens])
+  # Newline character - check for indent changes on next line
+  defp do_tokenize([?\n | rest], {line, col}, tokens, indent_stack) do
+    new_tokens = [{:newline, "\n", {line, col}} | tokens]
+    new_line = line + 1
+
+    # Check for whitespace at start of next line
+    {ws, remaining} = take_line_start_whitespace(rest, [])
+    ws_str = to_string(ws)
+    current_indent = current_indent_string(indent_stack)
+
+    cond do
+      # More indentation - emit :indent
+      String.length(ws_str) > String.length(current_indent) ->
+        new_col = String.length(ws_str) + 1
+        indent_token = {:indent, ws_str, {new_line, 1}}
+
+        do_tokenize(remaining, {new_line, new_col}, [indent_token | new_tokens], [
+          ws_str | indent_stack
+        ])
+
+      # Same indentation - no token, just continue
+      ws_str == current_indent ->
+        new_col = String.length(ws_str) + 1
+        do_tokenize(remaining, {new_line, new_col}, new_tokens, indent_stack)
+
+      # Less indentation - emit :dedent(s)
+      true ->
+        {dedent_tokens, new_stack} = emit_dedents(ws_str, indent_stack, {new_line, 1})
+        new_col = String.length(ws_str) + 1
+        do_tokenize(remaining, {new_line, new_col}, dedent_tokens ++ new_tokens, new_stack)
+    end
   end
 
   # Open brace
-  defp do_tokenize([?{ | rest], {line, col}, tokens) do
-    do_tokenize(rest, {line, col + 1}, [{:open_brace, "{", {line, col}} | tokens])
+  defp do_tokenize([?{ | rest], {line, col}, tokens, indent_stack) do
+    do_tokenize(rest, {line, col + 1}, [{:open_brace, "{", {line, col}} | tokens], indent_stack)
   end
 
   # Close brace
-  defp do_tokenize([?} | rest], {line, col}, tokens) do
-    do_tokenize(rest, {line, col + 1}, [{:close_brace, "}", {line, col}} | tokens])
+  defp do_tokenize([?} | rest], {line, col}, tokens, indent_stack) do
+    do_tokenize(rest, {line, col + 1}, [{:close_brace, "}", {line, col}} | tokens], indent_stack)
   end
 
   # Comma
-  defp do_tokenize([?, | rest], {line, col}, tokens) do
-    do_tokenize(rest, {line, col + 1}, [{:comma, ",", {line, col}} | tokens])
+  defp do_tokenize([?, | rest], {line, col}, tokens, indent_stack) do
+    do_tokenize(rest, {line, col + 1}, [{:comma, ",", {line, col}} | tokens], indent_stack)
   end
 
   # Quoted text
-  defp do_tokenize([?" | _] = chars, {line, col}, tokens) do
+  defp do_tokenize([?" | _] = chars, {line, col}, tokens, indent_stack) do
     {text, rest} = take_quoted_text(chars, [])
     text_str = to_string(text)
     new_col = col + length(text)
-    do_tokenize(rest, {line, new_col}, [{:text, text_str, {line, col}} | tokens])
+    do_tokenize(rest, {line, new_col}, [{:text, text_str, {line, col}} | tokens], indent_stack)
   end
 
   # Whitespace (spaces and tabs)
-  defp do_tokenize([c | _] = chars, {line, col}, tokens) when c == ?\s or c == ?\t do
+  defp do_tokenize([c | _] = chars, {line, col}, tokens, indent_stack)
+       when c == ?\s or c == ?\t do
     {whitespace, rest} = take_whitespace(chars, [])
     whitespace_str = to_string(whitespace)
     new_col = col + length(whitespace)
-    do_tokenize(rest, {line, new_col}, [{:whitespace, whitespace_str, {line, col}} | tokens])
+
+    do_tokenize(
+      rest,
+      {line, new_col},
+      [{:whitespace, whitespace_str, {line, col}} | tokens],
+      indent_stack
+    )
   end
 
   # Number (digits, optional decimal point)
-  defp do_tokenize([c | _] = chars, {line, col}, tokens) when c in ?0..?9 do
+  defp do_tokenize([c | _] = chars, {line, col}, tokens, indent_stack) when c in ?0..?9 do
     {number, rest} = take_number(chars, [])
     number_str = to_string(number)
     new_col = col + length(number)
-    do_tokenize(rest, {line, new_col}, [{:number, number_str, {line, col}} | tokens])
+
+    do_tokenize(
+      rest,
+      {line, new_col},
+      [{:number, number_str, {line, col}} | tokens],
+      indent_stack
+    )
   end
 
   # Unquoted text - after element name + whitespace (default value position)
@@ -427,17 +475,18 @@ defmodule Juvet.Template.TokenizerDeuce do
   defp do_tokenize(
          [c | _] = chars,
          {line, col},
-         [{:whitespace, _, _}, {:keyword, _, _}, {:dot, _, _} | _] = tokens
+         [{:whitespace, _, _}, {:keyword, _, _}, {:dot, _, _} | _] = tokens,
+         indent_stack
        )
        when c in ?a..?z or c in ?A..?Z or c == ?_ do
     {text, rest} = take_unquoted_text(chars, [])
     text_str = to_string(text)
     new_col = col + length(text)
-    do_tokenize(rest, {line, new_col}, [{:text, text_str, {line, col}} | tokens])
+    do_tokenize(rest, {line, new_col}, [{:text, text_str, {line, col}} | tokens], indent_stack)
   end
 
   # Keyword (alphanumeric and underscores) - also handles booleans
-  defp do_tokenize([c | _] = chars, {line, col}, tokens)
+  defp do_tokenize([c | _] = chars, {line, col}, tokens, indent_stack)
        when c in ?a..?z or c in ?A..?Z or c == ?_ do
     {keyword, rest} = take_keyword(chars, [])
     keyword_str = to_string(keyword)
@@ -450,11 +499,16 @@ defmodule Juvet.Template.TokenizerDeuce do
         _ -> :keyword
       end
 
-    do_tokenize(rest, {line, new_col}, [{token_type, keyword_str, {line, col}} | tokens])
+    do_tokenize(
+      rest,
+      {line, new_col},
+      [{token_type, keyword_str, {line, col}} | tokens],
+      indent_stack
+    )
   end
 
   # Unexpected character - raise error
-  defp do_tokenize([c | _rest], {line, col}, _tokens) do
+  defp do_tokenize([c | _rest], {line, col}, _tokens, _indent_stack) do
     raise Juvet.Template.TokenizerError,
           "Unexpected character '#{<<c::utf8>>}' at line #{line}, column #{col}"
   end
@@ -514,5 +568,35 @@ defmodule Juvet.Template.TokenizerDeuce do
 
   defp take_unquoted_text([c | rest], acc) do
     take_unquoted_text(rest, [c | acc])
+  end
+
+  # Take whitespace at the start of a line (for indent detection)
+  defp take_line_start_whitespace([c | rest], acc) when c == ?\s or c == ?\t do
+    take_line_start_whitespace(rest, [c | acc])
+  end
+
+  defp take_line_start_whitespace(rest, acc) do
+    {Enum.reverse(acc), rest}
+  end
+
+  # Get the current indent string from the stack
+  defp current_indent_string([]), do: ""
+  defp current_indent_string([current | _]), do: current
+
+  # Emit dedent tokens and pop from indent stack until we match the new indent level
+  defp emit_dedents(new_indent, indent_stack, pos) do
+    emit_dedents(new_indent, indent_stack, pos, [])
+  end
+
+  defp emit_dedents(_new_indent, [], _pos, dedents) do
+    {dedents, []}
+  end
+
+  defp emit_dedents(new_indent, [current | rest] = stack, pos, dedents) do
+    if String.length(new_indent) >= String.length(current) do
+      {dedents, stack}
+    else
+      emit_dedents(new_indent, rest, pos, [{:dedent, "", pos} | dedents])
+    end
   end
 end

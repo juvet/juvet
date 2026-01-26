@@ -180,5 +180,75 @@ defmodule Juvet.Template.TokenizerDeuceTest do
                {:eof, "", {1, 23}}
              ] = Tokenizer.tokenize(":slack.section Hello{}")
     end
+
+    test "simple indent" do
+      template = ":slack.header\n  text: \"Hello\""
+
+      assert [
+               {:colon, ":", {1, 1}},
+               {:keyword, "slack", {1, 2}},
+               {:dot, ".", {1, 7}},
+               {:keyword, "header", {1, 8}},
+               {:newline, "\n", {1, 14}},
+               {:indent, "  ", {2, 1}},
+               {:keyword, "text", {2, 3}},
+               {:colon, ":", {2, 7}},
+               {:whitespace, " ", {2, 8}},
+               {:text, "\"Hello\"", {2, 9}},
+               {:dedent, "", {2, 16}},
+               {:eof, "", {2, 16}}
+             ] = Tokenizer.tokenize(template)
+    end
+
+    test "multiple attributes at same indent level" do
+      template = ":slack.header\n  text: \"Hello\"\n  emoji: true"
+
+      assert [
+               {:colon, ":", {1, 1}},
+               {:keyword, "slack", {1, 2}},
+               {:dot, ".", {1, 7}},
+               {:keyword, "header", {1, 8}},
+               {:newline, "\n", {1, 14}},
+               {:indent, "  ", {2, 1}},
+               {:keyword, "text", {2, 3}},
+               {:colon, ":", {2, 7}},
+               {:whitespace, " ", {2, 8}},
+               {:text, "\"Hello\"", {2, 9}},
+               {:newline, "\n", {2, 16}},
+               {:keyword, "emoji", {3, 3}},
+               {:colon, ":", {3, 8}},
+               {:whitespace, " ", {3, 9}},
+               {:boolean, "true", {3, 10}},
+               {:dedent, "", {3, 14}},
+               {:eof, "", {3, 14}}
+             ] = Tokenizer.tokenize(template)
+    end
+
+    test "nested indent with multi-level dedent" do
+      template = ":slack.section\n  accessory:\n    :image\n:slack.divider"
+
+      assert [
+               {:colon, ":", {1, 1}},
+               {:keyword, "slack", {1, 2}},
+               {:dot, ".", {1, 7}},
+               {:keyword, "section", {1, 8}},
+               {:newline, "\n", {1, 15}},
+               {:indent, "  ", {2, 1}},
+               {:keyword, "accessory", {2, 3}},
+               {:colon, ":", {2, 12}},
+               {:newline, "\n", {2, 13}},
+               {:indent, "    ", {3, 1}},
+               {:colon, ":", {3, 5}},
+               {:keyword, "image", {3, 6}},
+               {:newline, "\n", {3, 11}},
+               {:dedent, "", {4, 1}},
+               {:dedent, "", {4, 1}},
+               {:colon, ":", {4, 1}},
+               {:keyword, "slack", {4, 2}},
+               {:dot, ".", {4, 7}},
+               {:keyword, "divider", {4, 8}},
+               {:eof, "", {4, 15}}
+             ] = Tokenizer.tokenize(template)
+    end
   end
 end
