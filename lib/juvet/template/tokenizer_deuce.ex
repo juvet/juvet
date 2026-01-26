@@ -369,6 +369,24 @@ defmodule Juvet.Template.TokenizerDeuce do
     do_tokenize(rest, {line + 1, 1}, [{:newline, "\n", {line, col}} | tokens])
   end
 
+  # Open brace
+  defp do_tokenize([?{ | rest], {line, col}, tokens) do
+    do_tokenize(rest, {line, col + 1}, [{:open_brace, "{", {line, col}} | tokens])
+  end
+
+  # Close brace
+  defp do_tokenize([?} | rest], {line, col}, tokens) do
+    do_tokenize(rest, {line, col + 1}, [{:close_brace, "}", {line, col}} | tokens])
+  end
+
+  # Whitespace (spaces and tabs)
+  defp do_tokenize([c | _] = chars, {line, col}, tokens) when c == ?\s or c == ?\t do
+    {whitespace, rest} = take_whitespace(chars, [])
+    whitespace_str = to_string(whitespace)
+    new_col = col + length(whitespace)
+    do_tokenize(rest, {line, new_col}, [{:whitespace, whitespace_str, {line, col}} | tokens])
+  end
+
   # Keyword (alphanumeric and underscores)
   defp do_tokenize([c | _] = chars, {line, col}, tokens) when c in ?a..?z or c in ?A..?Z or c == ?_ do
     {keyword, rest} = take_keyword(chars, [])
@@ -389,6 +407,15 @@ defmodule Juvet.Template.TokenizerDeuce do
   end
 
   defp take_keyword(rest, acc) do
+    {Enum.reverse(acc), rest}
+  end
+
+  # Collect whitespace characters (spaces and tabs)
+  defp take_whitespace([c | rest], acc) when c == ?\s or c == ?\t do
+    take_whitespace(rest, [c | acc])
+  end
+
+  defp take_whitespace(rest, acc) do
     {Enum.reverse(acc), rest}
   end
 end
