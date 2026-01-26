@@ -379,6 +379,19 @@ defmodule Juvet.Template.TokenizerDeuce do
     do_tokenize(rest, {line, col + 1}, [{:close_brace, "}", {line, col}} | tokens])
   end
 
+  # Comma
+  defp do_tokenize([?, | rest], {line, col}, tokens) do
+    do_tokenize(rest, {line, col + 1}, [{:comma, ",", {line, col}} | tokens])
+  end
+
+  # Quoted text
+  defp do_tokenize([?" | _] = chars, {line, col}, tokens) do
+    {text, rest} = take_quoted_text(chars, [])
+    text_str = to_string(text)
+    new_col = col + length(text)
+    do_tokenize(rest, {line, new_col}, [{:text, text_str, {line, col}} | tokens])
+  end
+
   # Whitespace (spaces and tabs)
   defp do_tokenize([c | _] = chars, {line, col}, tokens) when c == ?\s or c == ?\t do
     {whitespace, rest} = take_whitespace(chars, [])
@@ -387,13 +400,21 @@ defmodule Juvet.Template.TokenizerDeuce do
     do_tokenize(rest, {line, new_col}, [{:whitespace, whitespace_str, {line, col}} | tokens])
   end
 
-  # Keyword (alphanumeric and underscores)
+  # Keyword (alphanumeric and underscores) - also handles booleans
   defp do_tokenize([c | _] = chars, {line, col}, tokens)
        when c in ?a..?z or c in ?A..?Z or c == ?_ do
     {keyword, rest} = take_keyword(chars, [])
     keyword_str = to_string(keyword)
     new_col = col + length(keyword)
-    do_tokenize(rest, {line, new_col}, [{:keyword, keyword_str, {line, col}} | tokens])
+
+    token_type =
+      case keyword_str do
+        "true" -> :boolean
+        "false" -> :boolean
+        _ -> :keyword
+      end
+
+    do_tokenize(rest, {line, new_col}, [{token_type, keyword_str, {line, col}} | tokens])
   end
 
   # Unexpected character - raise error
@@ -418,5 +439,18 @@ defmodule Juvet.Template.TokenizerDeuce do
 
   defp take_whitespace(rest, acc) do
     {Enum.reverse(acc), rest}
+  end
+
+  # Collect quoted text (including the quotes)
+  defp take_quoted_text([?" | rest], []) do
+    take_quoted_text(rest, [?"])
+  end
+
+  defp take_quoted_text([?" | rest], acc) do
+    {Enum.reverse([?" | acc]), rest}
+  end
+
+  defp take_quoted_text([c | rest], acc) do
+    take_quoted_text(rest, [c | acc])
   end
 end

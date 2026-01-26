@@ -72,5 +72,51 @@ defmodule Juvet.Template.TokenizerDeuceTest do
                {:eof, "", {1, 18}}
              ] = Tokenizer.tokenize(":slack.header\t {}")
     end
+
+    test "quoted text in attributes" do
+      assert [
+               {:colon, ":", {1, 1}},
+               {:keyword, "slack", {1, 2}},
+               {:dot, ".", {1, 7}},
+               {:keyword, "header", {1, 8}},
+               {:open_brace, "{", {1, 14}},
+               {:keyword, "text", {1, 15}},
+               {:colon, ":", {1, 19}},
+               {:whitespace, " ", {1, 20}},
+               {:text, "\"Hello\"", {1, 21}},
+               {:close_brace, "}", {1, 28}},
+               {:eof, "", {1, 29}}
+             ] = Tokenizer.tokenize(":slack.header{text: \"Hello\"}")
+    end
+
+    test "boolean values" do
+      assert [
+               {:open_brace, "{", {1, 1}},
+               {:keyword, "emoji", {1, 2}},
+               {:colon, ":", {1, 7}},
+               {:whitespace, " ", {1, 8}},
+               {:boolean, "true", {1, 9}},
+               {:close_brace, "}", {1, 13}},
+               {:eof, "", {1, 14}}
+             ] = Tokenizer.tokenize("{emoji: true}")
+    end
+
+    test "comma separates attributes" do
+      assert [
+               {:open_brace, "{", {1, 1}},
+               {:keyword, "a", {1, 2}},
+               {:colon, ":", {1, 3}},
+               {:whitespace, " ", {1, 4}},
+               {:boolean, "true", {1, 5}},
+               {:comma, ",", {1, 9}},
+               {:whitespace, " ", {1, 10}},
+               {:keyword, "b", {1, 11}},
+               {:colon, ":", {1, 12}},
+               {:whitespace, " ", {1, 13}},
+               {:boolean, "false", {1, 14}},
+               {:close_brace, "}", {1, 19}},
+               {:eof, "", {1, 20}}
+             ] = Tokenizer.tokenize("{a: true, b: false}")
+    end
   end
 end
