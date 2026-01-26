@@ -388,7 +388,8 @@ defmodule Juvet.Template.TokenizerDeuce do
   end
 
   # Keyword (alphanumeric and underscores)
-  defp do_tokenize([c | _] = chars, {line, col}, tokens) when c in ?a..?z or c in ?A..?Z or c == ?_ do
+  defp do_tokenize([c | _] = chars, {line, col}, tokens)
+       when c in ?a..?z or c in ?A..?Z or c == ?_ do
     {keyword, rest} = take_keyword(chars, [])
     keyword_str = to_string(keyword)
     new_col = col + length(keyword)
