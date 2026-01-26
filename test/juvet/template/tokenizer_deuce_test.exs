@@ -1,22 +1,21 @@
 defmodule Juvet.Template.TokenizerDeuceTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.Template.TokenizerError
   alias Juvet.Template.TokenizerDeuce, as: Tokenizer
 
   describe "tokenize/1" do
-    test "empty template returns empty list" do
-      assert [] = assert(Tokenizer.tokenize(""))
+    test "empty template returns eof token" do
+      assert [{:eof, "", {1, 1}}] = Tokenizer.tokenize("")
     end
 
-    test "no platform specified raises unknown platform parser error" do
-      template = """
-      :divider
-      """
-
-      assert_raise TokenizerError, "Unknown platform for line 1: :divider", fn ->
-        Tokenizer.tokenize(template)
-      end
+    test "simple element returns expected tokens" do
+      assert [
+               {:colon, ":", {1, 1}},
+               {:keyword, "slack", {1, 2}},
+               {:dot, ".", {1, 7}},
+               {:keyword, "divider", {1, 8}},
+               {:eof, "", {1, 15}}
+             ] = Tokenizer.tokenize(":slack.divider")
     end
   end
 end

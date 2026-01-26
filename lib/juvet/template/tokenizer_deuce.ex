@@ -342,25 +342,42 @@ defmodule Juvet.Template.TokenizerDeuce do
   determine defaults for attributes as needed.
   """
 
-  def tokenize(template, opts \\ [])
+  def tokenize(template, _opts \\ []) when is_binary(template) do
+    template
+    |> String.to_charlist()
+    |> do_tokenize({1, 1}, [])
+    |> Enum.reverse()
+  end
 
-  def tokenize(template, opts) when is_binary(template),
-    do:
-      template
-      |> split_tokens()
-      |> tokenize(opts)
+  # End of input - emit :eof
+  defp do_tokenize([], pos, tokens) do
+    [{:eof, "", pos} | tokens]
+  end
 
-  def tokenize([], _opts), do: []
+  # Colon character
+  defp do_tokenize([?: | rest], {line, col}, tokens) do
+    do_tokenize(rest, {line, col + 1}, [{:colon, ":", {line, col}} | tokens])
+  end
 
-  def tokenize([h | t], opts), do: [tokenize_line(h, opts) | tokenize(t, opts)]
+  # Dot character
+  defp do_tokenize([?. | rest], {line, col}, tokens) do
+    do_tokenize(rest, {line, col + 1}, [{:dot, ".", {line, col}} | tokens])
+  end
 
-  # This simply splits the lines based on a line break
-  defp split_tokens(template),
-    do:
-      template
-      |> String.split("\n", trim: true)
+  # Keyword (alphanumeric and underscores)
+  defp do_tokenize([c | _] = chars, {line, col}, tokens) when c in ?a..?z or c in ?A..?Z or c == ?_ do
+    {keyword, rest} = take_keyword(chars, [])
+    keyword_str = to_string(keyword)
+    new_col = col + length(keyword)
+    do_tokenize(rest, {line, new_col}, [{:keyword, keyword_str, {line, col}} | tokens])
+  end
 
-  defp tokenize_line(line, _opts) do
-    raise Juvet.Template.TokenizerError, "Unknown platform for line 1: #{line}"
+  # Collect keyword characters (alphanumeric and underscores)
+  defp take_keyword([c | rest], acc) when c in ?a..?z or c in ?A..?Z or c in ?0..?9 or c == ?_ do
+    take_keyword(rest, [c | acc])
+  end
+
+  defp take_keyword(rest, acc) do
+    {Enum.reverse(acc), rest}
   end
 end
