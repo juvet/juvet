@@ -52,6 +52,8 @@
 #    handle nested structures. We may want to process from the leaves up to the root.
 
 defmodule Juvet.Template.Tokenizer do
+  @moduledoc false
+
   alias Juvet.Template.Tokenizer.{ContinuationTokenizer, SlackTokenizer, UnknownTokenizer}
 
   # Start line with any tab or space followed by non-whitespace
@@ -83,8 +85,9 @@ defmodule Juvet.Template.Tokenizer do
     do: List.to_tuple([:slack] ++ SlackTokenizer.tokenize_line(slack_line))
 
   def tokenize_line(line, opts) do
-    line |> IO.inspect(label: "unknown line")
-    opts |> IO.inspect(label: "opts")
+    # line |> IO.inspect(label: "unknown line")
+    # opts |> IO.inspect(label: "opts")
+    _ = {line, opts}
 
     # TODO: Detect it new element line -- e.g. starts with text: Something here
     # TODO: If these are attributes, how do we know what tokenizer to use?

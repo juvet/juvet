@@ -1,4 +1,6 @@
 defmodule Juvet.Template.Renderer do
+  @moduledoc false
+
   alias Juvet.Template.{Compiler, Parser, Tokenizer}
 
   require EEx

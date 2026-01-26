@@ -1,4 +1,6 @@
 defmodule Juvet.Template.Parser do
+  @moduledoc false
+
   alias Juvet.Template.Parser.SlackParser
 
   def parse([]), do: []
@@ -9,6 +11,7 @@ defmodule Juvet.Template.Parser do
 
   # This is not correct
   def parse_token(token) do
-    token |> IO.inspect(label: "Unparsed token")
+    # token |> IO.inspect(label: "Unparsed token")
+    token
   end
 end
