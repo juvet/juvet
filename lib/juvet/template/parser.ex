@@ -329,12 +329,35 @@ defmodule Juvet.Template.Parser do
   #
   # =============================================================================
 
-  def parse([]), do: []
+  def parse(tokens), do: do_parse(tokens, [])
 
-  def parse([{:eof, _, _}]), do: []
+  # Main parsing loop - dispatch based on first token
+  defp do_parse([], acc), do: Enum.reverse(acc)
+  defp do_parse([{:eof, _, _}], acc), do: Enum.reverse(acc)
 
-  def parse(tokens) do
-    # TODO: Implement recursive descent parser
-    tokens
+  defp do_parse([{:colon, _, _} | _] = tokens, acc) do
+    {el, rest} = element(tokens)
+    do_parse(rest, [el | acc])
   end
+
+  # Element parsing - :platform.element_type
+  defp element([
+         {:colon, _, _},
+         {:keyword, platform, _},
+         {:dot, _, _},
+         {:keyword, el, _}
+         | rest
+       ]) do
+    {attrs, rest} = attributes(rest)
+
+    {%{
+       platform: String.to_atom(platform),
+       element: String.to_atom(el),
+       attributes: attrs
+     }, rest}
+  end
+
+  # Attribute dispatching - for Phase 1, just return empty map
+  defp attributes([{:eof, _, _}] = rest), do: {%{}, rest}
+  defp attributes(rest), do: {%{}, rest}
 end
