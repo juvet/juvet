@@ -6,10 +6,12 @@ defmodule Juvet.Template.Compiler.Slack do
   Delegates to element-specific modules for compilation.
   """
 
+  alias Juvet.Template.Compiler
   alias Juvet.Template.Compiler.Encoder
   alias Juvet.Template.Compiler.Slack.Blocks.{Actions, Divider, Header, Image, Section}
   alias Juvet.Template.Compiler.Slack.Elements.Button
 
+  @spec compile([Compiler.ast_element()]) :: String.t()
   def compile([]), do: Encoder.encode!(%{blocks: []})
 
   def compile(ast) do
@@ -18,6 +20,7 @@ defmodule Juvet.Template.Compiler.Slack do
   end
 
   @doc false
+  @spec compile_element(Compiler.ast_element()) :: map()
   def compile_element(%{element: :actions} = el), do: Actions.compile(el)
   def compile_element(%{element: :button} = el), do: Button.compile(el)
   def compile_element(%{element: :divider} = el), do: Divider.compile(el)

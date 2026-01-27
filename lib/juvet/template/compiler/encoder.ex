@@ -13,6 +13,7 @@ defmodule Juvet.Template.Compiler.Encoder do
 
   @callback encode!(term()) :: String.t()
 
+  @spec encode!(term()) :: String.t()
   def encode!(data) do
     encoder().encode!(data)
   end

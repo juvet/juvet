@@ -16,6 +16,14 @@ defmodule Juvet.Template.Compiler do
 
   alias Juvet.Template.Compiler.Slack
 
+  @type ast_element :: %{
+          :platform => atom(),
+          :element => atom(),
+          :attributes => map(),
+          optional(:children) => map()
+        }
+
+  @spec compile([ast_element()]) :: String.t()
   def compile([]), do: ""
   def compile([%{platform: :slack} | _] = ast), do: Slack.compile(ast)
 end
