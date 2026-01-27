@@ -107,4 +107,37 @@ defmodule Juvet.TemplateTest do
       end
     end
   end
+
+  describe "template_file/2" do
+    defmodule FileTemplates do
+      use Juvet.Template
+
+      template_file :greeting, "templates/greeting.cheex"
+    end
+
+    test "loads and compiles template from file" do
+      result = FileTemplates.greeting(name: "World")
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             })
+    end
+
+    test "missing file raises CompileError" do
+      assert_raise CompileError, ~r/template_file :missing could not read/, fn ->
+        Code.compile_string("""
+        defmodule MissingFileTemplate do
+          use Juvet.Template
+          template_file :missing, "nonexistent.cheex"
+        end
+        """)
+      end
+    end
+  end
 end

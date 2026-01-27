@@ -783,7 +783,7 @@ end
 
 #### Phase 3: Template from file
 
-Add `template_file/2` macro to load templates from external `.juvet` files (similar to Phoenix's `.eex` files).
+Add `template_file/2` macro to load templates from external `.cheex` files (similar to Phoenix's `.eex` files).
 
 ```elixir
 defmacro template_file(name, path) do
@@ -812,8 +812,8 @@ end
 defmodule MyApp.Templates do
   use Juvet.Template
 
-  template_file :welcome, "templates/welcome.juvet"
-  template_file :goodbye, "templates/goodbye.juvet"
+  template_file :welcome, "templates/welcome.cheex"
+  template_file :goodbye, "templates/goodbye.cheex"
 end
 ```
 

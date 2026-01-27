@@ -19,6 +19,18 @@ defmodule Juvet.Template do
       MyApp.Templates.welcome(name: "World")
       # => {"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello World"}},{"type":"divider"}]}
 
+  ## Templates from files
+
+  Templates can also be loaded from external files using `template_file/2`:
+
+      defmodule MyApp.Templates do
+        use Juvet.Template
+
+        template_file :welcome, "templates/welcome.cheex"
+      end
+
+  The file path is relative to the module's source file. The module will be
+  automatically recompiled when the template file changes.
   """
 
   alias Juvet.Template.{Compiler, Parser, Renderer, Tokenizer}
@@ -29,11 +41,11 @@ defmodule Juvet.Template do
   @doc """
   Sets up compile-time template support.
 
-  Imports the `template/2` macro for defining compiled templates.
+  Imports the `template/2` and `template_file/2` macros for defining compiled templates.
   """
   defmacro __using__(_opts) do
     quote do
-      import Juvet.Template, only: [template: 2]
+      import Juvet.Template, only: [template: 2, template_file: 2]
     end
   end
 
@@ -53,6 +65,41 @@ defmodule Juvet.Template do
   defmacro template(name, source) do
     json = compile_template!(name, source)
     generate_function(name, json)
+  end
+
+  @doc """
+  Defines a compiled template function from an external file.
+
+  The file is read and compiled at compile time. The module will be
+  recompiled when the template file changes.
+
+  ## Example
+
+      template_file :welcome, "templates/welcome.cheex"
+
+  The path is relative to the file containing the module.
+  """
+  defmacro template_file(name, path) do
+    caller_dir = Path.dirname(__CALLER__.file)
+    full_path = Path.expand(path, caller_dir)
+
+    source =
+      case File.read(full_path) do
+        {:ok, content} ->
+          content
+
+        {:error, reason} ->
+          raise CompileError,
+            description:
+              "template_file #{inspect(name)} could not read #{path}: #{inspect(reason)}"
+      end
+
+    json = compile_template!(name, source)
+
+    quote do
+      @external_resource unquote(full_path)
+      unquote(generate_function(name, json))
+    end
   end
 
   @doc false
