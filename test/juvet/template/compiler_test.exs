@@ -8,7 +8,7 @@ defmodule Juvet.Template.CompilerTest do
       assert Compiler.compile([]) == ""
     end
 
-    test "delegates slack elements to SlackCompiler" do
+    test "delegates slack elements to Slack compiler" do
       ast = [%{platform: :slack, element: :divider, attributes: %{}}]
 
       assert Compiler.compile(ast) == ~s({"blocks":[{"type":"divider"}]})

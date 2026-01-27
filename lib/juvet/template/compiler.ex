@@ -14,8 +14,8 @@ defmodule Juvet.Template.Compiler do
   See `docs/templates.md` for the full pipeline documentation.
   """
 
-  alias Juvet.Template.Compiler.SlackCompiler
+  alias Juvet.Template.Compiler.Slack
 
   def compile([]), do: ""
-  def compile([%{platform: :slack} | _] = ast), do: SlackCompiler.compile(ast)
+  def compile([%{platform: :slack} | _] = ast), do: Slack.compile(ast)
 end

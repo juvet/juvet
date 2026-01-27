@@ -1,9 +1,12 @@
-defmodule Juvet.Template.Compiler.SlackCompiler do
+defmodule Juvet.Template.Compiler.Slack do
   @moduledoc """
   Compiles AST elements for the Slack platform into Block Kit JSON.
 
   Wraps compiled elements in `{"blocks":[...]}` format.
+  Delegates to element-specific modules for compilation.
   """
+
+  alias Juvet.Template.Compiler.Slack.Elements.Divider
 
   def compile([]), do: ~s({"blocks":[]})
 
@@ -12,5 +15,5 @@ defmodule Juvet.Template.Compiler.SlackCompiler do
     ~s({"blocks":[#{blocks}]})
   end
 
-  def compile_element(%{element: :divider}), do: ~s({"type":"divider"})
+  defp compile_element(%{element: :divider} = el), do: Divider.compile(el)
 end
