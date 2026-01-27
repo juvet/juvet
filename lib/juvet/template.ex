@@ -64,7 +64,7 @@ defmodule Juvet.Template do
   """
   defmacro template(name, source) do
     json = compile_template!(name, source)
-    generate_function(name, json)
+    generate_template_function(name, json)
   end
 
   @doc """
@@ -98,11 +98,19 @@ defmodule Juvet.Template do
 
     quote do
       @external_resource unquote(full_path)
-      unquote(generate_function(name, json))
+      unquote(generate_template_function(name, json))
     end
   end
 
-  @doc false
+  @doc """
+  Compiles template source to JSON, raising on errors.
+
+  Runs the template through the tokenizer, parser, and compiler pipeline.
+  Errors are caught and re-raised as `CompileError` with helpful context.
+
+  This is an internal function used by the `template/2` and `template_file/2`
+  macros at compile time.
+  """
   def compile_template!(name, source) do
     source
     |> Tokenizer.tokenize()
@@ -120,7 +128,12 @@ defmodule Juvet.Template do
               __STACKTRACE__
   end
 
-  defp generate_function(name, json) do
+  # Generates the quoted function definition for a template.
+  #
+  # If the compiled JSON contains EEx interpolation markers (`<%`),
+  # generates a function that calls `EEx.eval_string/2` at runtime.
+  # Otherwise, generates a function that returns the static JSON directly.
+  defp generate_template_function(name, json) do
     if String.contains?(json, "<%") do
       quote do
         def unquote(name)(bindings \\ []) do
