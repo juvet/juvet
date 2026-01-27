@@ -4,6 +4,6 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Section do
   alias Juvet.Template.Compiler.Slack.Objects.Text
 
   def compile(%{element: :section, attributes: %{text: text} = attrs}) do
-    %{type: "section", text: Text.mrkdwn(text, attrs)}
+    %{type: "section", text: Text.compile(text, attrs)}
   end
 end
