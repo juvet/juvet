@@ -7,7 +7,8 @@ defmodule Juvet.Template.Compiler.Slack do
   """
 
   alias Juvet.Template.Compiler.Encoder
-  alias Juvet.Template.Compiler.Slack.Blocks.{Divider, Header, Image, Section}
+  alias Juvet.Template.Compiler.Slack.Blocks.{Actions, Divider, Header, Image, Section}
+  alias Juvet.Template.Compiler.Slack.Elements.Button
 
   def compile([]), do: Encoder.encode!(%{blocks: []})
 
@@ -17,6 +18,8 @@ defmodule Juvet.Template.Compiler.Slack do
   end
 
   @doc false
+  def compile_element(%{element: :actions} = el), do: Actions.compile(el)
+  def compile_element(%{element: :button} = el), do: Button.compile(el)
   def compile_element(%{element: :divider} = el), do: Divider.compile(el)
   def compile_element(%{element: :header} = el), do: Header.compile(el)
   def compile_element(%{element: :image} = el), do: Image.compile(el)

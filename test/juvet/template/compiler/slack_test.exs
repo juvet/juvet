@@ -149,4 +149,92 @@ defmodule Juvet.Template.Compiler.SlackTest do
              })
     end
   end
+
+  describe "compile/1 - Phase 6: List children (actions with buttons)" do
+    test "actions with single button" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :actions,
+          attributes: %{},
+          children: %{
+            elements: [
+              %{
+                platform: :slack,
+                element: :button,
+                attributes: %{text: "Click", action_id: "btn_1"}
+              }
+            ]
+          }
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "actions",
+                   "elements" => [
+                     %{
+                       "type" => "button",
+                       "text" => %{"type" => "plain_text", "text" => "Click"},
+                       "action_id" => "btn_1"
+                     }
+                   ]
+                 }
+               ]
+             })
+    end
+
+    test "actions with multiple buttons" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :actions,
+          attributes: %{},
+          children: %{
+            elements: [
+              %{
+                platform: :slack,
+                element: :button,
+                attributes: %{text: "Button 1", action_id: "btn_1"}
+              },
+              %{
+                platform: :slack,
+                element: :button,
+                attributes: %{text: "Button 2", action_id: "btn_2"}
+              }
+            ]
+          }
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "actions",
+                   "elements" => [
+                     %{
+                       "type" => "button",
+                       "text" => %{"type" => "plain_text", "text" => "Button 1"},
+                       "action_id" => "btn_1"
+                     },
+                     %{
+                       "type" => "button",
+                       "text" => %{"type" => "plain_text", "text" => "Button 2"},
+                       "action_id" => "btn_2"
+                     }
+                   ]
+                 }
+               ]
+             })
+    end
+
+    test "actions with no elements returns empty array" do
+      ast = [%{platform: :slack, element: :actions, attributes: %{}}]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [%{"type" => "actions", "elements" => []}]
+             })
+    end
+  end
 end
