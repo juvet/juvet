@@ -19,7 +19,7 @@ defmodule Juvet.Template.TokenizerDeuce do
   - `value` - the string value captured from the template
   - `{line, column}` - position in the source for error reporting (1-indexed)
 
-  ## Token Types (Level 1)
+  ## Basic Tokens
 
   These tokens handle the simplest template case (e.g., `:slack.divider`):
 
@@ -45,7 +45,7 @@ defmodule Juvet.Template.TokenizerDeuce do
 
   Note: If there's a trailing newline, `:newline` appears before `:eof`.
 
-  ## Token Types (Level 2)
+  ## Attribute Tokens
 
   These tokens add support for attributes and default values
   (e.g., `:slack.header{text: "Hello"}` or `:slack.header "Hello"`):
@@ -138,7 +138,7 @@ defmodule Juvet.Template.TokenizerDeuce do
         {:eof, "", {1, 38}}
       ]
 
-  ## Token Types (Level 4)
+  ## Indentation Tokens
 
   These tokens add support for multi-line elements with indentation:
 
