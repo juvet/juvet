@@ -18,6 +18,14 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
       assert json_equal?(Slack.compile(ast), %{"blocks" => [%{"type" => "divider"}]})
     end
+
+    test "unknown element raises ArgumentError" do
+      ast = [%{platform: :slack, element: :unknown, attributes: %{}}]
+
+      assert_raise ArgumentError, "Unknown Slack element: :unknown", fn ->
+        Slack.compile(ast)
+      end
+    end
   end
 
   describe "compile/1 with header" do

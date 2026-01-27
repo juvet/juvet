@@ -24,4 +24,8 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :header} = el), do: Header.compile(el)
   def compile_element(%{element: :image} = el), do: Image.compile(el)
   def compile_element(%{element: :section} = el), do: Section.compile(el)
+
+  def compile_element(%{element: element}) do
+    raise ArgumentError, "Unknown Slack element: #{inspect(element)}"
+  end
 end
