@@ -716,3 +716,216 @@ MyApp.Templates.Welcome.welcome(name: "Alice", team: "Acme")
 - Templates with dynamic structure (conditionals, loops) may need special handling
 - Error messages should reference original template line numbers
 - Hot code reloading should recompile templates in development
+
+## Future: Additional Block Kit Components
+
+The following Slack Block Kit components are planned for future implementation.
+
+### Blocks
+
+#### Input Block
+
+Collects user input in modals and workflow steps.
+
+```elixir
+# Input AST
+[%{
+  platform: :slack,
+  element: :input,
+  attributes: %{label: "Your Name", optional: false},
+  children: %{
+    element: %{platform: :slack, element: :plain_text_input, attributes: %{action_id: "name_input"}}
+  }
+}]
+
+# Output JSON
+{
+  "blocks": [{
+    "type": "input",
+    "label": {"type": "plain_text", "text": "Your Name"},
+    "optional": false,
+    "element": {"type": "plain_text_input", "action_id": "name_input"}
+  }]
+}
+```
+
+### Elements
+
+#### Select Menus
+
+Static select, user select, conversation select, channel select.
+
+```elixir
+# Static select
+%{platform: :slack, element: :static_select, attributes: %{
+  placeholder: "Choose an option",
+  action_id: "select_1"
+}, children: %{
+  options: [
+    %{platform: :slack, element: :option, attributes: %{text: "Option 1", value: "opt_1"}},
+    %{platform: :slack, element: :option, attributes: %{text: "Option 2", value: "opt_2"}}
+  ]
+}}
+
+# Output JSON
+{
+  "type": "static_select",
+  "placeholder": {"type": "plain_text", "text": "Choose an option"},
+  "action_id": "select_1",
+  "options": [
+    {"text": {"type": "plain_text", "text": "Option 1"}, "value": "opt_1"},
+    {"text": {"type": "plain_text", "text": "Option 2"}, "value": "opt_2"}
+  ]
+}
+```
+
+#### Overflow Menu
+
+Compact menu for additional actions.
+
+```elixir
+%{platform: :slack, element: :overflow, attributes: %{action_id: "overflow_1"}, children: %{
+  options: [
+    %{platform: :slack, element: :option, attributes: %{text: "Edit", value: "edit"}},
+    %{platform: :slack, element: :option, attributes: %{text: "Delete", value: "delete"}}
+  ]
+}}
+```
+
+#### Checkboxes
+
+Multi-select with checkboxes.
+
+```elixir
+%{platform: :slack, element: :checkboxes, attributes: %{action_id: "checkboxes_1"}, children: %{
+  options: [
+    %{platform: :slack, element: :option, attributes: %{text: "Email notifications", value: "email"}},
+    %{platform: :slack, element: :option, attributes: %{text: "SMS notifications", value: "sms"}}
+  ]
+}}
+```
+
+#### Radio Buttons
+
+Single-select with radio buttons.
+
+```elixir
+%{platform: :slack, element: :radio_buttons, attributes: %{action_id: "radio_1"}, children: %{
+  options: [
+    %{platform: :slack, element: :option, attributes: %{text: "Small", value: "sm"}},
+    %{platform: :slack, element: :option, attributes: %{text: "Medium", value: "md"}},
+    %{platform: :slack, element: :option, attributes: %{text: "Large", value: "lg"}}
+  ]
+}}
+```
+
+#### Date and Time Pickers
+
+```elixir
+# Date picker
+%{platform: :slack, element: :datepicker, attributes: %{
+  action_id: "date_1",
+  initial_date: "2024-01-15",
+  placeholder: "Select a date"
+}}
+
+# Time picker
+%{platform: :slack, element: :timepicker, attributes: %{
+  action_id: "time_1",
+  initial_time: "09:00",
+  placeholder: "Select a time"
+}}
+
+# Datetime picker
+%{platform: :slack, element: :datetimepicker, attributes: %{
+  action_id: "datetime_1",
+  initial_date_time: 1672531200
+}}
+```
+
+#### Plain Text Input
+
+Text input for modals.
+
+```elixir
+%{platform: :slack, element: :plain_text_input, attributes: %{
+  action_id: "input_1",
+  placeholder: "Enter text here",
+  multiline: false
+}}
+```
+
+### Objects
+
+#### Confirmation Dialog
+
+Confirmation popup for destructive actions.
+
+```elixir
+# Button with confirmation
+%{platform: :slack, element: :button, attributes: %{
+  text: "Delete",
+  action_id: "delete_btn",
+  style: :danger
+}, children: %{
+  confirm: %{
+    platform: :slack,
+    element: :confirm,
+    attributes: %{
+      title: "Are you sure?",
+      text: "This action cannot be undone.",
+      confirm: "Delete",
+      deny: "Cancel"
+    }
+  }
+}}
+
+# Output JSON
+{
+  "type": "button",
+  "text": {"type": "plain_text", "text": "Delete"},
+  "action_id": "delete_btn",
+  "style": "danger",
+  "confirm": {
+    "title": {"type": "plain_text", "text": "Are you sure?"},
+    "text": {"type": "plain_text", "text": "This action cannot be undone."},
+    "confirm": {"type": "plain_text", "text": "Delete"},
+    "deny": {"type": "plain_text", "text": "Cancel"}
+  }
+}
+```
+
+#### Option and Option Group
+
+Used in select menus, checkboxes, radio buttons.
+
+```elixir
+# Option
+%{platform: :slack, element: :option, attributes: %{
+  text: "Option Label",
+  value: "option_value",
+  description: "Optional description"
+}}
+
+# Option Group (for categorizing options)
+%{platform: :slack, element: :option_group, attributes: %{label: "Category"}, children: %{
+  options: [
+    %{platform: :slack, element: :option, attributes: %{text: "Option 1", value: "opt_1"}}
+  ]
+}}
+```
+
+### Implementation Priority
+
+| Priority | Component | Notes |
+|----------|-----------|-------|
+| High | Input block | Required for modals |
+| High | Static select | Common interactive element |
+| High | Plain text input | Required for forms |
+| Medium | Confirmation dialog | Important for destructive actions |
+| Medium | Overflow menu | Common UX pattern |
+| Medium | Checkboxes | Multi-select scenarios |
+| Medium | Radio buttons | Single-select scenarios |
+| Medium | Option/Option group | Required by select menus |
+| Lower | Date/time pickers | Scheduling use cases |
+| Lower | User/channel selects | Slack-specific pickers |
