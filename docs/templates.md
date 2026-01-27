@@ -80,8 +80,8 @@ Group elements by platform
     v
 Delegate to platform compiler:
     |
-    +--> SlackCompiler.compile/1   (platform: :slack)  --> {"blocks":[...]}
-    +--> DiscordCompiler.compile/1 (platform: :discord)  # future
+    +--> Compiler.Slack.compile/1   (platform: :slack)  --> {"blocks":[...]}
+    +--> Compiler.Discord.compile/1 (platform: :discord)  # future
     +--> etc.
 ```
 
@@ -89,23 +89,39 @@ Delegate to platform compiler:
 
 ```
 lib/juvet/template/
-  compiler.ex              # Main entry, dispatches by platform
+  compiler.ex                      # Main entry, dispatches by platform
   compiler/
-    slack_compiler.ex      # Handles :slack elements, wraps in {"blocks":[...]}
+    slack.ex                       # Compiler.Slack - wraps in {"blocks":[...]}
+    slack/
+      blocks/
+        divider.ex                 # Compiler.Slack.Blocks.Divider
+        header.ex                  # Compiler.Slack.Blocks.Header
+        section.ex                 # Compiler.Slack.Blocks.Section
+      elements/
+        button.ex                  # Compiler.Slack.Elements.Button (future)
+        image.ex                   # Compiler.Slack.Elements.Image (future)
+      objects/
+        text.ex                    # Compiler.Slack.Objects.Text
 ```
 
 ### Compiler.compile/1
 
 - Takes AST (list of element maps)
 - Returns JSON string
-- Delegates to platform-specific compiler (currently assumes single platform per template)
+- Delegates to platform-specific compiler based on `platform:` field
 
-### Platform Compilers
-
-Each platform compiler implements:
+### Platform Compilers (e.g., Compiler.Slack)
 
 - `compile/1` - Takes list of AST elements, returns JSON string with platform-specific wrapper
-- `compile_element/1` - Compiles a single element to an Elixir map
+- Delegates to block modules (e.g., `Blocks.Header.compile/1`)
+- Block modules return Elixir maps, platform compiler encodes to JSON
+
+### Slack Block Kit Hierarchy
+
+Following Slack's Block Kit structure:
+- **Blocks** - Top-level layout (header, divider, section, actions)
+- **Elements** - Interactive components nested in blocks (button, image)
+- **Objects** - Composition objects (text objects: plain_text, mrkdwn)
 
 ## Compiler Transformations
 
@@ -355,33 +371,51 @@ Create the compiler structure with platform delegation:
 ```elixir
 # lib/juvet/template/compiler.ex
 defmodule Juvet.Template.Compiler do
-  alias Juvet.Template.Compiler.SlackCompiler
+  alias Juvet.Template.Compiler.Slack
 
   def compile([]), do: ""
-
-  def compile([%{platform: :slack} | _] = ast) do
-    SlackCompiler.compile(ast)
-  end
+  def compile([%{platform: :slack} | _] = ast), do: Slack.compile(ast)
 end
 
-# lib/juvet/template/compiler/slack_compiler.ex
-defmodule Juvet.Template.Compiler.SlackCompiler do
+# lib/juvet/template/compiler/slack.ex
+defmodule Juvet.Template.Compiler.Slack do
+  alias Juvet.Template.Compiler.Slack.Blocks.{Divider, Header}
+
   def compile([]), do: ~s({"blocks":[]})
 
   def compile(ast) do
-    blocks = Enum.map(ast, &compile_element/1)
-    ~s({"blocks":[#{Enum.join(blocks, ",")}]})
+    %{blocks: Enum.map(ast, &compile_element/1)}
+    |> Jason.encode!()
   end
 
-  def compile_element(%{element: element_type} = el) do
-    # dispatch by element type, return Elixir map
+  defp compile_element(%{element: :divider} = el), do: Divider.compile(el)
+  defp compile_element(%{element: :header} = el), do: Header.compile(el)
+end
+
+# lib/juvet/template/compiler/slack/blocks/header.ex
+defmodule Juvet.Template.Compiler.Slack.Blocks.Header do
+  alias Juvet.Template.Compiler.Slack.Objects.Text
+
+  def compile(%{element: :header, attributes: %{text: text} = attrs}) do
+    %{type: "header", text: Text.plain_text(text, attrs)}
   end
+end
+
+# lib/juvet/template/compiler/slack/objects/text.ex
+defmodule Juvet.Template.Compiler.Slack.Objects.Text do
+  def plain_text(text, attrs \\ %{}) do
+    %{type: "plain_text", text: text}
+    |> maybe_put(:emoji, attrs[:emoji])
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 end
 ```
 
-### Phase 1: Basic structure and divider (SlackCompiler)
+### Phase 1: Basic structure and divider
 
-SlackCompiler wraps elements in `{"blocks":[...]}` and compiles divider:
+Compiler.Slack wraps elements in `{"blocks":[...]}` and compiles divider:
 
 ```elixir
 # Input AST
