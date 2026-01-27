@@ -1,6 +1,8 @@
 defmodule Juvet.Template.Compiler.Slack.Objects.Text do
   @moduledoc false
 
+  import Juvet.Template.Compiler.Encoder.Helpers, only: [maybe_put: 3]
+
   def compile(text, %{type: :plain_text} = attrs) do
     %{type: "plain_text", text: text}
     |> maybe_put(:emoji, attrs[:emoji])
@@ -14,7 +16,4 @@ defmodule Juvet.Template.Compiler.Slack.Objects.Text do
   def compile(text, attrs) do
     compile(text, Map.put(attrs, :type, :mrkdwn))
   end
-
-  defp maybe_put(map, _key, nil), do: map
-  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 end
