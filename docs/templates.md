@@ -67,6 +67,83 @@ For Slack Block Kit, the final JSON looks like:
 }
 ```
 
+## Compiler Architecture
+
+The compiler delegates to platform-specific compilers based on the `platform:` field in each AST element.
+
+```
+Compiler.compile/1
+    |
+    v
+Wrap in {"blocks": [...]}
+    |
+    v
+For each element, dispatch by platform:
+    |
+    +--> SlackCompiler.compile_element/1   (platform: :slack)
+    +--> DiscordCompiler.compile_element/1 (platform: :discord)  # future
+    +--> etc.
+```
+
+### File Structure
+
+```
+lib/juvet/template/
+  compiler.ex              # Main entry, wraps blocks, dispatches by platform
+  compiler/
+    slack_compiler.ex      # Handles :slack elements
+```
+
+### Compiler.compile/1
+
+- Takes AST (list of element maps)
+- Returns JSON string
+- Wraps result in `{"blocks":[...]}`
+- Dispatches each element to appropriate platform compiler
+
+### Platform Compilers
+
+Each platform compiler implements `compile_element/1` which:
+- Takes a single AST element map
+- Returns an Elixir map (not JSON yet)
+- Handles platform-specific transformations
+
+## Compiler Transformations
+
+The compiler applies platform-specific transformations when converting AST to JSON.
+
+### Slack Block Kit Transformations
+
+#### Element Type Mapping
+
+| AST Element | JSON Type |
+|-------------|-----------|
+| `:header` | `"header"` |
+| `:divider` | `"divider"` |
+| `:section` | `"section"` |
+| `:image` | `"image"` |
+| `:button` | `"button"` |
+| `:actions` | `"actions"` |
+
+#### Text Object Wrapping
+
+Text attributes are wrapped in text objects based on element type:
+
+- **header**: `text` → `{"type": "plain_text", "text": "...", "emoji": true/false}`
+- **section**: `text` → `{"type": "mrkdwn", "text": "..."}`
+- **button**: `text` → `{"type": "plain_text", "text": "..."}`
+
+#### Attribute Renaming
+
+Some attributes are renamed for Slack compatibility:
+
+- `url` in image → `image_url`
+
+#### Children Handling
+
+- Single child (e.g., `accessory`) → compiled and added as attribute
+- List children (e.g., `elements`) → each child compiled, added as array
+
 ## Grammar (informal)
 
 ```
@@ -269,3 +346,155 @@ JSON: {
   }]
 }
 ```
+
+## Compiler Implementation Phases
+
+### Phase 0: Architecture setup
+
+Create the compiler structure with platform delegation:
+
+```elixir
+# lib/juvet/template/compiler.ex
+defmodule Juvet.Template.Compiler do
+  alias Juvet.Template.Compiler.SlackCompiler
+
+  def compile([]), do: ~s({"blocks":[]})
+
+  def compile(ast) do
+    blocks = Enum.map(ast, &compile_element/1)
+    ~s({"blocks":[#{Enum.join(blocks, ",")}]})
+  end
+
+  defp compile_element(%{platform: :slack} = element) do
+    element
+    |> SlackCompiler.compile_element()
+    |> Jason.encode!()
+  end
+end
+
+# lib/juvet/template/compiler/slack_compiler.ex
+defmodule Juvet.Template.Compiler.SlackCompiler do
+  def compile_element(%{element: element_type} = el) do
+    # dispatch by element type
+  end
+end
+```
+
+### Phase 1: Basic structure and divider
+
+```elixir
+# Input AST
+[%{platform: :slack, element: :divider, attributes: %{}}]
+
+# Output JSON
+{"blocks":[{"type":"divider"}]}
+```
+
+### Phase 2: Header with text (plain_text wrapping)
+
+```elixir
+# Input AST
+[%{platform: :slack, element: :header, attributes: %{text: "Hello"}}]
+
+# Output JSON
+{"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello"}}]}
+
+# With emoji attribute
+[%{platform: :slack, element: :header, attributes: %{text: "Hello", emoji: true}}]
+
+# Output JSON
+{"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello","emoji":true}}]}
+```
+
+### Phase 3: Section with text (mrkdwn wrapping)
+
+```elixir
+# Input AST
+[%{platform: :slack, element: :section, attributes: %{text: "Hello *world*"}}]
+
+# Output JSON
+{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"Hello *world*"}}]}
+```
+
+### Phase 4: Image element (attribute renaming)
+
+```elixir
+# Input AST
+[%{platform: :slack, element: :image, attributes: %{url: "http://example.com/img.png", alt_text: "Example"}}]
+
+# Output JSON
+{"blocks":[{"type":"image","image_url":"http://example.com/img.png","alt_text":"Example"}]}
+```
+
+### Phase 5: Nested children (section with accessory)
+
+```elixir
+# Input AST
+[%{
+  platform: :slack,
+  element: :section,
+  attributes: %{text: "Content"},
+  children: %{
+    accessory: %{platform: :slack, element: :image, attributes: %{url: "http://ex.com/img.png", alt_text: "Alt"}}
+  }
+}]
+
+# Output JSON
+{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"Content"},"accessory":{"type":"image","image_url":"http://ex.com/img.png","alt_text":"Alt"}}]}
+```
+
+### Phase 6: List children (actions with buttons)
+
+```elixir
+# Input AST
+[%{
+  platform: :slack,
+  element: :actions,
+  attributes: %{},
+  children: %{
+    elements: [
+      %{platform: :slack, element: :button, attributes: %{text: "Click", action_id: "btn_1"}}
+    ]
+  }
+}]
+
+# Output JSON
+{"blocks":[{"type":"actions","elements":[{"type":"button","text":{"type":"plain_text","text":"Click"},"action_id":"btn_1"}]}]}
+```
+
+### Phase 7: Multiple top-level elements
+
+```elixir
+# Input AST
+[
+  %{platform: :slack, element: :header, attributes: %{text: "Welcome"}},
+  %{platform: :slack, element: :divider, attributes: %{}},
+  %{platform: :slack, element: :section, attributes: %{text: "Content"}}
+]
+
+# Output JSON
+{"blocks":[{"type":"header","text":{"type":"plain_text","text":"Welcome"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Content"}}]}
+```
+
+### Phase 8: Interpolation passthrough
+
+EEx interpolation tags must pass through the entire pipeline intact until the final eval step.
+
+```elixir
+# Input Template
+":slack.header{text: \"Hello <%= name %>\"}"
+
+# After Tokenizer - interpolation preserved in text token
+[..., {:text, "\"Hello <%= name %>\"", _}, ...]
+
+# After Parser - interpolation preserved in AST
+[%{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}}]
+
+# After Compiler - interpolation preserved in JSON
+{"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello <%= name %>"}}]}
+
+# After Renderer.eval with [name: "World"]
+{"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello World"}}]}
+```
+
+This ensures interpolation works end-to-end without requiring special handling in tokenizer, parser, or compiler.
