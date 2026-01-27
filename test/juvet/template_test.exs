@@ -74,5 +74,13 @@ defmodule Juvet.TemplateTest do
                ]
              })
     end
+
+    test "template without interpolation ignores bindings" do
+      # Static templates don't use bindings, so passing any value works
+      result1 = TestTemplates.simple_header()
+      result2 = TestTemplates.simple_header(name: "ignored")
+
+      assert result1 == result2
+    end
   end
 end

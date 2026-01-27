@@ -41,7 +41,8 @@ defmodule Juvet.Template do
   Defines a compiled template function.
 
   The template source is compiled to JSON at compile time. At runtime,
-  only EEx interpolation is performed.
+  only EEx interpolation is performed. If the template has no interpolations,
+  the compiled JSON is returned directly without EEx evaluation.
 
   ## Example
 
@@ -56,9 +57,15 @@ defmodule Juvet.Template do
       |> Parser.parse()
       |> Compiler.compile()
 
-    quote do
-      def unquote(name)(bindings \\ []) do
-        EEx.eval_string(unquote(json), bindings)
+    if String.contains?(json, "<%") do
+      quote do
+        def unquote(name)(bindings \\ []) do
+          EEx.eval_string(unquote(json), bindings)
+        end
+      end
+    else
+      quote do
+        def unquote(name)(_bindings \\ []), do: unquote(json)
       end
     end
   end
