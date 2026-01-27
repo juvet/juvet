@@ -2,6 +2,7 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Context do
   @moduledoc false
 
   alias Juvet.Template.Compiler.Slack
+  alias Juvet.Template.Compiler.Slack.Objects.Text
 
   import Juvet.Template.Compiler.Encoder.Helpers, only: [maybe_put: 3]
 
@@ -24,7 +25,7 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Context do
 
   # Text elements are rendered as text objects
   defp compile_context_element(%{element: :text, attributes: attrs}) do
-    Slack.Objects.Text.compile(attrs[:text], attrs)
+    Text.compile(attrs[:text], attrs)
   end
 
   # Fall back to standard element compilation for other types
