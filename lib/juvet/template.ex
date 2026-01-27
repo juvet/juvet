@@ -51,12 +51,29 @@ defmodule Juvet.Template do
   Generates a function `greeting/1` that accepts a keyword list of bindings.
   """
   defmacro template(name, source) do
-    json =
-      source
-      |> Tokenizer.tokenize()
-      |> Parser.parse()
-      |> Compiler.compile()
+    json = compile_template!(name, source)
+    generate_function(name, json)
+  end
 
+  @doc false
+  def compile_template!(name, source) do
+    source
+    |> Tokenizer.tokenize()
+    |> Parser.parse()
+    |> Compiler.compile()
+  rescue
+    e in Juvet.Template.TokenizerError ->
+      reraise CompileError,
+              [description: "template #{inspect(name)} has a syntax error: #{e.message}"],
+              __STACKTRACE__
+
+    e in ArgumentError ->
+      reraise CompileError,
+              [description: "template #{inspect(name)} failed to compile: #{e.message}"],
+              __STACKTRACE__
+  end
+
+  defp generate_function(name, json) do
     if String.contains?(json, "<%") do
       quote do
         def unquote(name)(bindings \\ []) do

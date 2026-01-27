@@ -83,4 +83,28 @@ defmodule Juvet.TemplateTest do
       assert result1 == result2
     end
   end
+
+  describe "compile-time errors" do
+    test "invalid template syntax raises CompileError" do
+      assert_raise CompileError, ~r/template :bad has a syntax error/, fn ->
+        Code.compile_string("""
+        defmodule InvalidTemplate do
+          use Juvet.Template
+          template :bad, "invalid syntax @#\$%"
+        end
+        """)
+      end
+    end
+
+    test "unknown element raises CompileError" do
+      assert_raise CompileError, ~r/template :unknown failed to compile.*Unknown Slack element/, fn ->
+        Code.compile_string("""
+        defmodule UnknownElementTemplate do
+          use Juvet.Template
+          template :unknown, ":slack.nonexistent{text: \\"Hello\\"}"
+        end
+        """)
+      end
+    end
+  end
 end
