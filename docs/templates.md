@@ -91,15 +91,20 @@ Delegate to platform compiler:
 lib/juvet/template/
   compiler.ex                      # Main entry, dispatches by platform
   compiler/
+    encoder.ex                     # Encoder behaviour for JSON encoding
+    encoder/
+      helpers.ex                   # Shared utilities (maybe_put/3)
+      jason.ex                     # Default Jason implementation
     slack.ex                       # Compiler.Slack - wraps in {"blocks":[...]}
     slack/
       blocks/
+        actions.ex                 # Compiler.Slack.Blocks.Actions
         divider.ex                 # Compiler.Slack.Blocks.Divider
         header.ex                  # Compiler.Slack.Blocks.Header
+        image.ex                   # Compiler.Slack.Blocks.Image
         section.ex                 # Compiler.Slack.Blocks.Section
       elements/
-        button.ex                  # Compiler.Slack.Elements.Button (future)
-        image.ex                   # Compiler.Slack.Elements.Image (future)
+        button.ex                  # Compiler.Slack.Elements.Button
       objects/
         text.ex                    # Compiler.Slack.Objects.Text
 ```
@@ -377,19 +382,36 @@ defmodule Juvet.Template.Compiler do
   def compile([%{platform: :slack} | _] = ast), do: Slack.compile(ast)
 end
 
+# lib/juvet/template/compiler/encoder.ex
+defmodule Juvet.Template.Compiler.Encoder do
+  @callback encode!(term()) :: String.t()
+
+  def encode!(data) do
+    encoder = Application.get_env(:juvet, :json_encoder, __MODULE__.Jason)
+    encoder.encode!(data)
+  end
+end
+
+# lib/juvet/template/compiler/encoder/helpers.ex
+defmodule Juvet.Template.Compiler.Encoder.Helpers do
+  def maybe_put(%{} = map, _key, nil), do: map
+  def maybe_put(%{} = map, key, value), do: Map.put(map, key, value)
+end
+
 # lib/juvet/template/compiler/slack.ex
 defmodule Juvet.Template.Compiler.Slack do
-  alias Juvet.Template.Compiler.Slack.Blocks.{Divider, Header}
+  alias Juvet.Template.Compiler.Encoder
 
-  def compile([]), do: ~s({"blocks":[]})
+  def compile([]), do: Encoder.encode!(%{blocks: []})
 
   def compile(ast) do
     %{blocks: Enum.map(ast, &compile_element/1)}
-    |> Jason.encode!()
+    |> Encoder.encode!()
   end
 
-  defp compile_element(%{element: :divider} = el), do: Divider.compile(el)
-  defp compile_element(%{element: :header} = el), do: Header.compile(el)
+  def compile_element(%{element: :divider} = el), do: Divider.compile(el)
+  def compile_element(%{element: :header} = el), do: Header.compile(el)
+  # ... other elements
 end
 
 # lib/juvet/template/compiler/slack/blocks/header.ex
@@ -397,19 +419,25 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Header do
   alias Juvet.Template.Compiler.Slack.Objects.Text
 
   def compile(%{element: :header, attributes: %{text: text} = attrs}) do
-    %{type: "header", text: Text.plain_text(text, attrs)}
+    %{type: "header", text: Text.compile(text, Map.put_new(attrs, :type, :plain_text))}
   end
 end
 
 # lib/juvet/template/compiler/slack/objects/text.ex
 defmodule Juvet.Template.Compiler.Slack.Objects.Text do
-  def plain_text(text, attrs \\ %{}) do
+  import Juvet.Template.Compiler.Encoder.Helpers, only: [maybe_put: 3]
+
+  def compile(text, %{type: :plain_text} = attrs) do
     %{type: "plain_text", text: text}
     |> maybe_put(:emoji, attrs[:emoji])
   end
 
-  defp maybe_put(map, _key, nil), do: map
-  defp maybe_put(map, key, value), do: Map.put(map, key, value)
+  def compile(text, %{type: :mrkdwn} = attrs) do
+    %{type: "mrkdwn", text: text}
+    |> maybe_put(:verbatim, attrs[:verbatim])
+  end
+
+  def compile(text, attrs), do: compile(text, Map.put(attrs, :type, :mrkdwn))
 end
 ```
 
