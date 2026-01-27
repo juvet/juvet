@@ -129,4 +129,43 @@ defmodule Juvet.Template.ParserTest do
              ]
     end
   end
+
+  describe "parse/1 - Phase 6: Multiple top-level elements" do
+    test "two simple elements" do
+      template = ":slack.header\n:slack.divider"
+
+      assert parse(template) == [
+               %{platform: :slack, element: :header, attributes: %{}},
+               %{platform: :slack, element: :divider, attributes: %{}}
+             ]
+    end
+
+    test "multiple elements with different attribute styles" do
+      template = ~s(:slack.header{text: "Welcome"}\n:slack.divider\n:slack.section "Main content")
+
+      assert parse(template) == [
+               %{platform: :slack, element: :header, attributes: %{text: "Welcome"}},
+               %{platform: :slack, element: :divider, attributes: %{}},
+               %{platform: :slack, element: :section, attributes: %{text: "Main content"}}
+             ]
+    end
+
+    test "elements with blank lines between" do
+      template = ":slack.header\n\n\n:slack.divider"
+
+      assert parse(template) == [
+               %{platform: :slack, element: :header, attributes: %{}},
+               %{platform: :slack, element: :divider, attributes: %{}}
+             ]
+    end
+
+    test "multi-line element followed by simple element" do
+      template = ":slack.header\n  text: \"Hello\"\n:slack.divider"
+
+      assert parse(template) == [
+               %{platform: :slack, element: :header, attributes: %{text: "Hello"}},
+               %{platform: :slack, element: :divider, attributes: %{}}
+             ]
+    end
+  end
 end
