@@ -171,7 +171,8 @@ defmodule Juvet.Template.ParserTest do
 
   describe "parse/1 - Phase 7: List children" do
     test "element with multiple children under same key" do
-      template = ":slack.actions\n  elements:\n    :slack.button\n      text: \"Button 1\"\n    :slack.button\n      text: \"Button 2\""
+      template =
+        ":slack.actions\n  elements:\n    :slack.button\n      text: \"Button 1\"\n    :slack.button\n      text: \"Button 2\""
 
       assert parse(template) == [
                %{
@@ -208,7 +209,8 @@ defmodule Juvet.Template.ParserTest do
     end
 
     test "three children in a list" do
-      template = ":slack.actions\n  elements:\n    :slack.button\n      text: \"One\"\n    :slack.button\n      text: \"Two\"\n    :slack.button\n      text: \"Three\""
+      template =
+        ":slack.actions\n  elements:\n    :slack.button\n      text: \"One\"\n    :slack.button\n      text: \"Two\"\n    :slack.button\n      text: \"Three\""
 
       assert parse(template) == [
                %{
