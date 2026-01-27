@@ -6,28 +6,18 @@ defmodule Juvet.Template.Compiler.Encoder do
 
   Configure the encoder in your application config:
 
-      config :juvet, :json_encoder, MyApp.CustomEncoder
+      config :juvet, :json_encoder, Jason
 
-  If not configured, automatically detects and uses Jason (preferred) or Poison.
+  Defaults to Poison if not configured.
   """
 
   @callback encode!(term()) :: String.t()
 
-  # Suppress dialyzer warning for optional Jason dependency
-  @dialyzer {:nowarn_function, default_encode!: 1}
-
   def encode!(data) do
-    case Application.get_env(:juvet, :json_encoder) do
-      nil -> default_encode!(data)
-      encoder -> encoder.encode!(data)
-    end
+    encoder().encode!(data)
   end
 
-  defp default_encode!(data) do
-    if Code.ensure_loaded?(Jason) do
-      Jason.encode!(data)
-    else
-      Poison.encode!(data)
-    end
+  defp encoder do
+    Application.get_env(:juvet, :json_encoder, Poison)
   end
 end
