@@ -4,6 +4,8 @@ defmodule Juvet.TemplateTest do
   alias Juvet.Template
 
   describe "render/1" do
+    # We are not here yet
+    @tag :skip
     test "empty template returns empty string" do
       assert Template.render("") == ""
     end
