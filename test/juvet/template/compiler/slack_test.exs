@@ -271,4 +271,66 @@ defmodule Juvet.Template.Compiler.SlackTest do
              })
     end
   end
+
+  describe "compile/1 - Phase 8: Interpolation passthrough" do
+    test "EEx interpolation in header text passes through" do
+      ast = [%{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}}]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello <%= name %>"}
+                 }
+               ]
+             })
+    end
+
+    test "EEx interpolation in section text passes through" do
+      ast = [%{platform: :slack, element: :section, attributes: %{text: "Welcome <%= user %>!"}}]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "section",
+                   "text" => %{"type" => "mrkdwn", "text" => "Welcome <%= user %>!"}
+                 }
+               ]
+             })
+    end
+
+    test "EEx interpolation in button text passes through" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :actions,
+          attributes: %{},
+          children: %{
+            elements: [
+              %{
+                platform: :slack,
+                element: :button,
+                attributes: %{text: "<%= action_label %>", action_id: "btn_<%= id %>"}
+              }
+            ]
+          }
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "actions",
+                   "elements" => [
+                     %{
+                       "type" => "button",
+                       "text" => %{"type" => "plain_text", "text" => "<%= action_label %>"},
+                       "action_id" => "btn_<%= id %>"
+                     }
+                   ]
+                 }
+               ]
+             })
+    end
+  end
 end
