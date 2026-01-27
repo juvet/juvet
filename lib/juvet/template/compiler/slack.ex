@@ -6,14 +6,15 @@ defmodule Juvet.Template.Compiler.Slack do
   Delegates to element-specific modules for compilation.
   """
 
-  alias Juvet.Template.Compiler.Slack.Elements.Divider
+  alias Juvet.Template.Compiler.Slack.Elements.{Divider, Header}
 
   def compile([]), do: ~s({"blocks":[]})
 
   def compile(ast) do
-    blocks = Enum.map_join(ast, ",", &compile_element/1)
-    ~s({"blocks":[#{blocks}]})
+    %{blocks: Enum.map(ast, &compile_element/1)}
+    |> Jason.encode!()
   end
 
   defp compile_element(%{element: :divider} = el), do: Divider.compile(el)
+  defp compile_element(%{element: :header} = el), do: Header.compile(el)
 end
