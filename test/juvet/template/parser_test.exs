@@ -108,4 +108,25 @@ defmodule Juvet.Template.ParserTest do
              ]
     end
   end
+
+  describe "parse/1 - Phase 5: Nested elements" do
+    test "element with nested child" do
+      template = ":slack.section\n  accessory:\n    :slack.image\n      url: \"http://ex.com\""
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :section,
+                 attributes: %{},
+                 children: %{
+                   accessory: %{
+                     platform: :slack,
+                     element: :image,
+                     attributes: %{url: "http://ex.com"}
+                   }
+                 }
+               }
+             ]
+    end
+  end
 end

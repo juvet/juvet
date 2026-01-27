@@ -334,6 +334,9 @@ defmodule Juvet.Template.Parser do
   # Main parsing loop - dispatch based on first token
   defp do_parse([], acc), do: Enum.reverse(acc)
   defp do_parse([{:eof, _, _}], acc), do: Enum.reverse(acc)
+  defp do_parse([{:eof, _, _} | rest], acc), do: do_parse(rest, acc)
+  defp do_parse([{:dedent, _, _} | rest], acc), do: do_parse(rest, acc)
+  defp do_parse([{:newline, _, _} | rest], acc), do: do_parse(rest, acc)
 
   defp do_parse([{:colon, _, _} | _] = tokens, acc) do
     {el, rest} = element(tokens)
@@ -348,13 +351,25 @@ defmodule Juvet.Template.Parser do
          {:keyword, el, _}
          | rest
        ]) do
-    {attrs, rest} = attributes(rest)
+    {attrs_result, rest} = attributes(rest)
 
-    {%{
-       platform: String.to_atom(platform),
-       element: String.to_atom(el),
-       attributes: attrs
-     }, rest}
+    el_map = %{
+      platform: String.to_atom(platform),
+      element: String.to_atom(el)
+    }
+
+    el_map =
+      case attrs_result do
+        {attrs, children} ->
+          el_map
+          |> Map.put(:attributes, attrs)
+          |> Map.put(:children, children)
+
+        attrs ->
+          Map.put(el_map, :attributes, attrs)
+      end
+
+    {el_map, rest}
   end
 
   # Attribute dispatching
@@ -362,7 +377,7 @@ defmodule Juvet.Template.Parser do
 
   # Multi-line block (newline + indent)
   defp attributes([{:newline, _, _}, {:indent, _, _} | rest]) do
-    block(rest, %{})
+    block(rest, %{}, %{})
   end
 
   # Default value (unquoted text) followed by inline attrs - must come before general text match
@@ -380,14 +395,35 @@ defmodule Juvet.Template.Parser do
   defp attributes([{:eof, _, _}] = rest), do: {%{}, rest}
   defp attributes(rest), do: {%{}, rest}
 
-  # Block parsing - indented attributes until dedent
-  defp block([{:dedent, _, _} | rest], acc), do: {acc, rest}
-  defp block([{:newline, _, _} | rest], acc), do: block(rest, acc)
-  defp block([{:whitespace, _, _} | rest], acc), do: block(rest, acc)
+  # Block parsing - indented attributes and children until dedent
+  defp block([{:dedent, _, _} | rest], attrs, children) do
+    if map_size(children) > 0 do
+      {{attrs, children}, rest}
+    else
+      {attrs, rest}
+    end
+  end
 
-  defp block([{:keyword, key, _}, {:colon, _, _} | rest], acc) do
+  defp block([{:newline, _, _} | rest], attrs, children), do: block(rest, attrs, children)
+  defp block([{:whitespace, _, _} | rest], attrs, children), do: block(rest, attrs, children)
+
+  # Nested element - key followed by newline+indent+colon
+  defp block(
+         [{:keyword, _, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _}, {:colon, _, _} | _] =
+           tokens,
+         attrs,
+         children
+       ) do
+    # Skip keyword and colon, then parse the nested element
+    [{:keyword, key, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _} | rest] = tokens
+    {nested_el, rest} = element(rest)
+    block(rest, attrs, Map.put(children, String.to_atom(key), nested_el))
+  end
+
+  # Regular attribute
+  defp block([{:keyword, key, _}, {:colon, _, _} | rest], attrs, children) do
     {val, rest} = value(rest)
-    block(rest, Map.put(acc, String.to_atom(key), val))
+    block(rest, Map.put(attrs, String.to_atom(key), val), children)
   end
 
   # Inline attributes - parse {key: value, ...}
