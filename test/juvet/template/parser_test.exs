@@ -90,4 +90,22 @@ defmodule Juvet.Template.ParserTest do
              ]
     end
   end
+
+  describe "parse/1 - Phase 4: Multi-line with indent/dedent" do
+    test "element with indented attributes" do
+      template = ":slack.header\n  text: \"Hello\""
+
+      assert parse(template) == [
+               %{platform: :slack, element: :header, attributes: %{text: "Hello"}}
+             ]
+    end
+
+    test "element with multiple indented attributes" do
+      template = ":slack.header\n  text: \"Hello\"\n  emoji: true"
+
+      assert parse(template) == [
+               %{platform: :slack, element: :header, attributes: %{text: "Hello", emoji: true}}
+             ]
+    end
+  end
 end

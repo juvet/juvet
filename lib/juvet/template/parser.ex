@@ -360,6 +360,11 @@ defmodule Juvet.Template.Parser do
   # Attribute dispatching
   defp attributes([{:open_brace, _, _} | rest]), do: inline_attrs(rest, %{})
 
+  # Multi-line block (newline + indent)
+  defp attributes([{:newline, _, _}, {:indent, _, _} | rest]) do
+    block(rest, %{})
+  end
+
   # Default value (unquoted text) followed by inline attrs - must come before general text match
   defp attributes([{:whitespace, _, _}, {:text, text, _}, {:open_brace, _, _} | rest]) do
     {more_attrs, rest} = inline_attrs(rest, %{})
@@ -374,6 +379,16 @@ defmodule Juvet.Template.Parser do
 
   defp attributes([{:eof, _, _}] = rest), do: {%{}, rest}
   defp attributes(rest), do: {%{}, rest}
+
+  # Block parsing - indented attributes until dedent
+  defp block([{:dedent, _, _} | rest], acc), do: {acc, rest}
+  defp block([{:newline, _, _} | rest], acc), do: block(rest, acc)
+  defp block([{:whitespace, _, _} | rest], acc), do: block(rest, acc)
+
+  defp block([{:keyword, key, _}, {:colon, _, _} | rest], acc) do
+    {val, rest} = value(rest)
+    block(rest, Map.put(acc, String.to_atom(key), val))
+  end
 
   # Inline attributes - parse {key: value, ...}
   defp inline_attrs([{:close_brace, _, _} | rest], acc), do: {acc, rest}
