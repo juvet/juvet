@@ -353,23 +353,23 @@ defmodule Juvet.Template.Parser do
        ]) do
     {attrs_result, rest} = attributes(rest)
 
-    el_map = %{
+    new_element = %{
       platform: String.to_atom(platform),
       element: String.to_atom(el)
     }
 
-    el_map =
+    new_element =
       case attrs_result do
         {attrs, children} ->
-          el_map
+          new_element
           |> Map.put(:attributes, attrs)
           |> Map.put(:children, children)
 
         attrs ->
-          Map.put(el_map, :attributes, attrs)
+          Map.put(new_element, :attributes, attrs)
       end
 
-    {el_map, rest}
+    {new_element, rest}
   end
 
   # Attribute dispatching
