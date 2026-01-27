@@ -268,9 +268,9 @@ defmodule Juvet.Template.TokenizerTest do
 
     test "escaped quotes in string" do
       assert [
-               {:text, "\"Hello \\\"world\\\"\"", {1, 1}},
+               {:text, ~s("Hello \\"world\\""), {1, 1}},
                {:eof, "", {1, 18}}
-             ] = Tokenizer.tokenize("\"Hello \\\"world\\\"\"")
+             ] = Tokenizer.tokenize(~s("Hello \\"world\\""))
     end
 
     test "negative number" do
