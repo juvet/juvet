@@ -168,4 +168,62 @@ defmodule Juvet.Template.ParserTest do
              ]
     end
   end
+
+  describe "parse/1 - Phase 7: List children" do
+    test "element with multiple children under same key" do
+      template = ":slack.actions\n  elements:\n    :slack.button\n      text: \"Button 1\"\n    :slack.button\n      text: \"Button 2\""
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :actions,
+                 attributes: %{},
+                 children: %{
+                   elements: [
+                     %{platform: :slack, element: :button, attributes: %{text: "Button 1"}},
+                     %{platform: :slack, element: :button, attributes: %{text: "Button 2"}}
+                   ]
+                 }
+               }
+             ]
+    end
+
+    test "single child still works (not wrapped in list)" do
+      template = ":slack.section\n  accessory:\n    :slack.image\n      url: \"http://ex.com\""
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :section,
+                 attributes: %{},
+                 children: %{
+                   accessory: %{
+                     platform: :slack,
+                     element: :image,
+                     attributes: %{url: "http://ex.com"}
+                   }
+                 }
+               }
+             ]
+    end
+
+    test "three children in a list" do
+      template = ":slack.actions\n  elements:\n    :slack.button\n      text: \"One\"\n    :slack.button\n      text: \"Two\"\n    :slack.button\n      text: \"Three\""
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :actions,
+                 attributes: %{},
+                 children: %{
+                   elements: [
+                     %{platform: :slack, element: :button, attributes: %{text: "One"}},
+                     %{platform: :slack, element: :button, attributes: %{text: "Two"}},
+                     %{platform: :slack, element: :button, attributes: %{text: "Three"}}
+                   ]
+                 }
+               }
+             ]
+    end
+  end
 end

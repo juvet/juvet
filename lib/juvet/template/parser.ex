@@ -407,23 +407,39 @@ defmodule Juvet.Template.Parser do
   defp block([{:newline, _, _} | rest], attrs, children), do: block(rest, attrs, children)
   defp block([{:whitespace, _, _} | rest], attrs, children), do: block(rest, attrs, children)
 
-  # Nested element - key followed by newline+indent+colon
+  # Nested element(s) - key followed by newline+indent+colon
   defp block(
          [{:keyword, _, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _}, {:colon, _, _} | _] =
            tokens,
          attrs,
          children
        ) do
-    # Skip keyword and colon, then parse the nested element
     [{:keyword, key, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _} | rest] = tokens
-    {nested_el, rest} = element(rest)
-    block(rest, attrs, Map.put(children, String.to_atom(key), nested_el))
+    {nested_elements, rest} = nested_elements(rest, [])
+
+    # Single element stored as-is, multiple elements stored as list
+    child_value =
+      case nested_elements do
+        [single] -> single
+        multiple -> multiple
+      end
+
+    block(rest, attrs, Map.put(children, String.to_atom(key), child_value))
   end
 
   # Regular attribute
   defp block([{:keyword, key, _}, {:colon, _, _} | rest], attrs, children) do
     {val, rest} = value(rest)
     block(rest, Map.put(attrs, String.to_atom(key), val), children)
+  end
+
+  # Collect sibling elements until dedent
+  defp nested_elements([{:dedent, _, _} | rest], acc), do: {Enum.reverse(acc), rest}
+  defp nested_elements([{:newline, _, _} | rest], acc), do: nested_elements(rest, acc)
+
+  defp nested_elements([{:colon, _, _} | _] = tokens, acc) do
+    {el, rest} = element(tokens)
+    nested_elements(rest, [el | acc])
   end
 
   # Inline attributes - parse {key: value, ...}
