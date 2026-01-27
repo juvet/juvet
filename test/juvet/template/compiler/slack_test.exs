@@ -72,4 +72,38 @@ defmodule Juvet.Template.Compiler.SlackTest do
              })
     end
   end
+
+  describe "compile/1 - Phase 4: Image with attribute renaming" do
+    test "image with url and alt_text" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :image,
+          attributes: %{url: "http://example.com/img.png", alt_text: "Example"}
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "image",
+                   "image_url" => "http://example.com/img.png",
+                   "alt_text" => "Example"
+                 }
+               ]
+             })
+    end
+
+    test "image with only url" do
+      ast = [
+        %{platform: :slack, element: :image, attributes: %{url: "http://example.com/img.png"}}
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{"type" => "image", "image_url" => "http://example.com/img.png"}
+               ]
+             })
+    end
+  end
 end
