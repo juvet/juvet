@@ -119,47 +119,84 @@ defmodule Juvet.Template.Parser do
   #     block        -> indent (attr | element)+ dedent
   #
   # =============================================================================
-  # PARSING STRATEGY: RECURSIVE DESCENT
+  # PARSING STRATEGY: RECURSIVE DESCENT WITH PATTERN MATCHING
   # =============================================================================
   #
   # Use a recursive descent parser that consumes tokens and builds the AST.
-  # Track remaining tokens and return {result, remaining_tokens}.
+  # Pattern match on the first token to dispatch to the appropriate handler.
+  # Each function returns {result, remaining_tokens}.
+  #
+  # ## Function Signatures
   #
   #     def parse(tokens) -> [element]
-  #     defp parse_element(tokens) -> {element, remaining}
-  #     defp parse_inline_attrs(tokens) -> {attrs, remaining}
-  #     defp parse_block(tokens) -> {block_content, remaining}
+  #     defp do_parse(tokens, acc) -> [element]
+  #     defp element(tokens) -> {element_map, remaining}
+  #     defp attributes(tokens) -> {attrs_map, remaining}
+  #     defp inline_attrs(tokens, acc) -> {attrs_map, remaining}
+  #     defp block(tokens) -> {block_content, remaining}
+  #     defp value(tokens) -> {value, remaining}
   #
-  # ## Key Parsing Functions
+  # ## Main Loop (do_parse/2)
   #
-  # 1. parse/1 - Entry point, parse all elements until :eof
+  # Pattern match on first token to dispatch:
   #
-  # 2. parse_element/1 - Parse single element
-  #    - Expect: :colon, :keyword (platform), :dot, :keyword (element)
-  #    - Optional: default value (whitespace + text)
-  #    - Optional: inline attributes ({...})
-  #    - Optional: block (newline + indent + ... + dedent)
+  #     defp do_parse([], acc), do: Enum.reverse(acc)
+  #     defp do_parse([{:eof, _, _}], acc), do: Enum.reverse(acc)
+  #     defp do_parse([{:colon, _, _} | _] = tokens, acc) do
+  #       {el, rest} = element(tokens)
+  #       do_parse(rest, [el | acc])
+  #     end
+  #     defp do_parse([{:newline, _, _} | rest], acc), do: do_parse(rest, acc)
   #
-  # 3. parse_inline_attrs/1 - Parse {key: value, ...}
-  #    - Consume tokens between :open_brace and :close_brace
-  #    - Build map of attributes
+  # ## Element Parsing (element/1)
   #
-  # 4. parse_block/1 - Parse indented children
-  #    - After :indent, parse attributes and nested elements
-  #    - Continue until :dedent
-  #    - Handle nested indentation recursively
+  # Pattern match the element structure directly:
   #
-  # 5. parse_value/1 - Parse attribute value
-  #    - :text -> string (strip quotes if present)
-  #    - :boolean -> true/false atom
-  #    - :atom -> atom
-  #    - :number -> integer or float
+  #     defp element([{:colon, _, _}, {:keyword, platform, _},
+  #                   {:dot, _, _}, {:keyword, el, _} | rest]) do
+  #       {attrs, rest} = attributes(rest)
+  #       {%{platform: to_atom(platform), element: to_atom(el), attributes: attrs}, rest}
+  #     end
+  #
+  # ## Attribute Dispatching (attributes/1)
+  #
+  # Pattern match to determine attribute style:
+  #
+  #     defp attributes([{:open_brace, _, _} | rest]), do: inline_attrs(rest, %{})
+  #     defp attributes([{:whitespace, _, _}, {:text, text, _} | rest]) do
+  #       {%{text: unquote_text(text)}, rest}
+  #     end
+  #     defp attributes([{:newline, _, _}, {:indent, _, _} | _] = tokens), do: block(tokens)
+  #     defp attributes(rest), do: {%{}, rest}
+  #
+  # ## Inline Attributes (inline_attrs/2)
+  #
+  # Parse {key: value, ...} recursively:
+  #
+  #     defp inline_attrs([{:close_brace, _, _} | rest], acc), do: {acc, rest}
+  #     defp inline_attrs([{:comma, _, _} | rest], acc), do: inline_attrs(rest, acc)
+  #     defp inline_attrs([{:whitespace, _, _} | rest], acc), do: inline_attrs(rest, acc)
+  #     defp inline_attrs([{:keyword, key, _}, {:colon, _, _} | rest], acc) do
+  #       {val, rest} = value(rest)
+  #       inline_attrs(rest, Map.put(acc, to_atom(key), val))
+  #     end
+  #
+  # ## Value Parsing (value/1)
+  #
+  # Extract and convert the value:
+  #
+  #     defp value([{:whitespace, _, _} | rest]), do: value(rest)
+  #     defp value([{:text, text, _} | rest]), do: {unquote_text(text), rest}
+  #     defp value([{:boolean, "true", _} | rest]), do: {true, rest}
+  #     defp value([{:boolean, "false", _} | rest]), do: {false, rest}
+  #     defp value([{:atom, atom, _} | rest]), do: {to_atom(atom), rest}
+  #     defp value([{:number, num, _} | rest]), do: {parse_number(num), rest}
   #
   # ## Helper Functions
   #
-  # - skip_whitespace/1 - Skip :whitespace tokens
-  # - expect/2 - Consume expected token type or raise error
-  # - peek/1 - Look at next token without consuming
+  # - unquote_text/1 - Remove surrounding quotes from text
+  # - to_atom/1 - Convert string to atom (strip leading colon if present)
+  # - parse_number/1 - Convert string to integer or float
   #
   # =============================================================================
   # EXPECTED AST OUTPUT EXAMPLES
