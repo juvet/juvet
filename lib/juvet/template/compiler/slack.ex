@@ -6,7 +6,7 @@ defmodule Juvet.Template.Compiler.Slack do
   Delegates to element-specific modules for compilation.
   """
 
-  alias Juvet.Template.Compiler.Slack.Elements.{Divider, Header}
+  alias Juvet.Template.Compiler.Slack.Blocks.{Divider, Header}
 
   def compile([]), do: ~s({"blocks":[]})
 
