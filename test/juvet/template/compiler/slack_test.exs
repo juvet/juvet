@@ -237,4 +237,38 @@ defmodule Juvet.Template.Compiler.SlackTest do
              })
     end
   end
+
+  describe "compile/1 - Phase 7: Multiple top-level elements" do
+    test "header, divider, and section" do
+      ast = [
+        %{platform: :slack, element: :header, attributes: %{text: "Welcome"}},
+        %{platform: :slack, element: :divider, attributes: %{}},
+        %{platform: :slack, element: :section, attributes: %{text: "Content"}}
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Welcome"}},
+                 %{"type" => "divider"},
+                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Content"}}
+               ]
+             })
+    end
+
+    test "multiple sections" do
+      ast = [
+        %{platform: :slack, element: :section, attributes: %{text: "First"}},
+        %{platform: :slack, element: :section, attributes: %{text: "Second"}},
+        %{platform: :slack, element: :section, attributes: %{text: "Third"}}
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "First"}},
+                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Second"}},
+                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Third"}}
+               ]
+             })
+    end
+  end
 end
