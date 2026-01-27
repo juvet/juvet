@@ -357,7 +357,44 @@ defmodule Juvet.Template.Parser do
      }, rest}
   end
 
-  # Attribute dispatching - for Phase 1, just return empty map
+  # Attribute dispatching
+  defp attributes([{:open_brace, _, _} | rest]), do: inline_attrs(rest, %{})
   defp attributes([{:eof, _, _}] = rest), do: {%{}, rest}
   defp attributes(rest), do: {%{}, rest}
+
+  # Inline attributes - parse {key: value, ...}
+  defp inline_attrs([{:close_brace, _, _} | rest], acc), do: {acc, rest}
+  defp inline_attrs([{:comma, _, _} | rest], acc), do: inline_attrs(rest, acc)
+  defp inline_attrs([{:whitespace, _, _} | rest], acc), do: inline_attrs(rest, acc)
+
+  defp inline_attrs([{:keyword, key, _}, {:colon, _, _} | rest], acc) do
+    {val, rest} = value(rest)
+    inline_attrs(rest, Map.put(acc, String.to_atom(key), val))
+  end
+
+  # Value parsing
+  defp value([{:whitespace, _, _} | rest]), do: value(rest)
+  defp value([{:text, text, _} | rest]), do: {unquote_text(text), rest}
+  defp value([{:boolean, "true", _} | rest]), do: {true, rest}
+  defp value([{:boolean, "false", _} | rest]), do: {false, rest}
+  defp value([{:atom, atom_str, _} | rest]), do: {parse_atom(atom_str), rest}
+  defp value([{:number, num_str, _} | rest]), do: {parse_number(num_str), rest}
+
+  # Helper functions
+  defp unquote_text(text) do
+    text
+    |> String.trim_leading("\"")
+    |> String.trim_trailing("\"")
+  end
+
+  defp parse_atom(":" <> name), do: String.to_atom(name)
+  defp parse_atom(name), do: String.to_atom(name)
+
+  defp parse_number(str) do
+    if String.contains?(str, ".") do
+      String.to_float(str)
+    else
+      String.to_integer(str)
+    end
+  end
 end
