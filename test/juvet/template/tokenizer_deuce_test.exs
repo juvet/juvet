@@ -250,5 +250,58 @@ defmodule Juvet.Template.TokenizerDeuceTest do
                {:eof, "", {4, 15}}
              ] = Tokenizer.tokenize(template)
     end
+
+    # Edge cases
+
+    test "unclosed quote raises error" do
+      assert_raise Juvet.Template.TokenizerError,
+                   ~r/Unclosed string starting at line 1, column 1/,
+                   fn -> Tokenizer.tokenize("\"Hello") end
+    end
+
+    test "empty string" do
+      assert [
+               {:text, "\"\"", {1, 1}},
+               {:eof, "", {1, 3}}
+             ] = Tokenizer.tokenize("\"\"")
+    end
+
+    test "escaped quotes in string" do
+      assert [
+               {:text, "\"Hello \\\"world\\\"\"", {1, 1}},
+               {:eof, "", {1, 18}}
+             ] = Tokenizer.tokenize("\"Hello \\\"world\\\"\"")
+    end
+
+    test "negative number" do
+      assert [
+               {:open_brace, "{", {1, 1}},
+               {:keyword, "count", {1, 2}},
+               {:colon, ":", {1, 7}},
+               {:whitespace, " ", {1, 8}},
+               {:number, "-42", {1, 9}},
+               {:close_brace, "}", {1, 12}},
+               {:eof, "", {1, 13}}
+             ] = Tokenizer.tokenize("{count: -42}")
+    end
+
+    test "multiple consecutive newlines" do
+      template = ":slack.header\n\n\n:slack.divider"
+
+      assert [
+               {:colon, ":", {1, 1}},
+               {:keyword, "slack", {1, 2}},
+               {:dot, ".", {1, 7}},
+               {:keyword, "header", {1, 8}},
+               {:newline, "\n", {1, 14}},
+               {:newline, "\n", {2, 1}},
+               {:newline, "\n", {3, 1}},
+               {:colon, ":", {4, 1}},
+               {:keyword, "slack", {4, 2}},
+               {:dot, ".", {4, 7}},
+               {:keyword, "divider", {4, 8}},
+               {:eof, "", {4, 15}}
+             ] = Tokenizer.tokenize(template)
+    end
   end
 end

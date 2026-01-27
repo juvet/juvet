@@ -435,10 +435,15 @@ defmodule Juvet.Template.TokenizerDeuce do
 
   # Quoted text
   defp do_tokenize([?" | _] = chars, {line, col}, tokens, indent_stack) do
-    {text, rest} = take_quoted_text(chars, [])
-    text_str = to_string(text)
-    new_col = col + length(text)
-    do_tokenize(rest, {line, new_col}, [{:text, text_str, {line, col}} | tokens], indent_stack)
+    case take_quoted_text(chars, [], {line, col}) do
+      {:ok, text, rest} ->
+        text_str = to_string(text)
+        new_col = col + length(text)
+        do_tokenize(rest, {line, new_col}, [{:text, text_str, {line, col}} | tokens], indent_stack)
+
+      {:error, message} ->
+        raise Juvet.Template.TokenizerError, message
+    end
   end
 
   # Whitespace (spaces and tabs)
@@ -452,6 +457,21 @@ defmodule Juvet.Template.TokenizerDeuce do
       rest,
       {line, new_col},
       [{:whitespace, whitespace_str, {line, col}} | tokens],
+      indent_stack
+    )
+  end
+
+  # Number (digits, optional decimal point)
+  # Negative number (- followed by digit)
+  defp do_tokenize([?- | [d | _] = rest], {line, col}, tokens, indent_stack) when d in ?0..?9 do
+    {number, remaining} = take_number(rest, [?-])
+    number_str = to_string(number)
+    new_col = col + length(number)
+
+    do_tokenize(
+      remaining,
+      {line, new_col},
+      [{:number, number_str, {line, col}} | tokens],
       indent_stack
     )
   end
@@ -531,17 +551,29 @@ defmodule Juvet.Template.TokenizerDeuce do
     {Enum.reverse(acc), rest}
   end
 
-  # Collect quoted text (including the quotes)
-  defp take_quoted_text([?" | rest], []) do
-    take_quoted_text(rest, [?"])
+  # Collect quoted text (including the quotes), handling escapes
+  defp take_quoted_text([?" | rest], [], pos) do
+    take_quoted_text(rest, [?"], pos)
   end
 
-  defp take_quoted_text([?" | rest], acc) do
-    {Enum.reverse([?" | acc]), rest}
+  # End of input without closing quote
+  defp take_quoted_text([], _acc, {line, col}) do
+    {:error, "Unclosed string starting at line #{line}, column #{col}"}
   end
 
-  defp take_quoted_text([c | rest], acc) do
-    take_quoted_text(rest, [c | acc])
+  # Closing quote
+  defp take_quoted_text([?" | rest], acc, _pos) do
+    {:ok, Enum.reverse([?" | acc]), rest}
+  end
+
+  # Escaped character (e.g., \")
+  defp take_quoted_text([?\\ | [c | rest]], acc, pos) do
+    take_quoted_text(rest, [c, ?\\ | acc], pos)
+  end
+
+  # Regular character
+  defp take_quoted_text([c | rest], acc, pos) do
+    take_quoted_text(rest, [c | acc], pos)
   end
 
   # Collect number (digits and optional decimal point)
