@@ -8,7 +8,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
     Jason.decode!(json_string) == expected_map
   end
 
-  describe "compile/1 - Phase 0-1: Basic structure" do
+  describe "compile/1 with basic structure" do
     test "empty AST returns empty blocks" do
       assert json_equal?(Slack.compile([]), %{"blocks" => []})
     end
@@ -20,7 +20,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
-  describe "compile/1 - Phase 2: Header with plain_text" do
+  describe "compile/1 with header" do
     test "header with text" do
       ast = [%{platform: :slack, element: :header, attributes: %{text: "Hello"}}]
 
@@ -45,7 +45,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
-  describe "compile/1 - Phase 3: Section with mrkdwn" do
+  describe "compile/1 with section" do
     test "section with text" do
       ast = [%{platform: :slack, element: :section, attributes: %{text: "Hello *world*"}}]
 
@@ -71,43 +71,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
                ]
              })
     end
-  end
 
-  describe "compile/1 - Phase 4: Image with attribute renaming" do
-    test "image with url and alt_text" do
-      ast = [
-        %{
-          platform: :slack,
-          element: :image,
-          attributes: %{url: "http://example.com/img.png", alt_text: "Example"}
-        }
-      ]
-
-      assert json_equal?(Slack.compile(ast), %{
-               "blocks" => [
-                 %{
-                   "type" => "image",
-                   "image_url" => "http://example.com/img.png",
-                   "alt_text" => "Example"
-                 }
-               ]
-             })
-    end
-
-    test "image with only url" do
-      ast = [
-        %{platform: :slack, element: :image, attributes: %{url: "http://example.com/img.png"}}
-      ]
-
-      assert json_equal?(Slack.compile(ast), %{
-               "blocks" => [
-                 %{"type" => "image", "image_url" => "http://example.com/img.png"}
-               ]
-             })
-    end
-  end
-
-  describe "compile/1 - Phase 5: Nested children (section with accessory)" do
     test "section with image accessory" do
       ast = [
         %{
@@ -150,7 +114,41 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
-  describe "compile/1 - Phase 6: List children (actions with buttons)" do
+  describe "compile/1 with image" do
+    test "image with url and alt_text" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :image,
+          attributes: %{url: "http://example.com/img.png", alt_text: "Example"}
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "image",
+                   "image_url" => "http://example.com/img.png",
+                   "alt_text" => "Example"
+                 }
+               ]
+             })
+    end
+
+    test "image with only url" do
+      ast = [
+        %{platform: :slack, element: :image, attributes: %{url: "http://example.com/img.png"}}
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{"type" => "image", "image_url" => "http://example.com/img.png"}
+               ]
+             })
+    end
+  end
+
+  describe "compile/1 with actions" do
     test "actions with single button" do
       ast = [
         %{
@@ -238,7 +236,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
-  describe "compile/1 - Phase 7: Multiple top-level elements" do
+  describe "compile/1 with multiple top-level elements" do
     test "header, divider, and section" do
       ast = [
         %{platform: :slack, element: :header, attributes: %{text: "Welcome"}},
@@ -272,7 +270,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
-  describe "compile/1 - Phase 8: Interpolation passthrough" do
+  describe "compile/1 with interpolation" do
     test "EEx interpolation in header text passes through" do
       ast = [%{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}}]
 
