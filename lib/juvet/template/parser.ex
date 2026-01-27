@@ -359,6 +359,19 @@ defmodule Juvet.Template.Parser do
 
   # Attribute dispatching
   defp attributes([{:open_brace, _, _} | rest]), do: inline_attrs(rest, %{})
+
+  # Default value (unquoted text) followed by inline attrs - must come before general text match
+  defp attributes([{:whitespace, _, _}, {:text, text, _}, {:open_brace, _, _} | rest]) do
+    {more_attrs, rest} = inline_attrs(rest, %{})
+    {Map.put(more_attrs, :text, text), rest}
+  end
+
+  # Default value (text after whitespace)
+  defp attributes([{:whitespace, _, _}, {:text, text, _} | rest]) do
+    {maybe_more_attrs, rest} = attributes(rest)
+    {Map.put(maybe_more_attrs, :text, unquote_text(text)), rest}
+  end
+
   defp attributes([{:eof, _, _}] = rest), do: {%{}, rest}
   defp attributes(rest), do: {%{}, rest}
 

@@ -70,4 +70,24 @@ defmodule Juvet.Template.ParserTest do
              ]
     end
   end
+
+  describe "parse/1 - Phase 3: Default values" do
+    test "element with quoted default value" do
+      assert parse(~s(:slack.header "Hello")) == [
+               %{platform: :slack, element: :header, attributes: %{text: "Hello"}}
+             ]
+    end
+
+    test "element with unquoted default value" do
+      assert parse(":slack.section Hello world") == [
+               %{platform: :slack, element: :section, attributes: %{text: "Hello world"}}
+             ]
+    end
+
+    test "element with default value and inline attributes" do
+      assert parse(~s(:slack.section Hello{emoji: true})) == [
+               %{platform: :slack, element: :section, attributes: %{text: "Hello", emoji: true}}
+             ]
+    end
+  end
 end
