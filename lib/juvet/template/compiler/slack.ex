@@ -16,8 +16,9 @@ defmodule Juvet.Template.Compiler.Slack do
     |> Encoder.encode!()
   end
 
-  defp compile_element(%{element: :divider} = el), do: Divider.compile(el)
-  defp compile_element(%{element: :header} = el), do: Header.compile(el)
-  defp compile_element(%{element: :image} = el), do: Image.compile(el)
-  defp compile_element(%{element: :section} = el), do: Section.compile(el)
+  @doc false
+  def compile_element(%{element: :divider} = el), do: Divider.compile(el)
+  def compile_element(%{element: :header} = el), do: Header.compile(el)
+  def compile_element(%{element: :image} = el), do: Image.compile(el)
+  def compile_element(%{element: :section} = el), do: Section.compile(el)
 end

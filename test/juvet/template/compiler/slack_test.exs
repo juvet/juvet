@@ -106,4 +106,47 @@ defmodule Juvet.Template.Compiler.SlackTest do
              })
     end
   end
+
+  describe "compile/1 - Phase 5: Nested children (section with accessory)" do
+    test "section with image accessory" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :section,
+          attributes: %{text: "Content"},
+          children: %{
+            accessory: %{
+              platform: :slack,
+              element: :image,
+              attributes: %{url: "http://example.com/img.png", alt_text: "Alt"}
+            }
+          }
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "section",
+                   "text" => %{"type" => "mrkdwn", "text" => "Content"},
+                   "accessory" => %{
+                     "type" => "image",
+                     "image_url" => "http://example.com/img.png",
+                     "alt_text" => "Alt"
+                   }
+                 }
+               ]
+             })
+    end
+
+    test "section without accessory still works" do
+      ast = [%{platform: :slack, element: :section, attributes: %{text: "No accessory"}}]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "No accessory"}}
+               ]
+             })
+    end
+  end
 end
