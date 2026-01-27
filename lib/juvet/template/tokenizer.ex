@@ -439,7 +439,13 @@ defmodule Juvet.Template.Tokenizer do
       {:ok, text, rest} ->
         text_str = to_string(text)
         new_col = col + length(text)
-        do_tokenize(rest, {line, new_col}, [{:text, text_str, {line, col}} | tokens], indent_stack)
+
+        do_tokenize(
+          rest,
+          {line, new_col},
+          [{:text, text_str, {line, col}} | tokens],
+          indent_stack
+        )
 
       {:error, message} ->
         raise Juvet.Template.TokenizerError, message
