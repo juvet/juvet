@@ -571,3 +571,77 @@ EEx interpolation tags must pass through the entire pipeline intact until the fi
 ```
 
 This ensures interpolation works end-to-end without requiring special handling in tokenizer, parser, or compiler.
+
+## Future: Compile-Time Template Compilation
+
+For optimal performance, templates can be compiled at compile-time rather than runtime. This approach is similar to how Phoenix templates and EEx work.
+
+### Current Runtime Flow
+
+```
+# Every request
+Template → Tokenizer → Parser → Compiler → JSON with <%= %> → EEx.eval_string → Final output
+```
+
+### Proposed Compile-Time Flow
+
+```
+# At compile time (once)
+Template → Tokenizer → Parser → Compiler → JSON with <%= %> markers (stored as module attribute)
+
+# At runtime (every request)
+Stored JSON + bindings → EEx.eval_string → Final output
+```
+
+### Implementation Approach
+
+1. **Define templates in modules** using a macro:
+
+```elixir
+defmodule MyApp.Templates.Welcome do
+  use Juvet.Template
+
+  template :welcome, """
+  :slack.header{text: "Hello <%= name %>"}
+  :slack.divider
+  :slack.section "Welcome to <%= team %>!"
+  """
+end
+```
+
+2. **Compile at build time** - the macro compiles the template to JSON:
+
+```elixir
+defmacro template(name, source) do
+  # Compile template to JSON at macro expansion time
+  json = source
+    |> Juvet.Template.Tokenizer.tokenize()
+    |> Juvet.Template.Parser.parse()
+    |> Juvet.Template.Compiler.compile()
+
+  quote do
+    def unquote(name)(bindings) do
+      EEx.eval_string(unquote(json), bindings)
+    end
+  end
+end
+```
+
+3. **Call at runtime** with only bindings evaluation:
+
+```elixir
+MyApp.Templates.Welcome.welcome(name: "Alice", team: "Acme")
+# => {"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello Alice"}},...]}
+```
+
+### Benefits
+
+- **Faster rendering** - tokenizing, parsing, and compiling happen once at build time
+- **Early error detection** - syntax errors caught at compile time, not runtime
+- **Smaller memory footprint** - no need to store raw template strings
+
+### Considerations
+
+- Templates with dynamic structure (conditionals, loops) may need special handling
+- Error messages should reference original template line numbers
+- Hot code reloading should recompile templates in development
