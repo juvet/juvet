@@ -98,6 +98,7 @@ lib/juvet/template/
     slack/
       blocks/
         actions.ex                 # Compiler.Slack.Blocks.Actions
+        context.ex                 # Compiler.Slack.Blocks.Context
         divider.ex                 # Compiler.Slack.Blocks.Divider
         header.ex                  # Compiler.Slack.Blocks.Header
         image.ex                   # Compiler.Slack.Blocks.Image
@@ -140,6 +141,7 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:header` | `"header"` |
 | `:divider` | `"divider"` |
 | `:section` | `"section"` |
+| `:context` | `"context"` |
 | `:image` | `"image"` |
 | `:button` | `"button"` |
 | `:actions` | `"actions"` |
@@ -150,6 +152,8 @@ Text attributes are wrapped in text objects based on element type:
 
 - **header**: `text` → `{"type": "plain_text", "text": "...", "emoji": true/false}`
 - **section**: `text` → `{"type": "mrkdwn", "text": "..."}`
+- **section fields**: each field → `{"type": "mrkdwn", "text": "..."}`
+- **context**: each element → `{"type": "mrkdwn", "text": "..."}` or image object
 - **button**: `text` → `{"type": "plain_text", "text": "..."}`
 
 #### Attribute Renaming
@@ -571,6 +575,73 @@ EEx interpolation tags must pass through the entire pipeline intact until the fi
 ```
 
 This ensures interpolation works end-to-end without requiring special handling in tokenizer, parser, or compiler.
+
+### Context block
+
+The context block displays message context (images and text) in a smaller format.
+
+```elixir
+# Input AST
+[%{
+  platform: :slack,
+  element: :context,
+  attributes: %{},
+  children: %{
+    elements: [
+      %{platform: :slack, element: :image, attributes: %{url: "http://example.com/avatar.png", alt_text: "User"}},
+      %{platform: :slack, element: :text, attributes: %{text: "Posted by Alice", type: :mrkdwn}}
+    ]
+  }
+}]
+
+# Output JSON
+{
+  "blocks": [{
+    "type": "context",
+    "elements": [
+      {"type": "image", "image_url": "http://example.com/avatar.png", "alt_text": "User"},
+      {"type": "mrkdwn", "text": "Posted by Alice"}
+    ]
+  }]
+}
+```
+
+Context elements can be:
+- **image** - rendered as image object (not image block)
+- **text** - rendered as text object (mrkdwn or plain_text)
+
+### Section with fields
+
+Sections can display multiple fields in a two-column layout.
+
+```elixir
+# Input AST
+[%{
+  platform: :slack,
+  element: :section,
+  attributes: %{text: "Order Details"},
+  children: %{
+    fields: [
+      %{platform: :slack, element: :text, attributes: %{text: "*Order ID*\n12345"}},
+      %{platform: :slack, element: :text, attributes: %{text: "*Status*\nShipped"}}
+    ]
+  }
+}]
+
+# Output JSON
+{
+  "blocks": [{
+    "type": "section",
+    "text": {"type": "mrkdwn", "text": "Order Details"},
+    "fields": [
+      {"type": "mrkdwn", "text": "*Order ID*\n12345"},
+      {"type": "mrkdwn", "text": "*Status*\nShipped"}
+    ]
+  }]
+}
+```
+
+Fields are always rendered as mrkdwn text objects. Maximum of 10 fields per section.
 
 ## Future: Compile-Time Template Compilation
 
