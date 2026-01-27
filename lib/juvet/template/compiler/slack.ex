@@ -7,7 +7,7 @@ defmodule Juvet.Template.Compiler.Slack do
   """
 
   alias Juvet.Template.Compiler.Encoder
-  alias Juvet.Template.Compiler.Slack.Blocks.{Divider, Header}
+  alias Juvet.Template.Compiler.Slack.Blocks.{Divider, Header, Section}
 
   def compile([]), do: Encoder.encode!(%{blocks: []})
 
@@ -18,4 +18,5 @@ defmodule Juvet.Template.Compiler.Slack do
 
   defp compile_element(%{element: :divider} = el), do: Divider.compile(el)
   defp compile_element(%{element: :header} = el), do: Header.compile(el)
+  defp compile_element(%{element: :section} = el), do: Section.compile(el)
 end

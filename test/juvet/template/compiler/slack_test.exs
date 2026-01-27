@@ -30,4 +30,20 @@ defmodule Juvet.Template.Compiler.SlackTest do
                ~s({"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello","emoji":true}}]})
     end
   end
+
+  describe "compile/1 - Phase 3: Section with mrkdwn" do
+    test "section with text" do
+      ast = [%{platform: :slack, element: :section, attributes: %{text: "Hello *world*"}}]
+
+      assert Slack.compile(ast) ==
+               ~s({"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"Hello *world*"}}]})
+    end
+
+    test "section with text and verbatim" do
+      ast = [%{platform: :slack, element: :section, attributes: %{text: "Hello", verbatim: true}}]
+
+      assert Slack.compile(ast) ==
+               ~s({"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"Hello","verbatim":true}}]})
+    end
+  end
 end
