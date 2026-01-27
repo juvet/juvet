@@ -8,7 +8,7 @@ defmodule Juvet.Template.Compiler.Slack do
 
   alias Juvet.Template.Compiler
   alias Juvet.Template.Compiler.Encoder
-  alias Juvet.Template.Compiler.Slack.Blocks.{Actions, Divider, Header, Image, Section}
+  alias Juvet.Template.Compiler.Slack.Blocks.{Actions, Context, Divider, Header, Image, Section}
   alias Juvet.Template.Compiler.Slack.Elements.Button
 
   @spec compile([Compiler.ast_element()]) :: String.t()
@@ -23,6 +23,7 @@ defmodule Juvet.Template.Compiler.Slack do
   @spec compile_element(Compiler.ast_element()) :: map()
   def compile_element(%{element: :actions} = el), do: Actions.compile(el)
   def compile_element(%{element: :button} = el), do: Button.compile(el)
+  def compile_element(%{element: :context} = el), do: Context.compile(el)
   def compile_element(%{element: :divider} = el), do: Divider.compile(el)
   def compile_element(%{element: :header} = el), do: Header.compile(el)
   def compile_element(%{element: :image} = el), do: Image.compile(el)

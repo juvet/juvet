@@ -244,6 +244,150 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with context" do
+    test "context with text element" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :context,
+          attributes: %{},
+          children: %{
+            elements: [
+              %{
+                platform: :slack,
+                element: :text,
+                attributes: %{text: "Some context"}
+              }
+            ]
+          }
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "context",
+                   "elements" => [
+                     %{"type" => "mrkdwn", "text" => "Some context"}
+                   ]
+                 }
+               ]
+             })
+    end
+
+    test "context with image element" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :context,
+          attributes: %{},
+          children: %{
+            elements: [
+              %{
+                platform: :slack,
+                element: :image,
+                attributes: %{url: "http://example.com/icon.png", alt_text: "Icon"}
+              }
+            ]
+          }
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "context",
+                   "elements" => [
+                     %{
+                       "type" => "image",
+                       "image_url" => "http://example.com/icon.png",
+                       "alt_text" => "Icon"
+                     }
+                   ]
+                 }
+               ]
+             })
+    end
+
+    test "context with mixed image and text elements" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :context,
+          attributes: %{},
+          children: %{
+            elements: [
+              %{
+                platform: :slack,
+                element: :image,
+                attributes: %{url: "http://example.com/avatar.png", alt_text: "Avatar"}
+              },
+              %{
+                platform: :slack,
+                element: :text,
+                attributes: %{text: "Posted by *John*"}
+              }
+            ]
+          }
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "context",
+                   "elements" => [
+                     %{
+                       "type" => "image",
+                       "image_url" => "http://example.com/avatar.png",
+                       "alt_text" => "Avatar"
+                     },
+                     %{"type" => "mrkdwn", "text" => "Posted by *John*"}
+                   ]
+                 }
+               ]
+             })
+    end
+
+    test "context with no elements returns empty array" do
+      ast = [%{platform: :slack, element: :context, attributes: %{}}]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [%{"type" => "context", "elements" => []}]
+             })
+    end
+
+    test "context with plain_text type" do
+      ast = [
+        %{
+          platform: :slack,
+          element: :context,
+          attributes: %{},
+          children: %{
+            elements: [
+              %{
+                platform: :slack,
+                element: :text,
+                attributes: %{text: "Plain text", type: :plain_text}
+              }
+            ]
+          }
+        }
+      ]
+
+      assert json_equal?(Slack.compile(ast), %{
+               "blocks" => [
+                 %{
+                   "type" => "context",
+                   "elements" => [
+                     %{"type" => "plain_text", "text" => "Plain text"}
+                   ]
+                 }
+               ]
+             })
+    end
+  end
+
   describe "compile/1 with multiple top-level elements" do
     test "header, divider, and section" do
       ast = [
