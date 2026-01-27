@@ -75,13 +75,13 @@ The compiler delegates to platform-specific compilers based on the `platform:` f
 Compiler.compile/1
     |
     v
-Wrap in {"blocks": [...]}
+Group elements by platform
     |
     v
-For each element, dispatch by platform:
+Delegate to platform compiler:
     |
-    +--> SlackCompiler.compile_element/1   (platform: :slack)
-    +--> DiscordCompiler.compile_element/1 (platform: :discord)  # future
+    +--> SlackCompiler.compile/1   (platform: :slack)  --> {"blocks":[...]}
+    +--> DiscordCompiler.compile/1 (platform: :discord)  # future
     +--> etc.
 ```
 
@@ -89,24 +89,23 @@ For each element, dispatch by platform:
 
 ```
 lib/juvet/template/
-  compiler.ex              # Main entry, wraps blocks, dispatches by platform
+  compiler.ex              # Main entry, dispatches by platform
   compiler/
-    slack_compiler.ex      # Handles :slack elements
+    slack_compiler.ex      # Handles :slack elements, wraps in {"blocks":[...]}
 ```
 
 ### Compiler.compile/1
 
 - Takes AST (list of element maps)
 - Returns JSON string
-- Wraps result in `{"blocks":[...]}`
-- Dispatches each element to appropriate platform compiler
+- Delegates to platform-specific compiler (currently assumes single platform per template)
 
 ### Platform Compilers
 
-Each platform compiler implements `compile_element/1` which:
-- Takes a single AST element map
-- Returns an Elixir map (not JSON yet)
-- Handles platform-specific transformations
+Each platform compiler implements:
+
+- `compile/1` - Takes list of AST elements, returns JSON string with platform-specific wrapper
+- `compile_element/1` - Compiles a single element to an Elixir map
 
 ## Compiler Transformations
 
@@ -358,6 +357,15 @@ Create the compiler structure with platform delegation:
 defmodule Juvet.Template.Compiler do
   alias Juvet.Template.Compiler.SlackCompiler
 
+  def compile([]), do: ""
+
+  def compile([%{platform: :slack} | _] = ast) do
+    SlackCompiler.compile(ast)
+  end
+end
+
+# lib/juvet/template/compiler/slack_compiler.ex
+defmodule Juvet.Template.Compiler.SlackCompiler do
   def compile([]), do: ~s({"blocks":[]})
 
   def compile(ast) do
@@ -365,22 +373,15 @@ defmodule Juvet.Template.Compiler do
     ~s({"blocks":[#{Enum.join(blocks, ",")}]})
   end
 
-  defp compile_element(%{platform: :slack} = element) do
-    element
-    |> SlackCompiler.compile_element()
-    |> Jason.encode!()
-  end
-end
-
-# lib/juvet/template/compiler/slack_compiler.ex
-defmodule Juvet.Template.Compiler.SlackCompiler do
   def compile_element(%{element: element_type} = el) do
-    # dispatch by element type
+    # dispatch by element type, return Elixir map
   end
 end
 ```
 
-### Phase 1: Basic structure and divider
+### Phase 1: Basic structure and divider (SlackCompiler)
+
+SlackCompiler wraps elements in `{"blocks":[...]}` and compiles divider:
 
 ```elixir
 # Input AST
