@@ -91,7 +91,7 @@ Delegate to platform compiler:
 lib/juvet/template/
   compiler.ex                      # Main entry, dispatches by platform
   compiler/
-    encoder.ex                     # Encoder behaviour (auto-detects Jason or Poison)
+    encoder.ex                     # Encoder behaviour (defaults to Poison)
     encoder/
       helpers.ex                   # Shared utilities (maybe_put/3)
     slack.ex                       # Compiler.Slack - wraps in {"blocks":[...]}
@@ -386,27 +386,19 @@ defmodule Juvet.Template.Compiler.Encoder do
   @moduledoc """
   Encoder behaviour for JSON encoding.
 
-  Auto-detects Jason (preferred) or Poison at runtime.
-  Configure a custom encoder via:
+  Defaults to Poison. Configure a different encoder via:
 
-      config :juvet, :json_encoder, MyApp.CustomEncoder
+      config :juvet, :json_encoder, Jason
   """
 
   @callback encode!(term()) :: String.t()
 
   def encode!(data) do
-    case Application.get_env(:juvet, :json_encoder) do
-      nil -> default_encode!(data)
-      encoder -> encoder.encode!(data)
-    end
+    encoder().encode!(data)
   end
 
-  defp default_encode!(data) do
-    if Code.ensure_loaded?(Jason) do
-      Jason.encode!(data)
-    else
-      Poison.encode!(data)
-    end
+  defp encoder do
+    Application.get_env(:juvet, :json_encoder, Poison)
   end
 end
 
