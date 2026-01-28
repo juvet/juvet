@@ -235,5 +235,17 @@ defmodule Juvet.TemplateTest do
                :static_divider
              ]
     end
+
+    test "__template_ast__/1 returns AST for a template" do
+      ast = MixedTemplates.__template_ast__(:header)
+
+      assert [%{platform: :slack, element: :header, attributes: %{text: "Welcome"}} | _] = ast
+    end
+
+    test "__template_ast__/1 raises for unknown template" do
+      assert_raise ArgumentError, ~r/template :unknown not found/, fn ->
+        MixedTemplates.__template_ast__(:unknown)
+      end
+    end
   end
 end

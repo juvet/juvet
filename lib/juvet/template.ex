@@ -56,6 +56,7 @@ defmodule Juvet.Template do
     quote do
       import Juvet.Template, only: [template: 2, template_file: 2]
       Module.register_attribute(__MODULE__, :juvet_templates, accumulate: true)
+      Module.register_attribute(__MODULE__, :juvet_template_asts, accumulate: true)
       @before_compile Juvet.Template
     end
   end
@@ -63,12 +64,31 @@ defmodule Juvet.Template do
   @doc false
   defmacro __before_compile__(env) do
     templates = Module.get_attribute(env.module, :juvet_templates) |> Enum.reverse()
+    template_asts = Module.get_attribute(env.module, :juvet_template_asts) |> Enum.reverse()
+
+    ast_clauses =
+      for {name, ast} <- template_asts do
+        quote do
+          def __template_ast__(unquote(name)), do: unquote(Macro.escape(ast))
+        end
+      end
 
     quote do
       @doc """
       Returns a list of template names defined in this module.
       """
       def __templates__, do: unquote(templates)
+
+      @doc """
+      Returns the AST for a template by name.
+
+      Used internally for partial resolution at compile time.
+      """
+      unquote_splicing(ast_clauses)
+
+      def __template_ast__(name) do
+        raise ArgumentError, "template #{inspect(name)} not found in #{inspect(__MODULE__)}"
+      end
     end
   end
 
@@ -86,10 +106,11 @@ defmodule Juvet.Template do
   Generates a function `greeting/1` that accepts a keyword list of bindings.
   """
   defmacro template(name, source) do
-    json = compile_template!(name, source)
+    {ast, json} = compile_template!(name, source)
 
     quote do
       @juvet_templates unquote(name)
+      @juvet_template_asts {unquote(name), unquote(Macro.escape(ast))}
       unquote(generate_template_function(name, json))
     end
   end
@@ -121,29 +142,37 @@ defmodule Juvet.Template do
               "template_file #{inspect(name)} could not read #{path}: #{inspect(reason)}"
       end
 
-    json = compile_template!(name, source)
+    {ast, json} = compile_template!(name, source)
 
     quote do
       @juvet_templates unquote(name)
+      @juvet_template_asts {unquote(name), unquote(Macro.escape(ast))}
       @external_resource unquote(full_path)
       unquote(generate_template_function(name, json))
     end
   end
 
   @doc """
-  Compiles template source to JSON, raising on errors.
+  Compiles template source to AST and JSON, raising on errors.
 
   Runs the template through the tokenizer, parser, and compiler pipeline.
+  Returns `{ast, json}` tuple where:
+  - `ast` is the parsed AST (list of element maps)
+  - `json` is the compiled JSON string
+
   Errors are caught and re-raised as `CompileError` with helpful context.
 
   This is an internal function used by the `template/2` and `template_file/2`
   macros at compile time.
   """
   def compile_template!(name, source) do
-    source
-    |> Tokenizer.tokenize()
-    |> Parser.parse()
-    |> Compiler.compile()
+    ast =
+      source
+      |> Tokenizer.tokenize()
+      |> Parser.parse()
+
+    json = Compiler.compile(ast)
+    {ast, json}
   rescue
     e in Juvet.Template.TokenizerError ->
       reraise CompileError,
