@@ -109,6 +109,19 @@ defmodule Juvet.TemplateTest do
                      """)
                    end
     end
+
+    test "parser error includes line number" do
+      assert_raise CompileError,
+                   ~r/template :bad_parse has a parse error.*line 1/,
+                   fn ->
+                     Code.compile_string("""
+                     defmodule BadParseTemplate do
+                       use Juvet.Template
+                       template :bad_parse, ":slack"
+                     end
+                     """)
+                   end
+    end
   end
 
   describe "template_file/2" do

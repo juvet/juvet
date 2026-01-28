@@ -154,6 +154,15 @@ defmodule Juvet.Template do
               ],
               __STACKTRACE__
 
+    e in Juvet.Template.ParserError ->
+      reraise CompileError,
+              [
+                description:
+                  "template #{inspect(name)} has a parse error: #{Exception.message(e)}",
+                line: e.line
+              ],
+              __STACKTRACE__
+
     e in ArgumentError ->
       reraise CompileError,
               [description: "template #{inspect(name)} failed to compile: #{e.message}"],
