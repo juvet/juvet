@@ -147,7 +147,11 @@ defmodule Juvet.Template do
   rescue
     e in Juvet.Template.TokenizerError ->
       reraise CompileError,
-              [description: "template #{inspect(name)} has a syntax error: #{e.message}"],
+              [
+                description:
+                  "template #{inspect(name)} has a syntax error: #{Exception.message(e)}",
+                line: e.line
+              ],
               __STACKTRACE__
 
     e in ArgumentError ->

@@ -447,8 +447,8 @@ defmodule Juvet.Template.Tokenizer do
           indent_stack
         )
 
-      {:error, message} ->
-        raise Juvet.Template.TokenizerError, message
+      {:error, message, line, col} ->
+        raise Juvet.Template.TokenizerError, message: message, line: line, column: col
     end
   end
 
@@ -536,7 +536,9 @@ defmodule Juvet.Template.Tokenizer do
   # Unexpected character - raise error
   defp do_tokenize([c | _rest], {line, col}, _tokens, _indent_stack) do
     raise Juvet.Template.TokenizerError,
-          "Unexpected character '#{<<c::utf8>>}' at line #{line}, column #{col}"
+      message: "Unexpected character '#{<<c::utf8>>}'",
+      line: line,
+      column: col
   end
 
   # Collect keyword characters (alphanumeric and underscores)
@@ -564,7 +566,7 @@ defmodule Juvet.Template.Tokenizer do
 
   # End of input without closing quote
   defp take_quoted_text([], _acc, {line, col}) do
-    {:error, "Unclosed string starting at line #{line}, column #{col}"}
+    {:error, "Unclosed string", line, col}
   end
 
   # Closing quote
