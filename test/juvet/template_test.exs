@@ -3,6 +3,8 @@ defmodule Juvet.TemplateTest do
 
   alias Juvet.Template
 
+  import Juvet.Test.JsonHelpers, only: [json_equal?: 2]
+
   describe "render/1" do
     # We are not here yet
     @tag :skip
@@ -16,6 +18,209 @@ defmodule Juvet.TemplateTest do
     @tag :skip
     test "simple evaluation within template returns evaluated string" do
       assert Template.render("<%= salutation %>", salutation: "Hello there") == "Hello there"
+    end
+  end
+
+  describe "use Juvet.Template" do
+    defmodule TestTemplates do
+      use Juvet.Template
+
+      template(:simple_header, ":slack.header{text: \"Hello\"}")
+      template(:header_with_binding, ":slack.header{text: \"Hello <%= name %>\"}")
+
+      template(:multi_element, """
+      :slack.header{text: "Welcome <%= name %>"}
+      :slack.divider
+      """)
+    end
+
+    test "compiles template and generates function" do
+      result = TestTemplates.simple_header()
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+               ]
+             })
+    end
+
+    test "generated function accepts bindings" do
+      result = TestTemplates.header_with_binding(name: "World")
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 }
+               ]
+             })
+    end
+
+    test "bindings default to empty list" do
+      result = TestTemplates.simple_header()
+      assert is_binary(result)
+    end
+
+    test "multi-element template with bindings" do
+      result = TestTemplates.multi_element(name: "Alice")
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Welcome Alice"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             })
+    end
+
+    test "template without interpolation ignores bindings" do
+      # Static templates don't use bindings, so passing any value works
+      result1 = TestTemplates.simple_header()
+      result2 = TestTemplates.simple_header(name: "ignored")
+
+      assert result1 == result2
+    end
+  end
+
+  describe "compile-time errors" do
+    test "invalid template syntax raises CompileError" do
+      assert_raise CompileError, ~r/template :bad has a syntax error/, fn ->
+        Code.compile_string("""
+        defmodule InvalidTemplate do
+          use Juvet.Template
+          template :bad, "invalid syntax @#\$%"
+        end
+        """)
+      end
+    end
+
+    test "unknown element raises CompileError" do
+      assert_raise CompileError,
+                   ~r/template :unknown failed to compile.*Unknown Slack element/,
+                   fn ->
+                     Code.compile_string("""
+                     defmodule UnknownElementTemplate do
+                       use Juvet.Template
+                       template :unknown, ":slack.nonexistent{text: \\"Hello\\"}"
+                     end
+                     """)
+                   end
+    end
+  end
+
+  describe "template_file/2" do
+    defmodule FileTemplates do
+      use Juvet.Template
+
+      template_file(:greeting, "templates/greeting.cheex")
+    end
+
+    test "loads and compiles template from file" do
+      result = FileTemplates.greeting(name: "World")
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             })
+    end
+
+    test "missing file raises CompileError" do
+      assert_raise CompileError, ~r/template_file :missing could not read/, fn ->
+        Code.compile_string("""
+        defmodule MissingFileTemplate do
+          use Juvet.Template
+          template_file :missing, "nonexistent.cheex"
+        end
+        """)
+      end
+    end
+  end
+
+  describe "multiple templates per module" do
+    defmodule MixedTemplates do
+      use Juvet.Template
+
+      # Inline templates
+      template(:header, ":slack.header{text: \"Welcome\"}")
+      template(:dynamic_section, ":slack.section{text: \"Hello <%= name %>\"}")
+
+      # File-based templates
+      template_file(:greeting, "templates/greeting.cheex")
+      template_file(:static_divider, "templates/static.cheex")
+    end
+
+    test "inline static template works" do
+      result = MixedTemplates.header()
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Welcome"}}
+               ]
+             })
+    end
+
+    test "inline dynamic template works" do
+      result = MixedTemplates.dynamic_section(name: "World")
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Hello World"}}
+               ]
+             })
+    end
+
+    test "file-based dynamic template works" do
+      result = MixedTemplates.greeting(name: "Alice")
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             })
+    end
+
+    test "file-based static template works" do
+      result = MixedTemplates.static_divider()
+
+      assert json_equal?(result, %{"blocks" => [%{"type" => "divider"}]})
+    end
+
+    test "all templates in module are independent" do
+      # Verify each template produces correct output independently
+      header = MixedTemplates.header()
+      section = MixedTemplates.dynamic_section(name: "Test")
+      greeting = MixedTemplates.greeting(name: "Bob")
+      divider = MixedTemplates.static_divider()
+
+      # Each should be valid JSON with blocks
+      assert %{"blocks" => [%{"type" => "header"} | _]} = Poison.decode!(header)
+      assert %{"blocks" => [%{"type" => "section"} | _]} = Poison.decode!(section)
+
+      assert %{"blocks" => [%{"type" => "header"}, %{"type" => "divider"}]} =
+               Poison.decode!(greeting)
+
+      assert %{"blocks" => [%{"type" => "divider"}]} = Poison.decode!(divider)
+    end
+
+    test "__templates__/0 returns list of template names" do
+      assert MixedTemplates.__templates__() == [
+               :header,
+               :dynamic_section,
+               :greeting,
+               :static_divider
+             ]
     end
   end
 end

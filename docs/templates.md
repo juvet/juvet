@@ -643,7 +643,7 @@ Sections can display multiple fields in a two-column layout.
 
 Fields are always rendered as mrkdwn text objects. Maximum of 10 fields per section.
 
-## Future: Compile-Time Template Compilation
+## Compile-Time Template Compilation
 
 For optimal performance, templates can be compiled at compile-time rather than runtime. This approach is similar to how Phoenix templates and EEx work.
 
@@ -658,15 +658,13 @@ Template → Tokenizer → Parser → Compiler → JSON with <%= %> → EEx.eval
 
 ```
 # At compile time (once)
-Template → Tokenizer → Parser → Compiler → JSON with <%= %> markers (stored as module attribute)
+Template → Tokenizer → Parser → Compiler → JSON with <%= %> markers (stored in module)
 
 # At runtime (every request)
 Stored JSON + bindings → EEx.eval_string → Final output
 ```
 
-### Implementation Approach
-
-1. **Define templates in modules** using a macro:
+### Target API
 
 ```elixir
 defmodule MyApp.Templates.Welcome do
@@ -678,29 +676,8 @@ defmodule MyApp.Templates.Welcome do
   :slack.section "Welcome to <%= team %>!"
   """
 end
-```
 
-2. **Compile at build time** - the macro compiles the template to JSON:
-
-```elixir
-defmacro template(name, source) do
-  # Compile template to JSON at macro expansion time
-  json = source
-    |> Juvet.Template.Tokenizer.tokenize()
-    |> Juvet.Template.Parser.parse()
-    |> Juvet.Template.Compiler.compile()
-
-  quote do
-    def unquote(name)(bindings) do
-      EEx.eval_string(unquote(json), bindings)
-    end
-  end
-end
-```
-
-3. **Call at runtime** with only bindings evaluation:
-
-```elixir
+# Usage
 MyApp.Templates.Welcome.welcome(name: "Alice", team: "Acme")
 # => {"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello Alice"}},...]}
 ```
@@ -711,11 +688,177 @@ MyApp.Templates.Welcome.welcome(name: "Alice", team: "Acme")
 - **Early error detection** - syntax errors caught at compile time, not runtime
 - **Smaller memory footprint** - no need to store raw template strings
 
+### Implementation Phases
+
+#### Phase 0: Basic `use` and `template/2` macro
+
+Create `Juvet.Template` module with:
+- `__using__/1` macro that imports the `template` macro
+- `template/2` macro that compiles template at compile-time and generates a function
+
+```elixir
+defmodule Juvet.Template do
+  defmacro __using__(_opts) do
+    quote do
+      import Juvet.Template, only: [template: 2]
+    end
+  end
+
+  defmacro template(name, source) do
+    # Compile template to JSON at macro expansion time
+    json = source
+      |> Juvet.Template.Tokenizer.tokenize()
+      |> Juvet.Template.Parser.parse()
+      |> Juvet.Template.Compiler.compile()
+
+    quote do
+      def unquote(name)(bindings \\ []) do
+        EEx.eval_string(unquote(json), bindings)
+      end
+    end
+  end
+end
+```
+
+**Test:**
+
+```elixir
+defmodule MyApp.WelcomeTemplate do
+  use Juvet.Template
+
+  template :welcome, ":slack.header{text: \"Hello <%= name %>\"}"
+end
+
+MyApp.WelcomeTemplate.welcome(name: "World")
+# => {"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello World"}}]}
+```
+
+#### Phase 1: No-bindings optimization
+
+Skip `EEx.eval_string` when there are no interpolations in the template. If the compiled JSON contains no `<%=` markers, return the pre-compiled string directly.
+
+```elixir
+defmacro template(name, source) do
+  json = compile_template(source)
+  has_interpolation = String.contains?(json, "<%")
+
+  if has_interpolation do
+    quote do
+      def unquote(name)(bindings \\ []) do
+        EEx.eval_string(unquote(json), bindings)
+      end
+    end
+  else
+    quote do
+      def unquote(name)(_bindings \\ []) do
+        unquote(json)
+      end
+    end
+  end
+end
+```
+
+#### Phase 2: Compile-time error handling
+
+Catch tokenizer/parser/compiler errors at compile time with helpful messages that reference the module and template name.
+
+```elixir
+defmacro template(name, source) do
+  case compile_template_safe(source) do
+    {:ok, json} ->
+      generate_function(name, json)
+
+    {:error, %TokenizerError{} = error} ->
+      raise CompileError,
+        description: "Template #{name} has a syntax error: #{error.message}",
+        line: error.line
+
+    {:error, %ParserError{} = error} ->
+      raise CompileError,
+        description: "Template #{name} failed to parse: #{error.message}",
+        line: error.line
+  end
+end
+```
+
+#### Phase 3: Template from file
+
+Add `template_file/2` macro to load templates from external `.cheex` files (similar to Phoenix's `.eex` files).
+
+```elixir
+defmacro template_file(name, path) do
+  # Path is relative to the calling module's file
+  caller_dir = Path.dirname(__CALLER__.file)
+  full_path = Path.expand(path, caller_dir)
+
+  # Read and compile at compile time
+  source = File.read!(full_path)
+  json = compile_template(source)
+
+  # Register external resource for recompilation
+  quote do
+    @external_resource unquote(full_path)
+
+    def unquote(name)(bindings \\ []) do
+      EEx.eval_string(unquote(json), bindings)
+    end
+  end
+end
+```
+
+**Usage:**
+
+```elixir
+defmodule MyApp.Templates do
+  use Juvet.Template
+
+  template_file :welcome, "templates/welcome.cheex"
+  template_file :goodbye, "templates/goodbye.cheex"
+end
+```
+
+#### Phase 4: Multiple templates per module
+
+Ensure multiple `template` calls work correctly in a single module. Test various combinations:
+
+```elixir
+defmodule MyApp.Templates do
+  use Juvet.Template
+
+  template :header_only, ":slack.header{text: \"Hello\"}"
+  template :with_divider, """
+  :slack.header{text: "Title"}
+  :slack.divider
+  """
+  template :full_message, """
+  :slack.header{text: "Welcome <%= name %>"}
+  :slack.divider
+  :slack.section "Your balance is <%= balance %>"
+  """
+end
+```
+
+#### Phase 5: Development conveniences
+
+- **Recompilation on file changes**: The `@external_resource` attribute in Phase 3 enables Mix to detect when template files change and recompile the module.
+- **Better error messages**: Include original template line numbers in error messages by tracking source positions through the pipeline.
+- **Template inspection**: Add a way to inspect the compiled JSON for debugging:
+
+```elixir
+# Optional: store compiled JSON as module attribute for inspection
+def __templates__ do
+  %{
+    welcome: @welcome_compiled,
+    goodbye: @goodbye_compiled
+  }
+end
+```
+
 ### Considerations
 
-- Templates with dynamic structure (conditionals, loops) may need special handling
-- Error messages should reference original template line numbers
-- Hot code reloading should recompile templates in development
+- Templates with dynamic structure (conditionals, loops in EEx) work naturally since EEx handles them at eval time
+- The Juvet template syntax itself is static; dynamism comes from EEx interpolation
+- For complex dynamic structures, users can use multiple templates or raw JSON construction
 
 ## Future: Additional Block Kit Components
 

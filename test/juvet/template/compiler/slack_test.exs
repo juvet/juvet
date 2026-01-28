@@ -3,10 +3,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
   alias Juvet.Template.Compiler.Slack
 
-  # Helper to compare JSON by decoding to maps (avoids key ordering issues)
-  defp json_equal?(json_string, expected_map) do
-    Jason.decode!(json_string) == expected_map
-  end
+  import Juvet.Test.JsonHelpers, only: [json_equal?: 2]
 
   describe "compile/1 with basic structure" do
     test "empty AST returns empty blocks" do

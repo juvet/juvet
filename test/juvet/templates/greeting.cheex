@@ -1,0 +1,2 @@
+:slack.header{text: "Hello <%= name %>"}
+:slack.divider
