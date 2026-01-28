@@ -205,13 +205,13 @@ defmodule Juvet.TemplateTest do
       divider = MixedTemplates.static_divider()
 
       # Each should be valid JSON with blocks
-      assert %{"blocks" => [%{"type" => "header"} | _]} = Jason.decode!(header)
-      assert %{"blocks" => [%{"type" => "section"} | _]} = Jason.decode!(section)
+      assert %{"blocks" => [%{"type" => "header"} | _]} = Poison.decode!(header)
+      assert %{"blocks" => [%{"type" => "section"} | _]} = Poison.decode!(section)
 
       assert %{"blocks" => [%{"type" => "header"}, %{"type" => "divider"}]} =
-               Jason.decode!(greeting)
+               Poison.decode!(greeting)
 
-      assert %{"blocks" => [%{"type" => "divider"}]} = Jason.decode!(divider)
+      assert %{"blocks" => [%{"type" => "divider"}]} = Poison.decode!(divider)
     end
 
     test "__templates__/0 returns list of template names" do
