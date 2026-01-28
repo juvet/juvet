@@ -25,12 +25,13 @@ defmodule Juvet.TemplateTest do
     defmodule TestTemplates do
       use Juvet.Template
 
-      template :simple_header, ":slack.header{text: \"Hello\"}"
-      template :header_with_binding, ":slack.header{text: \"Hello <%= name %>\"}"
-      template :multi_element, """
+      template(:simple_header, ":slack.header{text: \"Hello\"}")
+      template(:header_with_binding, ":slack.header{text: \"Hello <%= name %>\"}")
+
+      template(:multi_element, """
       :slack.header{text: "Welcome <%= name %>"}
       :slack.divider
-      """
+      """)
     end
 
     test "compiles template and generates function" do
@@ -97,14 +98,16 @@ defmodule Juvet.TemplateTest do
     end
 
     test "unknown element raises CompileError" do
-      assert_raise CompileError, ~r/template :unknown failed to compile.*Unknown Slack element/, fn ->
-        Code.compile_string("""
-        defmodule UnknownElementTemplate do
-          use Juvet.Template
-          template :unknown, ":slack.nonexistent{text: \\"Hello\\"}"
-        end
-        """)
-      end
+      assert_raise CompileError,
+                   ~r/template :unknown failed to compile.*Unknown Slack element/,
+                   fn ->
+                     Code.compile_string("""
+                     defmodule UnknownElementTemplate do
+                       use Juvet.Template
+                       template :unknown, ":slack.nonexistent{text: \\"Hello\\"}"
+                     end
+                     """)
+                   end
     end
   end
 
@@ -112,7 +115,7 @@ defmodule Juvet.TemplateTest do
     defmodule FileTemplates do
       use Juvet.Template
 
-      template_file :greeting, "templates/greeting.cheex"
+      template_file(:greeting, "templates/greeting.cheex")
     end
 
     test "loads and compiles template from file" do
@@ -138,6 +141,77 @@ defmodule Juvet.TemplateTest do
         end
         """)
       end
+    end
+  end
+
+  describe "multiple templates per module" do
+    defmodule MixedTemplates do
+      use Juvet.Template
+
+      # Inline templates
+      template(:header, ":slack.header{text: \"Welcome\"}")
+      template(:dynamic_section, ":slack.section{text: \"Hello <%= name %>\"}")
+
+      # File-based templates
+      template_file(:greeting, "templates/greeting.cheex")
+      template_file(:static_divider, "templates/static.cheex")
+    end
+
+    test "inline static template works" do
+      result = MixedTemplates.header()
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Welcome"}}
+               ]
+             })
+    end
+
+    test "inline dynamic template works" do
+      result = MixedTemplates.dynamic_section(name: "World")
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Hello World"}}
+               ]
+             })
+    end
+
+    test "file-based dynamic template works" do
+      result = MixedTemplates.greeting(name: "Alice")
+
+      assert json_equal?(result, %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             })
+    end
+
+    test "file-based static template works" do
+      result = MixedTemplates.static_divider()
+
+      assert json_equal?(result, %{"blocks" => [%{"type" => "divider"}]})
+    end
+
+    test "all templates in module are independent" do
+      # Verify each template produces correct output independently
+      header = MixedTemplates.header()
+      section = MixedTemplates.dynamic_section(name: "Test")
+      greeting = MixedTemplates.greeting(name: "Bob")
+      divider = MixedTemplates.static_divider()
+
+      # Each should be valid JSON with blocks
+      assert %{"blocks" => [%{"type" => "header"} | _]} = Jason.decode!(header)
+      assert %{"blocks" => [%{"type" => "section"} | _]} = Jason.decode!(section)
+
+      assert %{"blocks" => [%{"type" => "header"}, %{"type" => "divider"}]} =
+               Jason.decode!(greeting)
+
+      assert %{"blocks" => [%{"type" => "divider"}]} = Jason.decode!(divider)
     end
   end
 end
