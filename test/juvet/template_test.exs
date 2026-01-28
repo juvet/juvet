@@ -97,9 +97,9 @@ defmodule Juvet.TemplateTest do
       end
     end
 
-    test "unknown element raises CompileError" do
+    test "unknown element raises CompileError with line number" do
       assert_raise CompileError,
-                   ~r/template :unknown failed to compile.*Unknown Slack element/,
+                   ~r/template :unknown failed to compile.*Unknown Slack element.*line 1/,
                    fn ->
                      Code.compile_string("""
                      defmodule UnknownElementTemplate do

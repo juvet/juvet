@@ -53,7 +53,7 @@ defmodule Juvet.Template.Parser do
 
   # Element parsing - :platform.element_type
   defp element([
-         {:colon, _, _},
+         {:colon, _, {line, col}},
          {:keyword, platform, _},
          {:dot, _, _},
          {:keyword, el, _}
@@ -63,7 +63,9 @@ defmodule Juvet.Template.Parser do
 
     new_element = %{
       platform: String.to_atom(platform),
-      element: String.to_atom(el)
+      element: String.to_atom(el),
+      line: line,
+      column: col
     }
 
     new_element =
