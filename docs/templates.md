@@ -972,6 +972,188 @@ end
 - The Juvet template syntax itself is static; dynamism comes from EEx interpolation
 - For complex dynamic structures, users can use multiple templates or raw JSON construction
 
+## Template Partials (Composition)
+
+Template partials allow reusable template fragments to be included in other templates, similar to Phoenix partials.
+
+### Design Goals
+
+1. **Reusability**: Define common UI patterns once, use them in multiple templates
+2. **Compile-time optimization**: Minimize runtime overhead where possible
+3. **Familiar API**: Similar to Phoenix's partial/render patterns
+4. **Block merging**: Partials contribute blocks that merge with the parent template
+
+### Challenge: Block Merging
+
+Templates compile to JSON with a `{"blocks": [...]}` wrapper. When composing templates, we need to merge the blocks arrays, not nest JSON objects.
+
+```elixir
+# Partial compiles to:
+{"blocks": [{"type": "header", ...}]}
+
+# Parent template with partial should produce:
+{"blocks": [{"type": "header", ...}, {"type": "divider"}, ...]}
+# NOT:
+{"blocks": [{"blocks": [...]}, {"type": "divider"}, ...]}
+```
+
+### Design Options
+
+#### Option A: Runtime Block Merging
+
+Use EEx to call a `partial/2` helper at runtime that extracts and merges blocks.
+
+```elixir
+defmodule MyTemplates do
+  use Juvet.Template
+
+  template :user_header, ":slack.header{text: \"Hello <%= name %>\"}"
+
+  template :dashboard, """
+  <%= partial(:user_header, name: name) %>
+  :slack.divider
+  :slack.section "Dashboard content"
+  """
+end
+```
+
+**Implementation**:
+- `partial/2` returns a special marker or raw blocks (not full JSON)
+- Final template assembly merges all blocks before JSON encoding
+- EEx evaluation happens first, then block merging
+
+**Pros**: Flexible, partials can have dynamic bindings
+**Cons**: Runtime overhead for parsing/merging
+
+#### Option B: Compile-Time AST Inlining
+
+Inline partial AST at compile time, before JSON generation.
+
+```elixir
+template :dashboard, """
+<%= inline(:user_header) %>
+:slack.divider
+"""
+```
+
+**Implementation**:
+- Store template AST (not JSON) as module attribute
+- `inline/1` expands to the partial's AST nodes at compile time
+- Combined AST compiles to single JSON
+
+**Pros**: Zero runtime overhead for static partials
+**Cons**: Partials must be in same module, limited dynamic capability
+
+#### Option C: Hybrid Approach
+
+Templates compile to block lists (not wrapped JSON). A render function assembles and encodes.
+
+```elixir
+defmodule MyTemplates do
+  use Juvet.Template
+
+  template :user_header, ":slack.header{text: \"Hello <%= name %>\"}"
+
+  template :dashboard, """
+  :partial user_header
+  :slack.divider
+  """
+end
+
+# Usage - explicit render step
+MyTemplates.render(:dashboard, name: "Alice")
+```
+
+**Implementation**:
+- Templates store compiled block AST
+- Special `:partial` syntax references other templates
+- `render/2` evaluates EEx, resolves partials, encodes to JSON
+
+**Pros**: Clean separation, compile-time partial resolution
+**Cons**: Requires new syntax, different API
+
+#### Option D: Function-Based Composition
+
+Partials are just functions that return block lists. Composition happens in Elixir.
+
+```elixir
+defmodule MyTemplates do
+  use Juvet.Template
+
+  template :user_header, ":slack.header{text: \"Hello <%= name %>\"}"
+
+  def dashboard(assigns) do
+    blocks([
+      user_header(assigns),
+      divider(),
+      section("Dashboard content")
+    ])
+  end
+end
+```
+
+**Pros**: Full Elixir power, explicit composition
+**Cons**: More verbose, loses declarative template feel
+
+### Recommended Approach
+
+**Option A (Runtime Block Merging)** provides the best balance:
+- Familiar `<%= partial(:name, bindings) %>` syntax
+- Works with existing EEx interpolation
+- Partials can have their own dynamic bindings
+- Cross-module partials possible with `<%= partial(OtherModule, :name, bindings) %>`
+
+### Implementation Phases
+
+#### Phase 1: Same-module partials with `partial/2`
+
+Add a `partial/2` function available during EEx evaluation:
+
+```elixir
+template :header, ":slack.header{text: \"<%= title %>\"}"
+
+template :page, """
+<%= partial(:header, title: "Welcome") %>
+:slack.divider
+"""
+```
+
+The partial output merges into the parent's blocks.
+
+#### Phase 2: Cross-module partials
+
+Support referencing templates from other modules:
+
+```elixir
+template :page, """
+<%= partial(SharedTemplates, :header, title: "Welcome") %>
+:slack.divider
+"""
+```
+
+#### Phase 3: Nested partials
+
+Ensure partials can include other partials (with cycle detection).
+
+#### Phase 4: Slots/yields (optional)
+
+Allow partials to define "slots" that the parent can fill:
+
+```elixir
+template :card, """
+:slack.section
+  text: "<%= @header %>"
+:slack.divider
+<%= yield(:body) %>
+"""
+
+template :user_card, """
+<%= partial(:card, header: "User Info") do %>
+  :slack.section "Name: <%= name %>"
+<% end %>
+"""
+```
+
 ## Future: Additional Block Kit Components
 
 The following Slack Block Kit components are planned for future implementation.
