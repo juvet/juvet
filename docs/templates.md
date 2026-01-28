@@ -48,9 +48,13 @@ Each element becomes a map:
   platform: :slack,
   element: :header,
   attributes: %{text: "Hello", emoji: true},
-  children: %{...}   # nested elements keyed by attribute name (optional)
+  children: %{...},  # nested elements keyed by attribute name (optional)
+  line: 1,           # source line number (1-indexed)
+  column: 1          # source column number (1-indexed)
 }
 ```
+
+The `line` and `column` fields track where each element was defined in the original template source, enabling precise error messages during compilation.
 
 ## JSON Output Format
 
@@ -179,6 +183,102 @@ attr_list    -> (attr (comma attr)*)?
 attr         -> whitespace? keyword colon whitespace? value
 value        -> text | boolean | atom | number
 block        -> indent (attr | element)+ dedent
+```
+
+## Error Handling and Line Number Tracking
+
+The template pipeline tracks source positions through all stages, enabling precise error messages that help developers quickly locate and fix issues.
+
+### Error Types
+
+#### TokenizerError
+
+Raised when the tokenizer encounters invalid syntax:
+
+```elixir
+%Juvet.Template.TokenizerError{
+  message: "Unterminated string",
+  line: 3,
+  column: 15
+}
+```
+
+Common tokenizer errors:
+- Unterminated strings (missing closing quote)
+- Invalid characters
+
+#### ParserError
+
+Raised when tokens don't form a valid template structure:
+
+```elixir
+%Juvet.Template.ParserError{
+  message: "Unexpected keyword 'invalid' at top level",
+  line: 2,
+  column: 1
+}
+```
+
+Common parser errors:
+- Unexpected tokens at top level
+- Invalid element syntax (missing platform or element name)
+- Unexpected tokens in attribute lists
+
+#### Compiler Errors
+
+Raised when the AST contains unknown elements:
+
+```elixir
+# Unknown element type
+ArgumentError: Unknown Slack element: :nonexistent (line 1, column 1)
+```
+
+### Error Message Format
+
+All errors include line and column information when available:
+
+```
+Error message (line N, column M)
+```
+
+For example:
+```
+Unterminated string (line 3, column 15)
+Invalid element syntax, expected :platform.element (line 1, column 1)
+Unknown Slack element: :unknown (line 2, column 1)
+```
+
+### Compile-Time Error Reporting
+
+When using the `template/2` or `template_file/2` macros, errors are converted to `CompileError` with the template name and line number:
+
+```elixir
+defmodule MyTemplates do
+  use Juvet.Template
+
+  template :bad, ":slack.nonexistent{text: \"Hello\"}"
+  # => ** (CompileError) template :bad failed to compile: Unknown Slack element: :nonexistent (line 1, column 1)
+end
+```
+
+The `line` field in `CompileError` enables IDE integration, allowing editors to jump directly to the problematic line in the source file.
+
+### Position Tracking Through the Pipeline
+
+```
+Template Source
+    |
+    v
+Tokenizer: Each token includes {line, column}
+    |
+    v
+Parser: AST elements include line and column from the opening colon
+    |
+    v
+Compiler: Uses line/column for error messages about unknown elements
+    |
+    v
+Template macro: Catches errors and re-raises as CompileError with line info
 ```
 
 ## End-to-End Example
@@ -760,26 +860,38 @@ end
 
 #### Phase 2: Compile-time error handling
 
-Catch tokenizer/parser/compiler errors at compile time with helpful messages that reference the module and template name.
+Catch tokenizer/parser/compiler errors at compile time with helpful messages that reference the template name and include line numbers.
 
 ```elixir
 defmacro template(name, source) do
-  case compile_template_safe(source) do
-    {:ok, json} ->
-      generate_function(name, json)
+  try do
+    json = compile_template(source)
+    generate_function(name, json)
+  rescue
+    e in TokenizerError ->
+      reraise CompileError,
+              [description: "template #{inspect(name)} has a syntax error: #{Exception.message(e)}", line: e.line],
+              __STACKTRACE__
 
-    {:error, %TokenizerError{} = error} ->
-      raise CompileError,
-        description: "Template #{name} has a syntax error: #{error.message}",
-        line: error.line
+    e in ParserError ->
+      reraise CompileError,
+              [description: "template #{inspect(name)} has a parse error: #{Exception.message(e)}", line: e.line],
+              __STACKTRACE__
 
-    {:error, %ParserError{} = error} ->
-      raise CompileError,
-        description: "Template #{name} failed to parse: #{error.message}",
-        line: error.line
+    e in ArgumentError ->
+      reraise CompileError,
+              [description: "template #{inspect(name)} failed to compile: #{Exception.message(e)}"],
+              __STACKTRACE__
   end
 end
 ```
+
+Error types and their handling:
+- **TokenizerError**: Syntax errors like unterminated strings → "has a syntax error"
+- **ParserError**: Structure errors like unexpected tokens → "has a parse error"
+- **ArgumentError**: Compiler errors like unknown elements → "failed to compile"
+
+All errors include line numbers when available, enabling IDE navigation to the source location.
 
 #### Phase 3: Template from file
 

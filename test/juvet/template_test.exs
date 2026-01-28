@@ -97,14 +97,27 @@ defmodule Juvet.TemplateTest do
       end
     end
 
-    test "unknown element raises CompileError" do
+    test "unknown element raises CompileError with line number" do
       assert_raise CompileError,
-                   ~r/template :unknown failed to compile.*Unknown Slack element/,
+                   ~r/template :unknown failed to compile.*Unknown Slack element.*line 1/,
                    fn ->
                      Code.compile_string("""
                      defmodule UnknownElementTemplate do
                        use Juvet.Template
                        template :unknown, ":slack.nonexistent{text: \\"Hello\\"}"
+                     end
+                     """)
+                   end
+    end
+
+    test "parser error includes line number" do
+      assert_raise CompileError,
+                   ~r/template :bad_parse has a parse error.*line 1/,
+                   fn ->
+                     Code.compile_string("""
+                     defmodule BadParseTemplate do
+                       use Juvet.Template
+                       template :bad_parse, ":slack"
                      end
                      """)
                    end

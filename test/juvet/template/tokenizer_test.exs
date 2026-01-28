@@ -31,7 +31,7 @@ defmodule Juvet.Template.TokenizerTest do
 
     test "unexpected character raises error" do
       assert_raise Juvet.Template.TokenizerError,
-                   "Unexpected character '@' at line 1, column 1",
+                   "Unexpected character '@' (line 1, column 1)",
                    fn -> Tokenizer.tokenize("@invalid") end
     end
 
@@ -255,7 +255,7 @@ defmodule Juvet.Template.TokenizerTest do
 
     test "unclosed quote raises error" do
       assert_raise Juvet.Template.TokenizerError,
-                   ~r/Unclosed string starting at line 1, column 1/,
+                   "Unclosed string (line 1, column 1)",
                    fn -> Tokenizer.tokenize("\"Hello") end
     end
 

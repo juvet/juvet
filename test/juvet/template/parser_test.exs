@@ -3,10 +3,38 @@ defmodule Juvet.Template.ParserTest do
 
   alias Juvet.Template.{Parser, Tokenizer}
 
+  # Parse template and strip line/column info for cleaner test assertions
   defp parse(template) do
     template
     |> Tokenizer.tokenize()
     |> Parser.parse()
+    |> strip_positions()
+  end
+
+  # Parse template and keep line/column info for position tests
+  defp parse_with_positions(template) do
+    template
+    |> Tokenizer.tokenize()
+    |> Parser.parse()
+  end
+
+  defp strip_positions(ast) when is_list(ast), do: Enum.map(ast, &strip_positions/1)
+
+  defp strip_positions(%{} = element) do
+    element
+    |> Map.drop([:line, :column])
+    |> Map.new(fn
+      {:children, children} -> {:children, strip_positions_from_children(children)}
+      other -> other
+    end)
+  end
+
+  defp strip_positions_from_children(%{} = children) do
+    Map.new(children, fn
+      {key, value} when is_list(value) -> {key, strip_positions(value)}
+      {key, value} when is_map(value) -> {key, strip_positions(value)}
+      other -> other
+    end)
   end
 
   describe "parse/1 - Phase 1: Basic elements" do
@@ -226,6 +254,41 @@ defmodule Juvet.Template.ParserTest do
                  }
                }
              ]
+    end
+  end
+
+  describe "parse/1 - line/column tracking" do
+    test "includes line and column in AST elements" do
+      [element] = parse_with_positions(":slack.header{text: \"Hello\"}")
+
+      assert element.line == 1
+      assert element.column == 1
+    end
+
+    test "tracks positions across multiple lines" do
+      template = """
+      :slack.header{text: "Title"}
+      :slack.divider
+      """
+
+      [first, second] = parse_with_positions(template)
+
+      assert first.line == 1
+      assert first.column == 1
+      assert second.line == 2
+      assert second.column == 1
+    end
+
+    test "tracks positions in nested elements" do
+      template = ":slack.section\n  accessory:\n    :slack.image\n      url: \"http://ex.com\""
+
+      [section] = parse_with_positions(template)
+      image = section.children.accessory
+
+      assert section.line == 1
+      assert section.column == 1
+      assert image.line == 3
+      assert image.column == 5
     end
   end
 end

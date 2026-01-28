@@ -27,6 +27,8 @@ defmodule Juvet.Template.Parser do
   See `docs/templates.md` for the full pipeline documentation.
   """
 
+  alias Juvet.Template.ParserError
+
   def parse(tokens), do: do_parse(tokens, [])
 
   # Main parsing loop - dispatch based on first token
@@ -41,9 +43,17 @@ defmodule Juvet.Template.Parser do
     do_parse(rest, [el | acc])
   end
 
+  # Unexpected token at top level
+  defp do_parse([{type, value, {line, col}} | _], _acc) do
+    raise ParserError,
+      message: "Unexpected #{type} '#{value}' at top level",
+      line: line,
+      column: col
+  end
+
   # Element parsing - :platform.element_type
   defp element([
-         {:colon, _, _},
+         {:colon, _, {line, col}},
          {:keyword, platform, _},
          {:dot, _, _},
          {:keyword, el, _}
@@ -53,7 +63,9 @@ defmodule Juvet.Template.Parser do
 
     new_element = %{
       platform: String.to_atom(platform),
-      element: String.to_atom(el)
+      element: String.to_atom(el),
+      line: line,
+      column: col
     }
 
     new_element =
@@ -68,6 +80,14 @@ defmodule Juvet.Template.Parser do
       end
 
     {new_element, rest}
+  end
+
+  # Invalid element syntax
+  defp element([{:colon, _, {line, col}} | _]) do
+    raise ParserError,
+      message: "Invalid element syntax, expected :platform.element",
+      line: line,
+      column: col
   end
 
   # Attribute dispatching
@@ -150,6 +170,14 @@ defmodule Juvet.Template.Parser do
     inline_attrs(rest, Map.put(acc, String.to_atom(key), val))
   end
 
+  # Unexpected token in inline attributes
+  defp inline_attrs([{type, value, {line, col}} | _], _acc) do
+    raise ParserError,
+      message: "Unexpected #{type} '#{value}' in attributes, expected key: value",
+      line: line,
+      column: col
+  end
+
   # Value parsing
   defp value([{:whitespace, _, _} | rest]), do: value(rest)
   defp value([{:text, text, _} | rest]), do: {unquote_text(text), rest}
@@ -157,6 +185,21 @@ defmodule Juvet.Template.Parser do
   defp value([{:boolean, "false", _} | rest]), do: {false, rest}
   defp value([{:atom, atom_str, _} | rest]), do: {parse_atom(atom_str), rest}
   defp value([{:number, num_str, _} | rest]), do: {parse_number(num_str), rest}
+
+  # Unexpected value type
+  defp value([{type, val, {line, col}} | _]) do
+    raise ParserError,
+      message: "Unexpected #{type} '#{val}', expected a value",
+      line: line,
+      column: col
+  end
+
+  defp value([]) do
+    raise ParserError,
+      message: "Unexpected end of input, expected a value",
+      line: nil,
+      column: nil
+  end
 
   # Helper functions
   defp unquote_text(text) do

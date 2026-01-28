@@ -20,7 +20,9 @@ defmodule Juvet.Template.Compiler do
           :platform => atom(),
           :element => atom(),
           :attributes => map(),
-          optional(:children) => map()
+          optional(:children) => map(),
+          optional(:line) => pos_integer(),
+          optional(:column) => pos_integer()
         }
 
   @spec compile([ast_element()]) :: String.t()
