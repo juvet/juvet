@@ -213,5 +213,14 @@ defmodule Juvet.TemplateTest do
 
       assert %{"blocks" => [%{"type" => "divider"}]} = Jason.decode!(divider)
     end
+
+    test "__templates__/0 returns list of template names" do
+      assert MixedTemplates.__templates__() == [
+               :header,
+               :dynamic_section,
+               :greeting,
+               :static_divider
+             ]
+    end
   end
 end

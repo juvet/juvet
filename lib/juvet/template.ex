@@ -31,6 +31,14 @@ defmodule Juvet.Template do
 
   The file path is relative to the module's source file. The module will be
   automatically recompiled when the template file changes.
+
+  ## Introspection
+
+  Modules using `Juvet.Template` get a `__templates__/0` function that returns
+  a list of all template names defined in the module:
+
+      MyApp.Templates.__templates__()
+      # => [:welcome, :goodbye]
   """
 
   alias Juvet.Template.{Compiler, Parser, Renderer, Tokenizer}
@@ -42,10 +50,25 @@ defmodule Juvet.Template do
   Sets up compile-time template support.
 
   Imports the `template/2` and `template_file/2` macros for defining compiled templates.
+  Also generates a `__templates__/0` function that returns a list of defined template names.
   """
   defmacro __using__(_opts) do
     quote do
       import Juvet.Template, only: [template: 2, template_file: 2]
+      Module.register_attribute(__MODULE__, :juvet_templates, accumulate: true)
+      @before_compile Juvet.Template
+    end
+  end
+
+  @doc false
+  defmacro __before_compile__(env) do
+    templates = Module.get_attribute(env.module, :juvet_templates) |> Enum.reverse()
+
+    quote do
+      @doc """
+      Returns a list of template names defined in this module.
+      """
+      def __templates__, do: unquote(templates)
     end
   end
 
@@ -64,7 +87,11 @@ defmodule Juvet.Template do
   """
   defmacro template(name, source) do
     json = compile_template!(name, source)
-    generate_template_function(name, json)
+
+    quote do
+      @juvet_templates unquote(name)
+      unquote(generate_template_function(name, json))
+    end
   end
 
   @doc """
@@ -97,6 +124,7 @@ defmodule Juvet.Template do
     json = compile_template!(name, source)
 
     quote do
+      @juvet_templates unquote(name)
       @external_resource unquote(full_path)
       unquote(generate_template_function(name, json))
     end
