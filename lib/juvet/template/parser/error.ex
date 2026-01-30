@@ -1,4 +1,4 @@
-defmodule Juvet.Template.ParserError do
+defmodule Juvet.Template.Parser.Error do
   @moduledoc """
   Exception raised for errors encountered during parsing of Templates.
 

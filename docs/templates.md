@@ -207,12 +207,12 @@ Common tokenizer errors:
 - Unterminated strings (missing closing quote)
 - Invalid characters
 
-#### ParserError
+#### Parser.Error
 
 Raised when tokens don't form a valid template structure:
 
 ```elixir
-%Juvet.Template.ParserError{
+%Juvet.Template.Parser.Error{
   message: "Unexpected keyword 'invalid' at top level",
   line: 2,
   column: 1
@@ -873,7 +873,7 @@ defmacro template(name, source) do
               [description: "template #{inspect(name)} has a syntax error: #{Exception.message(e)}", line: e.line],
               __STACKTRACE__
 
-    e in ParserError ->
+    e in Parser.Error ->
       reraise CompileError,
               [description: "template #{inspect(name)} has a parse error: #{Exception.message(e)}", line: e.line],
               __STACKTRACE__
@@ -888,7 +888,7 @@ end
 
 Error types and their handling:
 - **TokenizerError**: Syntax errors like unterminated strings → "has a syntax error"
-- **ParserError**: Structure errors like unexpected tokens → "has a parse error"
+- **Parser.Error**: Structure errors like unexpected tokens → "has a parse error"
 - **ArgumentError**: Compiler errors like unknown elements → "failed to compile"
 
 All errors include line numbers when available, enabling IDE navigation to the source location.

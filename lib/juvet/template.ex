@@ -198,7 +198,7 @@ defmodule Juvet.Template do
               ],
               __STACKTRACE__
 
-    e in Juvet.Template.ParserError ->
+    e in Juvet.Template.Parser.Error ->
       reraise CompileError,
               [
                 description:

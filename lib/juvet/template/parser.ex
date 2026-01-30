@@ -27,7 +27,7 @@ defmodule Juvet.Template.Parser do
   See `docs/templates.md` for the full pipeline documentation.
   """
 
-  alias Juvet.Template.ParserError
+  alias Juvet.Template.Parser.Error, as: ParserError
 
   def parse(tokens), do: do_parse(tokens, [])
 
