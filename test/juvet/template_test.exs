@@ -6,15 +6,13 @@ defmodule Juvet.TemplateTest do
   import Juvet.Test.JsonHelpers, only: [json_equal?: 2]
 
   describe "render/1" do
-    # We are not here yet
-    @tag :skip
     test "empty template returns empty string" do
       assert Template.render("") == ""
     end
   end
 
   describe "render/2" do
-    # This may or may not be a valid case
+    # Skipping until EEx evaluation is supported
     @tag :skip
     test "simple evaluation within template returns evaluated string" do
       assert Template.render("<%= salutation %>", salutation: "Hello there") == "Hello there"
