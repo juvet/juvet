@@ -310,4 +310,81 @@ defmodule Juvet.TemplateTest do
              } = Poison.decode!(result)
     end
   end
+
+  describe "nested partials" do
+    defmodule NestedPartialTemplates do
+      use Juvet.Template
+
+      template(:greeting, ":slack.header{text: \"Hello <%= name %>\"}")
+
+      template(:greeting_with_divider, """
+      :slack.partial{template: :greeting, name: "<%= name %>"}
+      :slack.divider
+      """)
+
+      template(:full_page, """
+      :slack.partial{template: :greeting_with_divider, name: "<%= user %>"}
+      :slack.section "Content"
+      """)
+    end
+
+    test "nested partials are resolved recursively" do
+      result = NestedPartialTemplates.full_page(user: "Alice")
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                 },
+                 %{"type" => "divider"},
+                 %{"type" => "section"}
+               ]
+             } = Poison.decode!(result)
+    end
+
+    test "intermediate partial still works standalone" do
+      result = NestedPartialTemplates.greeting_with_divider(name: "Bob")
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Bob"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             } = Poison.decode!(result)
+    end
+  end
+
+  describe "partial error handling" do
+    test "missing partial raises CompileError" do
+      assert_raise CompileError, ~r/partial :nonexistent not found/, fn ->
+        Code.compile_string("""
+        defmodule MissingPartialTest do
+          use Juvet.Template
+
+          template :broken, \":slack.partial{template: :nonexistent}\"
+        end
+        """)
+      end
+    end
+
+    test "circular partial reference raises CompileError" do
+      # Create a contrived cycle: :a references :b, :b references :a
+      cyclic_asts = %{
+        a: [%{platform: :slack, element: :partial, attributes: %{template: :b}}],
+        b: [%{platform: :slack, element: :partial, attributes: %{template: :a}}]
+      }
+
+      assert_raise CompileError, ~r/circular partial reference detected/, fn ->
+        Juvet.Template.compile_template!(
+          :test,
+          ":slack.partial{template: :a}",
+          cyclic_asts
+        )
+      end
+    end
+  end
 end

@@ -220,10 +220,14 @@ defmodule Juvet.Template do
   # 2. Substitute bindings from the partial's attributes into the referenced AST
   # 3. Replace the :partial element with the inlined blocks
   defp resolve_partials(ast, existing_asts) do
+    resolve_partials(ast, existing_asts, [])
+  end
+
+  defp resolve_partials(ast, existing_asts, stack) do
     Enum.flat_map(ast, fn element ->
       case element do
         %{element: :partial, attributes: attrs} ->
-          resolve_partial(attrs, existing_asts)
+          resolve_partial(attrs, existing_asts, stack)
 
         other ->
           [other]
@@ -231,13 +235,19 @@ defmodule Juvet.Template do
     end)
   end
 
-  defp resolve_partial(attrs, existing_asts) do
+  defp resolve_partial(attrs, existing_asts, stack) do
     template_name = Map.fetch!(attrs, :template)
     bindings = Map.drop(attrs, [:template])
 
+    if template_name in stack do
+      cycle = stack |> Enum.reverse() |> Enum.concat([template_name]) |> Enum.join(" -> ")
+      raise ArgumentError, "circular partial reference detected: #{cycle}"
+    end
+
     case Map.fetch(existing_asts, template_name) do
       {:ok, partial_ast} ->
-        substitute_bindings(partial_ast, bindings)
+        inlined = substitute_bindings(partial_ast, bindings)
+        resolve_partials(inlined, existing_asts, [template_name | stack])
 
       :error ->
         raise ArgumentError, "partial #{inspect(template_name)} not found"
