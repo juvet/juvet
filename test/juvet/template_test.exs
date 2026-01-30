@@ -248,4 +248,66 @@ defmodule Juvet.TemplateTest do
       end
     end
   end
+
+  describe "template partials" do
+    defmodule PartialTemplates do
+      use Juvet.Template
+
+      # Define partial first (must come before templates that use it)
+      template(:user_header, ":slack.header{text: \"Hello <%= name %>\"}")
+
+      # Template using the partial with static binding
+      template(:static_dashboard, """
+      :slack.partial{template: :user_header, name: "Alice"}
+      :slack.divider
+      """)
+
+      # Template using the partial with dynamic binding
+      template(:dynamic_dashboard, """
+      :slack.partial{template: :user_header, name: "<%= user_name %>"}
+      :slack.divider
+      """)
+    end
+
+    test "partial with static binding inlines the referenced template" do
+      result = PartialTemplates.static_dashboard()
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             } = Poison.decode!(result)
+    end
+
+    test "partial with dynamic binding passes through EEx" do
+      result = PartialTemplates.dynamic_dashboard(user_name: "Bob")
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Bob"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             } = Poison.decode!(result)
+    end
+
+    test "partial can be used standalone" do
+      result = PartialTemplates.user_header(name: "World")
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 }
+               ]
+             } = Poison.decode!(result)
+    end
+  end
 end
