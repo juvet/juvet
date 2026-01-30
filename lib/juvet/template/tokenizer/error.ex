@@ -1,4 +1,4 @@
-defmodule Juvet.Template.TokenizerError do
+defmodule Juvet.Template.Tokenizer.Error do
   @moduledoc """
   Exception raised for errors encountered during tokenization of Templates.
 

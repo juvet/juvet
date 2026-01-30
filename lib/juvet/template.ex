@@ -189,7 +189,7 @@ defmodule Juvet.Template do
     json = Compiler.compile(resolved_ast)
     {ast, json}
   rescue
-    e in Juvet.Template.TokenizerError ->
+    e in Juvet.Template.Tokenizer.Error ->
       reraise CompileError,
               [
                 description:

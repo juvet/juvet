@@ -191,12 +191,12 @@ The template pipeline tracks source positions through all stages, enabling preci
 
 ### Error Types
 
-#### TokenizerError
+#### Tokenizer.Error
 
 Raised when the tokenizer encounters invalid syntax:
 
 ```elixir
-%Juvet.Template.TokenizerError{
+%Juvet.Template.Tokenizer.Error{
   message: "Unterminated string",
   line: 3,
   column: 15
@@ -868,7 +868,7 @@ defmacro template(name, source) do
     json = compile_template(source)
     generate_function(name, json)
   rescue
-    e in TokenizerError ->
+    e in Tokenizer.Error ->
       reraise CompileError,
               [description: "template #{inspect(name)} has a syntax error: #{Exception.message(e)}", line: e.line],
               __STACKTRACE__
@@ -887,7 +887,7 @@ end
 ```
 
 Error types and their handling:
-- **TokenizerError**: Syntax errors like unterminated strings → "has a syntax error"
+- **Tokenizer.Error**: Syntax errors like unterminated strings → "has a syntax error"
 - **Parser.Error**: Structure errors like unexpected tokens → "has a parse error"
 - **ArgumentError**: Compiler errors like unknown elements → "failed to compile"
 
