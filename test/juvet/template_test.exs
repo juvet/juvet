@@ -359,8 +359,8 @@ defmodule Juvet.TemplateTest do
   end
 
   describe "partial error handling" do
-    test "missing partial raises CompileError" do
-      assert_raise CompileError, ~r/partial :nonexistent not found/, fn ->
+    test "missing partial raises CompileError with line info" do
+      assert_raise CompileError, ~r/partial :nonexistent not found \(line 1, column 1\)/, fn ->
         Code.compile_string("""
         defmodule MissingPartialTest do
           use Juvet.Template
@@ -371,14 +371,30 @@ defmodule Juvet.TemplateTest do
       end
     end
 
+    test "missing template attribute raises CompileError" do
+      assert_raise CompileError, ~r/partial is missing required template: attribute/, fn ->
+        Code.compile_string("""
+        defmodule MissingAttrPartialTest do
+          use Juvet.Template
+
+          template :broken, \":slack.partial{name: \\\"Alice\\\"}\"
+        end
+        """)
+      end
+    end
+
     test "circular partial reference raises CompileError" do
       # Create a contrived cycle: :a references :b, :b references :a
       cyclic_asts = %{
-        a: [%{platform: :slack, element: :partial, attributes: %{template: :b}}],
-        b: [%{platform: :slack, element: :partial, attributes: %{template: :a}}]
+        a: [
+          %{platform: :slack, element: :partial, attributes: %{template: :b}, line: 1, column: 1}
+        ],
+        b: [
+          %{platform: :slack, element: :partial, attributes: %{template: :a}, line: 1, column: 1}
+        ]
       }
 
-      assert_raise CompileError, ~r/circular partial reference detected/, fn ->
+      assert_raise CompileError, ~r/circular partial reference detected: a -> b -> a/, fn ->
         Juvet.Template.compile_template!(
           :test,
           ":slack.partial{template: :a}",

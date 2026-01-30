@@ -226,8 +226,8 @@ defmodule Juvet.Template do
   defp resolve_partials(ast, existing_asts, stack) do
     Enum.flat_map(ast, fn element ->
       case element do
-        %{element: :partial, attributes: attrs} ->
-          resolve_partial(attrs, existing_asts, stack)
+        %{element: :partial} ->
+          resolve_partial(element, existing_asts, stack)
 
         other ->
           [other]
@@ -235,13 +235,27 @@ defmodule Juvet.Template do
     end)
   end
 
-  defp resolve_partial(attrs, existing_asts, stack) do
-    template_name = Map.fetch!(attrs, :template)
+  defp resolve_partial(element, existing_asts, stack) do
+    attrs = element.attributes
+    location = format_location(element)
+
+    template_name =
+      case Map.fetch(attrs, :template) do
+        {:ok, name} ->
+          name
+
+        :error ->
+          raise ArgumentError,
+                "partial is missing required template: attribute#{location}"
+      end
+
     bindings = Map.drop(attrs, [:template])
 
     if template_name in stack do
       cycle = stack |> Enum.reverse() |> Enum.concat([template_name]) |> Enum.join(" -> ")
-      raise ArgumentError, "circular partial reference detected: #{cycle}"
+
+      raise ArgumentError,
+            "circular partial reference detected: #{cycle}#{location}"
     end
 
     case Map.fetch(existing_asts, template_name) do
@@ -250,9 +264,20 @@ defmodule Juvet.Template do
         resolve_partials(inlined, existing_asts, [template_name | stack])
 
       :error ->
-        raise ArgumentError, "partial #{inspect(template_name)} not found"
+        raise ArgumentError,
+              "partial #{inspect(template_name)} not found#{location}"
     end
   end
+
+  defp format_location(%{line: line, column: col}) when is_integer(line) and is_integer(col) do
+    " (line #{line}, column #{col})"
+  end
+
+  defp format_location(%{line: line}) when is_integer(line) do
+    " (line #{line})"
+  end
+
+  defp format_location(_), do: ""
 
   # Substitutes bindings into an AST.
   #
