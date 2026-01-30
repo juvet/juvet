@@ -22,6 +22,9 @@ erl_crash.dump
 # Ignore Secrets
 /config/*.secret.exs
 
+# Ignore our robots for open source projects
+/.claude
+
 # dialyzer PLTs
 /priv/plts/*.plt
 /priv/plts/*.plt.hash
