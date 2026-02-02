@@ -56,6 +56,7 @@ defmodule Juvet.Template do
     quote do
       import Juvet.Template, only: [template: 2, template_file: 2]
       Module.register_attribute(__MODULE__, :juvet_templates, accumulate: true)
+      Module.register_attribute(__MODULE__, :juvet_template_asts, [])
       @before_compile Juvet.Template
     end
   end
@@ -63,12 +64,31 @@ defmodule Juvet.Template do
   @doc false
   defmacro __before_compile__(env) do
     templates = Module.get_attribute(env.module, :juvet_templates) |> Enum.reverse()
+    template_asts = Module.get_attribute(env.module, :juvet_template_asts) || %{}
+
+    ast_clauses =
+      for {name, ast} <- template_asts do
+        quote do
+          def __template_ast__(unquote(name)), do: unquote(Macro.escape(ast))
+        end
+      end
 
     quote do
       @doc """
       Returns a list of template names defined in this module.
       """
       def __templates__, do: unquote(templates)
+
+      @doc """
+      Returns the AST for a template by name.
+
+      Used internally for partial resolution at compile time.
+      """
+      unquote_splicing(ast_clauses)
+
+      def __template_ast__(name) do
+        raise ArgumentError, "template #{inspect(name)} not found in #{inspect(__MODULE__)}"
+      end
     end
   end
 
@@ -86,7 +106,14 @@ defmodule Juvet.Template do
   Generates a function `greeting/1` that accepts a keyword list of bindings.
   """
   defmacro template(name, source) do
-    json = compile_template!(name, source)
+    existing_asts = Module.get_attribute(__CALLER__.module, :juvet_template_asts) || %{}
+    {ast, json} = compile_template!(name, source, existing_asts)
+
+    Module.put_attribute(
+      __CALLER__.module,
+      :juvet_template_asts,
+      Map.put(existing_asts, name, ast)
+    )
 
     quote do
       @juvet_templates unquote(name)
@@ -121,7 +148,14 @@ defmodule Juvet.Template do
               "template_file #{inspect(name)} could not read #{path}: #{inspect(reason)}"
       end
 
-    json = compile_template!(name, source)
+    existing_asts = Module.get_attribute(__CALLER__.module, :juvet_template_asts) || %{}
+    {ast, json} = compile_template!(name, source, existing_asts)
+
+    Module.put_attribute(
+      __CALLER__.module,
+      :juvet_template_asts,
+      Map.put(existing_asts, name, ast)
+    )
 
     quote do
       @juvet_templates unquote(name)
@@ -131,21 +165,31 @@ defmodule Juvet.Template do
   end
 
   @doc """
-  Compiles template source to JSON, raising on errors.
+  Compiles template source to AST and JSON, raising on errors.
 
   Runs the template through the tokenizer, parser, and compiler pipeline.
+  Resolves any `:partial` elements by inlining referenced template ASTs.
+
+  Returns `{ast, json}` tuple where:
+  - `ast` is the parsed AST (before partial resolution)
+  - `json` is the compiled JSON string (with partials resolved)
+
   Errors are caught and re-raised as `CompileError` with helpful context.
 
   This is an internal function used by the `template/2` and `template_file/2`
   macros at compile time.
   """
-  def compile_template!(name, source) do
-    source
-    |> Tokenizer.tokenize()
-    |> Parser.parse()
-    |> Compiler.compile()
+  def compile_template!(name, source, existing_asts \\ []) do
+    ast =
+      source
+      |> Tokenizer.tokenize()
+      |> Parser.parse()
+
+    resolved_ast = resolve_partials(ast, existing_asts)
+    json = Compiler.compile(resolved_ast)
+    {ast, json}
   rescue
-    e in Juvet.Template.TokenizerError ->
+    e in Juvet.Template.Tokenizer.Error ->
       reraise CompileError,
               [
                 description:
@@ -154,7 +198,7 @@ defmodule Juvet.Template do
               ],
               __STACKTRACE__
 
-    e in Juvet.Template.ParserError ->
+    e in Juvet.Template.Parser.Error ->
       reraise CompileError,
               [
                 description:
@@ -167,6 +211,124 @@ defmodule Juvet.Template do
       reraise CompileError,
               [description: "template #{inspect(name)} failed to compile: #{e.message}"],
               __STACKTRACE__
+  end
+
+  # Resolves :partial elements in the AST by inlining referenced templates.
+  #
+  # For each :partial element found:
+  # 1. Look up the referenced template's AST from existing_asts
+  # 2. Substitute bindings from the partial's attributes into the referenced AST
+  # 3. Replace the :partial element with the inlined blocks
+  defp resolve_partials(ast, existing_asts) do
+    resolve_partials(ast, existing_asts, [])
+  end
+
+  defp resolve_partials(ast, existing_asts, stack) do
+    Enum.flat_map(ast, fn element ->
+      case element do
+        %{element: :partial} ->
+          resolve_partial(element, existing_asts, stack)
+
+        other ->
+          [other]
+      end
+    end)
+  end
+
+  defp resolve_partial(element, existing_asts, stack) do
+    attrs = element.attributes
+    location = format_location(element)
+
+    template_name =
+      case Map.fetch(attrs, :template) do
+        {:ok, name} ->
+          name
+
+        :error ->
+          raise ArgumentError,
+                "partial is missing required template: attribute#{location}"
+      end
+
+    bindings = Map.drop(attrs, [:template])
+
+    if template_name in stack do
+      cycle = stack |> Enum.reverse() |> Enum.concat([template_name]) |> Enum.join(" -> ")
+
+      raise ArgumentError,
+            "circular partial reference detected: #{cycle}#{location}"
+    end
+
+    case Map.fetch(existing_asts, template_name) do
+      {:ok, partial_ast} ->
+        inlined = substitute_bindings(partial_ast, bindings)
+        resolve_partials(inlined, existing_asts, [template_name | stack])
+
+      :error ->
+        raise ArgumentError,
+              "partial #{inspect(template_name)} not found#{location}"
+    end
+  end
+
+  defp format_location(%{line: line, column: col}) when is_integer(line) and is_integer(col) do
+    " (line #{line}, column #{col})"
+  end
+
+  defp format_location(%{line: line}) when is_integer(line) do
+    " (line #{line})"
+  end
+
+  defp format_location(_), do: ""
+
+  # Substitutes bindings into an AST.
+  #
+  # For each EEx interpolation `<%= name %>` in the partial's AST,
+  # replaces it with the corresponding binding value.
+  #
+  # Example:
+  #   partial AST has: %{text: "Hello <%= name %>"}
+  #   bindings: %{name: "<%= user_name %>"}
+  #   result: %{text: "Hello <%= user_name %>"}
+  defp substitute_bindings(ast, bindings) when is_list(ast) do
+    Enum.map(ast, &substitute_bindings(&1, bindings))
+  end
+
+  defp substitute_bindings(%{} = element, bindings) do
+    element
+    |> Map.update(:attributes, %{}, &substitute_in_attributes(&1, bindings))
+    |> Map.update(:children, nil, &substitute_in_children(&1, bindings))
+    |> then(fn el ->
+      if el.children == nil, do: Map.delete(el, :children), else: el
+    end)
+  end
+
+  defp substitute_in_attributes(attrs, bindings) do
+    Map.new(attrs, fn {key, value} ->
+      {key, substitute_in_value(value, bindings)}
+    end)
+  end
+
+  defp substitute_in_value(value, bindings) when is_binary(value) do
+    Enum.reduce(bindings, value, fn {name, replacement}, acc ->
+      String.replace(acc, "<%= #{name} %>", to_string(replacement))
+    end)
+  end
+
+  defp substitute_in_value(value, _bindings), do: value
+
+  defp substitute_in_children(nil, _bindings), do: nil
+
+  defp substitute_in_children(children, bindings) when is_map(children) do
+    Map.new(children, fn {key, value} ->
+      {key, substitute_in_child_value(value, bindings)}
+    end)
+  end
+
+  defp substitute_in_child_value(value, bindings) when is_list(value) do
+    Enum.map(value, &substitute_bindings(&1, bindings))
+  end
+
+  defp substitute_in_child_value(value, bindings) when is_map(value) do
+    substitute_bindings(value, bindings)
   end
 
   # Generates the quoted function definition for a template.

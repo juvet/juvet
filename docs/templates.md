@@ -191,12 +191,12 @@ The template pipeline tracks source positions through all stages, enabling preci
 
 ### Error Types
 
-#### TokenizerError
+#### Tokenizer.Error
 
 Raised when the tokenizer encounters invalid syntax:
 
 ```elixir
-%Juvet.Template.TokenizerError{
+%Juvet.Template.Tokenizer.Error{
   message: "Unterminated string",
   line: 3,
   column: 15
@@ -207,12 +207,12 @@ Common tokenizer errors:
 - Unterminated strings (missing closing quote)
 - Invalid characters
 
-#### ParserError
+#### Parser.Error
 
 Raised when tokens don't form a valid template structure:
 
 ```elixir
-%Juvet.Template.ParserError{
+%Juvet.Template.Parser.Error{
   message: "Unexpected keyword 'invalid' at top level",
   line: 2,
   column: 1
@@ -868,12 +868,12 @@ defmacro template(name, source) do
     json = compile_template(source)
     generate_function(name, json)
   rescue
-    e in TokenizerError ->
+    e in Tokenizer.Error ->
       reraise CompileError,
               [description: "template #{inspect(name)} has a syntax error: #{Exception.message(e)}", line: e.line],
               __STACKTRACE__
 
-    e in ParserError ->
+    e in Parser.Error ->
       reraise CompileError,
               [description: "template #{inspect(name)} has a parse error: #{Exception.message(e)}", line: e.line],
               __STACKTRACE__
@@ -887,8 +887,8 @@ end
 ```
 
 Error types and their handling:
-- **TokenizerError**: Syntax errors like unterminated strings → "has a syntax error"
-- **ParserError**: Structure errors like unexpected tokens → "has a parse error"
+- **Tokenizer.Error**: Syntax errors like unterminated strings → "has a syntax error"
+- **Parser.Error**: Structure errors like unexpected tokens → "has a parse error"
 - **ArgumentError**: Compiler errors like unknown elements → "failed to compile"
 
 All errors include line numbers when available, enabling IDE navigation to the source location.
@@ -971,6 +971,162 @@ end
 - Templates with dynamic structure (conditionals, loops in EEx) work naturally since EEx handles them at eval time
 - The Juvet template syntax itself is static; dynamism comes from EEx interpolation
 - For complex dynamic structures, users can use multiple templates or raw JSON construction
+
+## Template Partials
+
+Template partials allow reusable template fragments to be included in other templates, using native cheex syntax. Partials are resolved at compile time by inlining the referenced template's AST before JSON generation.
+
+### Syntax
+
+```
+:slack.partial{template: :template_name}
+:slack.partial{template: :template_name, binding1: "value", binding2: "<%= expr %>"}
+```
+
+- `template:` (required) - references another template by name
+- Other attributes become bindings that substitute into the partial's EEx markers
+- Dynamic bindings use EEx interpolation in strings, consistent with other cheex attributes
+
+### Usage
+
+```elixir
+defmodule MyTemplates do
+  use Juvet.Template
+
+  # Define reusable partial
+  template :user_header, ":slack.header{text: \"Hello <%= name %>\"}"
+
+  # Use with static binding
+  template :welcome_page, """
+  :slack.partial{template: :user_header, name: "Alice"}
+  :slack.divider
+  :slack.section "Welcome to the app"
+  """
+
+  # Use with dynamic binding (EEx passthrough)
+  template :dashboard, """
+  :slack.partial{template: :user_header, name: "<%= user_name %>"}
+  :slack.divider
+  :slack.section "Your dashboard"
+  """
+end
+
+# Static partial - no bindings needed
+MyTemplates.welcome_page()
+
+# Dynamic partial - pass bindings at runtime
+MyTemplates.dashboard(user_name: "Bob")
+```
+
+### How It Works
+
+Partials are resolved entirely at compile time:
+
+```
+Template Source
+    |
+    v
+Tokenizer/Parser: :partial parsed as a regular element
+    |
+    v
+Partial Resolution:
+    1. Look up referenced template's stored AST
+    2. Substitute bindings into the AST
+       (e.g., "<%= name %>" → "<%= user_name %>")
+    3. Replace :partial element with inlined blocks
+    4. Recursively resolve any nested partials
+    |
+    v
+Compiler: Combined AST compiles to JSON
+    |
+    v
+Runtime: Only EEx evaluation (no JSON parsing/merging)
+```
+
+### Nested Partials
+
+Partials can include other partials. Resolution is recursive:
+
+```elixir
+template :greeting, ":slack.header{text: \"Hello <%= name %>\"}"
+
+template :greeting_card, """
+:slack.partial{template: :greeting, name: "<%= name %>"}
+:slack.divider
+"""
+
+template :full_page, """
+:slack.partial{template: :greeting_card, name: "<%= user %>"}
+:slack.section "Page content"
+"""
+```
+
+When `:full_page` is compiled:
+1. Inline `:greeting_card` → finds `:partial` for `:greeting`
+2. Inline `:greeting` → no more partials
+3. Final AST: header + divider + section
+4. Compile to JSON with EEx markers preserved
+
+### Binding Substitution
+
+Bindings map the partial's attributes to EEx markers in the referenced template:
+
+```elixir
+# Partial defines: "Hello <%= name %>"
+# Parent passes: name: "<%= user_name %>"
+# Result: "Hello <%= user_name %>"
+```
+
+Static values are substituted directly:
+
+```elixir
+# Partial defines: "Hello <%= name %>"
+# Parent passes: name: "Alice"
+# Result: "Hello Alice"
+```
+
+### Ordering Requirement
+
+Partials must be defined before templates that reference them. This is because resolution happens at compile time during macro expansion:
+
+```elixir
+# Correct: partial defined first
+template :header, ":slack.header{text: \"<%= title %>\"}"
+template :page, ":slack.partial{template: :header, title: \"Welcome\"}"
+
+# Error: partial not yet defined
+template :page, ":slack.partial{template: :header, title: \"Welcome\"}"
+template :header, ":slack.header{text: \"<%= title %>\"}"
+# => ** (CompileError) partial :header not found (line 1, column 1)
+```
+
+### Error Handling
+
+All partial errors include line and column information when available.
+
+**Missing template attribute:**
+```
+partial is missing required template: attribute (line 1, column 1)
+```
+
+**Partial not found:**
+```
+partial :unknown not found (line 2, column 1)
+```
+
+**Circular reference:**
+```
+circular partial reference detected: a -> b -> a (line 1, column 1)
+```
+
+### Introspection
+
+Templates store their AST for partial resolution. You can inspect a template's AST:
+
+```elixir
+MyTemplates.__template_ast__(:user_header)
+# => [%{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}, ...}]
+```
 
 ## Future: Additional Block Kit Components
 

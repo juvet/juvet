@@ -1,6 +1,6 @@
-defmodule Juvet.Template.TokenizerError do
+defmodule Juvet.Template.Parser.Error do
   @moduledoc """
-  Exception raised for errors encountered during tokenization of Templates.
+  Exception raised for errors encountered during parsing of Templates.
 
   Includes line and column information for error reporting.
   """

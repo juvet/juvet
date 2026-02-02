@@ -448,7 +448,7 @@ defmodule Juvet.Template.Tokenizer do
         )
 
       {:error, message, line, col} ->
-        raise Juvet.Template.TokenizerError, message: message, line: line, column: col
+        raise Juvet.Template.Tokenizer.Error, message: message, line: line, column: col
     end
   end
 
@@ -535,7 +535,7 @@ defmodule Juvet.Template.Tokenizer do
 
   # Unexpected character - raise error
   defp do_tokenize([c | _rest], {line, col}, _tokens, _indent_stack) do
-    raise Juvet.Template.TokenizerError,
+    raise Juvet.Template.Tokenizer.Error,
       message: "Unexpected character '#{<<c::utf8>>}'",
       line: line,
       column: col

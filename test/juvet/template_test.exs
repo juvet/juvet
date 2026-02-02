@@ -6,15 +6,13 @@ defmodule Juvet.TemplateTest do
   import Juvet.Test.JsonHelpers, only: [json_equal?: 2]
 
   describe "render/1" do
-    # We are not here yet
-    @tag :skip
     test "empty template returns empty string" do
       assert Template.render("") == ""
     end
   end
 
   describe "render/2" do
-    # This may or may not be a valid case
+    # Skipping until EEx evaluation is supported
     @tag :skip
     test "simple evaluation within template returns evaluated string" do
       assert Template.render("<%= salutation %>", salutation: "Hello there") == "Hello there"
@@ -234,6 +232,173 @@ defmodule Juvet.TemplateTest do
                :greeting,
                :static_divider
              ]
+    end
+
+    test "__template_ast__/1 returns AST for a template" do
+      ast = MixedTemplates.__template_ast__(:header)
+
+      assert [%{platform: :slack, element: :header, attributes: %{text: "Welcome"}} | _] = ast
+    end
+
+    test "__template_ast__/1 raises for unknown template" do
+      assert_raise ArgumentError, ~r/template :unknown not found/, fn ->
+        MixedTemplates.__template_ast__(:unknown)
+      end
+    end
+  end
+
+  describe "template partials" do
+    defmodule PartialTemplates do
+      use Juvet.Template
+
+      # Define partial first (must come before templates that use it)
+      template(:user_header, ":slack.header{text: \"Hello <%= name %>\"}")
+
+      # Template using the partial with static binding
+      template(:static_dashboard, """
+      :slack.partial{template: :user_header, name: "Alice"}
+      :slack.divider
+      """)
+
+      # Template using the partial with dynamic binding
+      template(:dynamic_dashboard, """
+      :slack.partial{template: :user_header, name: "<%= user_name %>"}
+      :slack.divider
+      """)
+    end
+
+    test "partial with static binding inlines the referenced template" do
+      result = PartialTemplates.static_dashboard()
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             } = Poison.decode!(result)
+    end
+
+    test "partial with dynamic binding passes through EEx" do
+      result = PartialTemplates.dynamic_dashboard(user_name: "Bob")
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Bob"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             } = Poison.decode!(result)
+    end
+
+    test "partial can be used standalone" do
+      result = PartialTemplates.user_header(name: "World")
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 }
+               ]
+             } = Poison.decode!(result)
+    end
+  end
+
+  describe "nested partials" do
+    defmodule NestedPartialTemplates do
+      use Juvet.Template
+
+      template(:greeting, ":slack.header{text: \"Hello <%= name %>\"}")
+
+      template(:greeting_with_divider, """
+      :slack.partial{template: :greeting, name: "<%= name %>"}
+      :slack.divider
+      """)
+
+      template(:full_page, """
+      :slack.partial{template: :greeting_with_divider, name: "<%= user %>"}
+      :slack.section "Content"
+      """)
+    end
+
+    test "nested partials are resolved recursively" do
+      result = NestedPartialTemplates.full_page(user: "Alice")
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                 },
+                 %{"type" => "divider"},
+                 %{"type" => "section"}
+               ]
+             } = Poison.decode!(result)
+    end
+
+    test "intermediate partial still works standalone" do
+      result = NestedPartialTemplates.greeting_with_divider(name: "Bob")
+
+      assert %{
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Bob"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             } = Poison.decode!(result)
+    end
+  end
+
+  describe "partial error handling" do
+    test "missing partial raises CompileError with line info" do
+      assert_raise CompileError, ~r/partial :nonexistent not found \(line 1, column 1\)/, fn ->
+        Code.compile_string("""
+        defmodule MissingPartialTest do
+          use Juvet.Template
+
+          template :broken, \":slack.partial{template: :nonexistent}\"
+        end
+        """)
+      end
+    end
+
+    test "missing template attribute raises CompileError" do
+      assert_raise CompileError, ~r/partial is missing required template: attribute/, fn ->
+        Code.compile_string("""
+        defmodule MissingAttrPartialTest do
+          use Juvet.Template
+
+          template :broken, \":slack.partial{name: \\\"Alice\\\"}\"
+        end
+        """)
+      end
+    end
+
+    test "circular partial reference raises CompileError" do
+      # Create a contrived cycle: :a references :b, :b references :a
+      cyclic_asts = %{
+        a: [
+          %{platform: :slack, element: :partial, attributes: %{template: :b}, line: 1, column: 1}
+        ],
+        b: [
+          %{platform: :slack, element: :partial, attributes: %{template: :a}, line: 1, column: 1}
+        ]
+      }
+
+      assert_raise CompileError, ~r/circular partial reference detected: a -> b -> a/, fn ->
+        Juvet.Template.compile_template!(
+          :test,
+          ":slack.partial{template: :a}",
+          cyclic_asts
+        )
+      end
     end
   end
 end
