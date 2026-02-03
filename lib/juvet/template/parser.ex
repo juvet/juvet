@@ -29,22 +29,33 @@ defmodule Juvet.Template.Parser do
 
   alias Juvet.Template.Parser.Error, as: ParserError
 
-  def parse(tokens), do: do_parse(tokens, [])
+  def parse(tokens), do: do_parse(tokens, [], nil)
+
+  def parse(tokens, opts) when is_list(opts) do
+    platform = Keyword.get(opts, :platform)
+    do_parse(tokens, [], platform)
+  end
 
   # Main parsing loop - dispatch based on first token
-  defp do_parse([], acc), do: Enum.reverse(acc)
-  defp do_parse([{:eof, _, _}], acc), do: Enum.reverse(acc)
-  defp do_parse([{:eof, _, _} | rest], acc), do: do_parse(rest, acc)
-  defp do_parse([{:dedent, _, _} | rest], acc), do: do_parse(rest, acc)
-  defp do_parse([{:newline, _, _} | rest], acc), do: do_parse(rest, acc)
+  defp do_parse([], acc, _platform), do: Enum.reverse(acc)
+  defp do_parse([{:eof, _, _}], acc, _platform), do: Enum.reverse(acc)
+  defp do_parse([{:eof, _, _} | rest], acc, platform), do: do_parse(rest, acc, platform)
+  defp do_parse([{:dedent, _, _} | rest], acc, platform), do: do_parse(rest, acc, platform)
+  defp do_parse([{:newline, _, _} | rest], acc, platform), do: do_parse(rest, acc, platform)
 
-  defp do_parse([{:colon, _, _} | _] = tokens, acc) do
+  defp do_parse([{:colon, _, _} | _] = tokens, acc, platform) do
     {el, rest} = element(tokens)
-    do_parse(rest, [el | acc])
+    do_parse(rest, [el | acc], platform)
+  end
+
+  # Dot shorthand at top level with a default platform - allowed
+  defp do_parse([{:dot, _, _} | _] = tokens, acc, platform) when platform != nil do
+    {el, rest} = element(tokens, platform)
+    do_parse(rest, [el | acc], platform)
   end
 
   # Dot shorthand at top level is an error - no parent platform to inherit from
-  defp do_parse([{:dot, _, {line, col}} | _], _acc) do
+  defp do_parse([{:dot, _, {line, col}} | _], _acc, _platform) do
     raise ParserError,
       message:
         "Element with '.' shorthand must be inside a parent element that specifies a platform",
@@ -53,7 +64,7 @@ defmodule Juvet.Template.Parser do
   end
 
   # Unexpected token at top level
-  defp do_parse([{type, value, {line, col}} | _], _acc) do
+  defp do_parse([{type, value, {line, col}} | _], _acc, _platform) do
     raise ParserError,
       message: "Unexpected #{type} '#{value}' at top level",
       line: line,

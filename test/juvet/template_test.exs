@@ -793,6 +793,80 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe ".slack.cheex file-based templates" do
+    defmodule SlackFileTemplates do
+      use Juvet.Template
+
+      partial(:shorthand_header, file: "templates/shorthand_partial.slack.cheex")
+
+      template(:home, file: "templates/home.slack.cheex")
+
+      template(:with_partial, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :shorthand_header, name: "<%= name %>"}
+          :slack.divider
+      """)
+    end
+
+    test "file template with shorthand compiles correctly" do
+      result = SlackFileTemplates.home(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello World"}},
+                 %{type: "divider"},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Welcome"}}
+               ]
+             }
+    end
+
+    test "file partial with shorthand works in a view" do
+      result = SlackFileTemplates.with_partial(name: "Alice")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello Alice"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "template with matching :slack.element in .slack.cheex is allowed" do
+      # Using full :slack.element syntax in a .slack.cheex file is allowed (just redundant)
+      {ast, _compiled} =
+        Template.compile_template!(
+          :matching,
+          ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Hello\"}",
+          [],
+          platform: :slack
+        )
+
+      assert [%{platform: :slack, element: :view}] = ast
+    end
+
+    test "template with mismatching platform in .slack.cheex raises CompileError" do
+      assert_raise CompileError,
+                   ~r/platform :discord in template does not match file platform :slack/,
+                   fn ->
+                     Template.compile_template!(
+                       :bad,
+                       ":discord.header{text: \"Hello\"}",
+                       [],
+                       platform: :slack
+                     )
+                   end
+    end
+
+    test "regular .cheex files continue to work as before" do
+      result = SlackFileTemplates.__template_ast__(:home)
+      assert [%{platform: :slack, element: :view} | _] = result
+    end
+  end
+
   describe "file-based template with format override" do
     defmodule FileFormatTemplates do
       use Juvet.Template

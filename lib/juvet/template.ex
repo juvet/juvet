@@ -162,8 +162,10 @@ defmodule Juvet.Template do
             description: "template #{inspect(name)} could not read #{path}: #{inspect(reason)}"
       end
 
+    platform = extract_platform_from_filename(path)
+
     existing_asts = Module.get_attribute(__CALLER__.module, :juvet_template_asts) || %{}
-    {ast, compiled} = compile_template!(name, source, existing_asts)
+    {ast, compiled} = compile_template!(name, source, existing_asts, platform: platform)
 
     Module.put_attribute(
       __CALLER__.module,
@@ -238,7 +240,8 @@ defmodule Juvet.Template do
             description: "partial #{inspect(name)} could not read #{path}: #{inspect(reason)}"
       end
 
-    store_partial(name, source, __CALLER__)
+    platform = extract_platform_from_filename(path)
+    store_partial(name, source, __CALLER__, platform: platform)
 
     quote do
       @external_resource unquote(full_path)
@@ -246,13 +249,20 @@ defmodule Juvet.Template do
   end
 
   @doc false
-  def store_partial(name, source, caller) do
+  def store_partial(name, source, caller, opts \\ []) do
     existing_asts = Module.get_attribute(caller.module, :juvet_template_asts) || %{}
+    platform = Keyword.get(opts, :platform)
+
+    tokens = Tokenizer.tokenize(source)
 
     ast =
-      source
-      |> Tokenizer.tokenize()
-      |> Parser.parse()
+      if platform do
+        Parser.parse(tokens, platform: platform)
+      else
+        Parser.parse(tokens)
+      end
+
+    if platform, do: validate_platform!(ast, platform)
 
     Module.put_attribute(
       caller.module,
@@ -277,6 +287,11 @@ defmodule Juvet.Template do
                 line: e.line
               ],
               __STACKTRACE__
+
+    e in ArgumentError ->
+      reraise CompileError,
+              [description: "partial #{inspect(name)} failed to compile: #{e.message}"],
+              __STACKTRACE__
   end
 
   @doc """
@@ -293,11 +308,18 @@ defmodule Juvet.Template do
 
   This is an internal function used by the `template/2` macro at compile time.
   """
-  def compile_template!(name, source, existing_asts \\ []) do
+  def compile_template!(name, source, existing_asts \\ [], opts \\ []) do
+    platform = Keyword.get(opts, :platform)
+    tokens = Tokenizer.tokenize(source)
+
     ast =
-      source
-      |> Tokenizer.tokenize()
-      |> Parser.parse()
+      if platform do
+        Parser.parse(tokens, platform: platform)
+      else
+        Parser.parse(tokens)
+      end
+
+    if platform, do: validate_platform!(ast, platform)
 
     resolved_ast = resolve_partials(ast, existing_asts)
     compiled = Compiler.compile(resolved_ast)
@@ -546,6 +568,59 @@ defmodule Juvet.Template do
         end
     end
   end
+
+  # Extracts a platform atom from a filename.
+  #
+  # "home.slack.cheex" → :slack
+  # "greeting.cheex" → nil
+  # "my.template.slack.cheex" → :slack
+  # "home.discord.cheex" → nil (only :slack recognized)
+  @recognized_platforms ~w(slack)
+  defp extract_platform_from_filename(path) do
+    parts = path |> Path.basename() |> String.split(".")
+
+    case parts do
+      [_ | rest] when length(rest) >= 2 ->
+        platform_segment = Enum.at(rest, length(rest) - 2)
+
+        if platform_segment in @recognized_platforms do
+          String.to_atom(platform_segment)
+        else
+          nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  # Validates that all elements in the AST match the expected platform.
+  # Raises ArgumentError if a conflicting platform is found.
+  defp validate_platform!(ast, expected) when is_list(ast) do
+    Enum.each(ast, &validate_platform_element!(&1, expected))
+  end
+
+  defp validate_platform_element!(%{platform: platform, line: line, column: col}, expected)
+       when platform != expected do
+    raise ArgumentError,
+          "platform :#{platform} in template does not match file platform :#{expected} (line #{line}, column #{col})"
+  end
+
+  defp validate_platform_element!(%{children: children} = _element, expected)
+       when is_map(children) do
+    Enum.each(children, fn
+      {_key, child_elements} when is_list(child_elements) ->
+        validate_platform!(child_elements, expected)
+
+      {_key, %{} = child} ->
+        validate_platform_element!(child, expected)
+
+      _ ->
+        :ok
+    end)
+  end
+
+  defp validate_platform_element!(_element, _expected), do: :ok
 
   # Checks if a map/list structure contains any EEx interpolation markers.
   defp map_contains_eex?(map) when is_map(map),

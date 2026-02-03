@@ -189,7 +189,7 @@ Some attributes are renamed for Slack compatibility:
 template     -> element* eof
 element      -> full_element | short_element
 full_element -> colon keyword dot keyword element_body?
-short_element -> dot keyword element_body?       (only valid inside a parent element)
+short_element -> dot keyword element_body?       (valid inside a parent element, or at top level with file platform)
 element_body -> default_value? inline_attrs? (newline block)?
 default_value -> whitespace text
 inline_attrs -> open_brace attr_list close_brace
@@ -200,7 +200,8 @@ block        -> indent (attr | element)+ dedent
 ```
 
 Short elements (`.element`) inherit their platform from the parent element.
-They can only appear as children — using `.element` at the top level is an error.
+They can only appear as children — using `.element` at the top level is an error,
+unless a file-level platform is set (e.g., `.slack.cheex` files).
 
 ## Error Handling and Line Number Tracking
 
@@ -533,6 +534,57 @@ Using `.element` at the top level (no parent) raises a parser error:
 .header{text: "Hello"}
 # => ** (Parser.Error) Element with '.' shorthand must be inside a parent element that specifies a platform
 ```
+
+### Platform from Filename
+
+Files named with a `.slack.cheex` extension establish a file-level platform, allowing `.element` shorthand at the top level — including for the root element.
+
+**Before** (standard `.cheex`):
+```
+:slack.view
+  type: :modal
+  blocks:
+    .header{text: "Hello"}
+    .divider
+```
+
+**After** (`home.slack.cheex`):
+```
+.view
+  type: :modal
+  blocks:
+    .header{text: "Hello"}
+    .divider
+```
+
+```elixir
+defmodule MyApp.Templates do
+  use Juvet.Template
+
+  template :home, file: "templates/home.slack.cheex"
+end
+```
+
+**Naming convention:** The platform segment is the second-to-last part of the filename before `.cheex`:
+
+| Filename | Platform |
+|----------|----------|
+| `home.slack.cheex` | `:slack` |
+| `greeting.cheex` | none (standard) |
+| `my.template.slack.cheex` | `:slack` |
+| `home.discord.cheex` | none (`:discord` not yet recognized) |
+
+Currently only `:slack` is recognized as a platform in filenames.
+
+**Validation rules:**
+
+- Using the matching full syntax (`:slack.header`) in a `.slack.cheex` file is allowed — it's just redundant
+- Using a different platform (`:discord.header`) in a `.slack.cheex` file raises a compile-time error:
+  ```
+  ** (CompileError) platform :discord in template does not match file platform :slack (line 1, column 1)
+  ```
+- Inline templates (`template(:name, "source")`) are unaffected — no filename to extract from
+- Partials from `.slack.cheex` files also support top-level shorthand
 
 ## Compiler Implementation Phases
 
