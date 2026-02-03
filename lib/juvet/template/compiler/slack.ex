@@ -20,6 +20,7 @@ defmodule Juvet.Template.Compiler.Slack do
     Markdown,
     RichText,
     Section,
+    Table,
     Video
   }
 
@@ -82,6 +83,7 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :markdown} = el), do: Markdown.compile(el)
   def compile_element(%{element: :rich_text} = el), do: RichText.compile(el)
   def compile_element(%{element: :section} = el), do: Section.compile(el)
+  def compile_element(%{element: :table} = el), do: Table.compile(el)
   def compile_element(%{element: :video} = el), do: Video.compile(el)
 
   def compile_element(%{element: element, line: line, column: col}) do

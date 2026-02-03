@@ -3469,6 +3469,162 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with table" do
+    test "table block with rows of raw_text cells" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :table,
+            attributes: %{},
+            children: %{
+              rows: [
+                [
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Name"}},
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Role"}}
+                ],
+                [
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Alice"}},
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Engineer"}}
+                ]
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "table",
+                   rows: [
+                     %{
+                       cells: [
+                         %{type: "raw_text", text: "Name"},
+                         %{type: "raw_text", text: "Role"}
+                       ]
+                     },
+                     %{
+                       cells: [
+                         %{type: "raw_text", text: "Alice"},
+                         %{type: "raw_text", text: "Engineer"}
+                       ]
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "table block with column_settings" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :table,
+            attributes: %{
+              column_settings: [
+                %{align: "left", is_wrapped: true},
+                %{align: "center", is_wrapped: false}
+              ]
+            },
+            children: %{
+              rows: [
+                [
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Name"}},
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Role"}}
+                ]
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "table",
+                   rows: [
+                     %{
+                       cells: [
+                         %{type: "raw_text", text: "Name"},
+                         %{type: "raw_text", text: "Role"}
+                       ]
+                     }
+                   ],
+                   column_settings: [
+                     %{align: "left", is_wrapped: true},
+                     %{align: "center", is_wrapped: false}
+                   ]
+                 }
+               ])
+    end
+
+    test "table block with rich_text cells" do
+      rich_elements = [%{type: "text", text: "Hello", style: %{bold: true}}]
+
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :table,
+            attributes: %{},
+            children: %{
+              rows: [
+                [
+                  %{
+                    platform: :slack,
+                    element: :rich_text,
+                    attributes: %{elements: rich_elements}
+                  }
+                ]
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "table",
+                   rows: [
+                     %{
+                       cells: [
+                         %{type: "rich_text", elements: rich_elements}
+                       ]
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "table block with block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :table,
+            attributes: %{block_id: "table_block_1"},
+            children: %{
+              rows: [
+                [
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Cell"}}
+                ]
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "table",
+                   rows: [
+                     %{cells: [%{type: "raw_text", text: "Cell"}]}
+                   ],
+                   block_id: "table_block_1"
+                 }
+               ])
+    end
+  end
+
   describe "compile/1 with video" do
     test "video block with required fields" do
       ast =
