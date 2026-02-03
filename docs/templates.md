@@ -114,6 +114,7 @@ lib/juvet/template/
       blocks/
         actions.ex                 # Compiler.Slack.Blocks.Actions
         context.ex                 # Compiler.Slack.Blocks.Context
+        context_actions.ex         # Compiler.Slack.Blocks.ContextActions
         divider.ex                 # Compiler.Slack.Blocks.Divider
         header.ex                  # Compiler.Slack.Blocks.Header
         image.ex                   # Compiler.Slack.Blocks.Image
@@ -165,11 +166,15 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:divider` | `"divider"` |
 | `:section` | `"section"` |
 | `:context` | `"context"` |
+| `:context_actions` | `"context_actions"` |
 | `:image` | `"image"` |
 | `:button` | `"button"` |
 | `:datepicker` | `"datepicker"` |
 | `:datetimepicker` | `"datetimepicker"` |
+| `:feedback_buttons` | `"feedback_buttons"` |
+| `:icon_button` | `"icon_button"` |
 | `:overflow` | `"overflow"` |
+| `:workflow_button` | `"workflow_button"` |
 | `:actions` | `"actions"` |
 | `:view` | `"modal"`, `"home"` (from `type` attribute) |
 

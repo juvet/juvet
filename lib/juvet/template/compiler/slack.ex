@@ -7,7 +7,16 @@ defmodule Juvet.Template.Compiler.Slack do
   """
 
   alias Juvet.Template.Compiler
-  alias Juvet.Template.Compiler.Slack.Blocks.{Actions, Context, Divider, Header, Image, Section}
+
+  alias Juvet.Template.Compiler.Slack.Blocks.{
+    Actions,
+    Context,
+    ContextActions,
+    Divider,
+    Header,
+    Image,
+    Section
+  }
 
   alias Juvet.Template.Compiler.Slack.Elements.{
     Button,
@@ -15,7 +24,9 @@ defmodule Juvet.Template.Compiler.Slack do
     Datepicker,
     Datetimepicker,
     EmailInput,
+    FeedbackButtons,
     FileInput,
+    IconButton,
     NumberInput,
     Overflow,
     PlainTextInput,
@@ -23,7 +34,8 @@ defmodule Juvet.Template.Compiler.Slack do
     RichTextInput,
     Select,
     Timepicker,
-    UrlInput
+    UrlInput,
+    WorkflowButton
   }
 
   alias Juvet.Template.Compiler.Slack.Objects.{ConversationFilter, Option, OptionGroup}
@@ -40,7 +52,9 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :datepicker} = el), do: Datepicker.compile(el)
   def compile_element(%{element: :datetimepicker} = el), do: Datetimepicker.compile(el)
   def compile_element(%{element: :email_input} = el), do: EmailInput.compile(el)
+  def compile_element(%{element: :feedback_buttons} = el), do: FeedbackButtons.compile(el)
   def compile_element(%{element: :file_input} = el), do: FileInput.compile(el)
+  def compile_element(%{element: :icon_button} = el), do: IconButton.compile(el)
   def compile_element(%{element: :number_input} = el), do: NumberInput.compile(el)
   def compile_element(%{element: :overflow} = el), do: Overflow.compile(el)
   def compile_element(%{element: :plain_text_input} = el), do: PlainTextInput.compile(el)
@@ -49,10 +63,12 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :timepicker} = el), do: Timepicker.compile(el)
   def compile_element(%{element: :select} = el), do: Select.compile(el)
   def compile_element(%{element: :url_input} = el), do: UrlInput.compile(el)
+  def compile_element(%{element: :workflow_button} = el), do: WorkflowButton.compile(el)
   def compile_element(%{element: :filter} = el), do: ConversationFilter.compile(el)
   def compile_element(%{element: :option} = el), do: Option.compile(el)
   def compile_element(%{element: :option_group} = el), do: OptionGroup.compile(el)
   def compile_element(%{element: :context} = el), do: Context.compile(el)
+  def compile_element(%{element: :context_actions} = el), do: ContextActions.compile(el)
   def compile_element(%{element: :divider} = el), do: Divider.compile(el)
   def compile_element(%{element: :header} = el), do: Header.compile(el)
   def compile_element(%{element: :image} = el), do: Image.compile(el)

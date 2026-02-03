@@ -2881,6 +2881,444 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with feedback_buttons" do
+    test "feedback_buttons with positive and negative buttons in context_actions block" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context_actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :feedback_buttons,
+                  attributes: %{
+                    positive_button: %{text: "Helpful", value: "yes"},
+                    negative_button: %{text: "Not Helpful", value: "no"}
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [context_actions] = result.blocks
+      [fb] = context_actions.elements
+
+      assert fb == %{
+               type: "feedback_buttons",
+               positive_button: %{
+                 text: %{type: "plain_text", text: "Helpful"},
+                 value: "yes"
+               },
+               negative_button: %{
+                 text: %{type: "plain_text", text: "Not Helpful"},
+                 value: "no"
+               }
+             }
+    end
+
+    test "feedback_buttons with accessibility_labels on sub-buttons" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context_actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :feedback_buttons,
+                  attributes: %{
+                    positive_button: %{
+                      text: "Good",
+                      value: "good",
+                      accessibility_label: "Mark as good"
+                    },
+                    negative_button: %{
+                      text: "Bad",
+                      value: "bad",
+                      accessibility_label: "Mark as bad"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [context_actions] = result.blocks
+      [fb] = context_actions.elements
+
+      assert fb.positive_button.accessibility_label == "Mark as good"
+      assert fb.negative_button.accessibility_label == "Mark as bad"
+    end
+
+    test "feedback_buttons with action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context_actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :feedback_buttons,
+                  attributes: %{
+                    action_id: "fb_1",
+                    positive_button: %{text: "Yes", value: "yes"},
+                    negative_button: %{text: "No", value: "no"}
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [context_actions] = result.blocks
+      [fb] = context_actions.elements
+
+      assert fb.action_id == "fb_1"
+    end
+  end
+
+  describe "compile/1 with icon_button" do
+    test "icon_button with icon, text, action_id in context_actions block" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context_actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :icon_button,
+                  attributes: %{
+                    icon: "trash",
+                    text: "Delete",
+                    action_id: "delete_btn"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [context_actions] = result.blocks
+      [icon_btn] = context_actions.elements
+
+      assert icon_btn == %{
+               type: "icon_button",
+               icon: "trash",
+               text: %{type: "plain_text", text: "Delete"},
+               action_id: "delete_btn"
+             }
+    end
+
+    test "icon_button with value and accessibility_label" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context_actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :icon_button,
+                  attributes: %{
+                    icon: "edit",
+                    text: "Edit",
+                    action_id: "edit_btn",
+                    value: "item_123",
+                    accessibility_label: "Edit this item"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [context_actions] = result.blocks
+      [icon_btn] = context_actions.elements
+
+      assert icon_btn.value == "item_123"
+      assert icon_btn.accessibility_label == "Edit this item"
+    end
+
+    test "icon_button with visible_to_user_ids" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context_actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :icon_button,
+                  attributes: %{
+                    icon: "trash",
+                    text: "Delete",
+                    action_id: "delete_btn",
+                    visible_to_user_ids: ["U111", "U222"]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [context_actions] = result.blocks
+      [icon_btn] = context_actions.elements
+
+      assert icon_btn.visible_to_user_ids == ["U111", "U222"]
+    end
+
+    test "icon_button with deep text" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context_actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :icon_button,
+                  attributes: %{
+                    icon: "star",
+                    text: %{text: "Favorite", emoji: true},
+                    action_id: "fav_btn"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [context_actions] = result.blocks
+      [icon_btn] = context_actions.elements
+
+      assert icon_btn.text == %{type: "plain_text", text: "Favorite", emoji: true}
+    end
+  end
+
+  describe "compile/1 with workflow_button" do
+    test "workflow_button with text and workflow trigger in actions block" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :workflow_button,
+                  attributes: %{
+                    text: "Run Workflow",
+                    action_id: "wf_btn_1",
+                    workflow: %{
+                      trigger: %{
+                        url: "https://slack.com/shortcuts/Ft123/xyz"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [wf_button] = actions.elements
+
+      assert wf_button == %{
+               type: "workflow_button",
+               text: %{type: "plain_text", text: "Run Workflow"},
+               action_id: "wf_btn_1",
+               workflow: %{
+                 trigger: %{
+                   url: "https://slack.com/shortcuts/Ft123/xyz"
+                 }
+               }
+             }
+    end
+
+    test "workflow_button with customizable_input_parameters" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :workflow_button,
+                  attributes: %{
+                    text: "Start",
+                    action_id: "wf_btn_2",
+                    workflow: %{
+                      trigger: %{
+                        url: "https://slack.com/shortcuts/Ft123/xyz",
+                        customizable_input_parameters: [
+                          %{name: "greeting", value: "Hello"}
+                        ]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [wf_button] = actions.elements
+
+      assert wf_button.workflow.trigger.customizable_input_parameters == [
+               %{name: "greeting", value: "Hello"}
+             ]
+    end
+
+    test "workflow_button with style and accessibility_label" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :workflow_button,
+                  attributes: %{
+                    text: "Deploy",
+                    action_id: "wf_btn_3",
+                    style: "primary",
+                    accessibility_label: "Deploy to production"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [wf_button] = actions.elements
+
+      assert wf_button.type == "workflow_button"
+      assert wf_button.style == "primary"
+      assert wf_button.accessibility_label == "Deploy to production"
+    end
+
+    test "workflow_button with deep text" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :workflow_button,
+                  attributes: %{
+                    text: %{text: "Run It", emoji: true},
+                    action_id: "wf_btn_4"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [wf_button] = actions.elements
+
+      assert wf_button.text == %{type: "plain_text", text: "Run It", emoji: true}
+    end
+  end
+
+  describe "compile/1 with context_actions" do
+    test "context_actions block with elements" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context_actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :button,
+                  attributes: %{text: "Click", action_id: "btn_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [context_actions] = result.blocks
+
+      assert context_actions == %{
+               type: "context_actions",
+               elements: [
+                 %{
+                   type: "button",
+                   text: %{type: "plain_text", text: "Click"},
+                   action_id: "btn_1"
+                 }
+               ]
+             }
+    end
+
+    test "context_actions block with no elements" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context_actions,
+            attributes: %{}
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [context_actions] = result.blocks
+
+      assert context_actions == %{type: "context_actions", elements: []}
+    end
+  end
+
   describe "compile/1 with deep attributes" do
     test "select with placeholder as deep attribute" do
       ast =
