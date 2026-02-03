@@ -3469,6 +3469,54 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with rich_text" do
+    test "rich text block with elements passed through" do
+      elements = [
+        %{
+          type: "rich_text_section",
+          elements: [
+            %{type: "text", text: "Hello "},
+            %{type: "text", text: "world", style: %{bold: true}}
+          ]
+        }
+      ]
+
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{elements: elements}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{type: "rich_text", elements: elements}
+               ])
+    end
+
+    test "rich text block with block_id" do
+      elements = [
+        %{type: "rich_text_section", elements: [%{type: "text", text: "Hello"}]}
+      ]
+
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{elements: elements, block_id: "rt_block_1"}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{type: "rich_text", elements: elements, block_id: "rt_block_1"}
+               ])
+    end
+  end
+
   describe "compile/1 with markdown" do
     test "markdown block with text" do
       ast =
