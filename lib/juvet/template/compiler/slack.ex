@@ -8,7 +8,8 @@ defmodule Juvet.Template.Compiler.Slack do
 
   alias Juvet.Template.Compiler
   alias Juvet.Template.Compiler.Slack.Blocks.{Actions, Context, Divider, Header, Image, Section}
-  alias Juvet.Template.Compiler.Slack.Elements.Button
+  alias Juvet.Template.Compiler.Slack.Elements.{Button, Overflow, Select}
+  alias Juvet.Template.Compiler.Slack.Objects.{ConversationFilter, Option, OptionGroup}
   alias Juvet.Template.Compiler.Slack.View
 
   @spec compile([Compiler.ast_element()]) :: map()
@@ -18,6 +19,11 @@ defmodule Juvet.Template.Compiler.Slack do
   @spec compile_element(Compiler.ast_element()) :: map()
   def compile_element(%{element: :actions} = el), do: Actions.compile(el)
   def compile_element(%{element: :button} = el), do: Button.compile(el)
+  def compile_element(%{element: :overflow} = el), do: Overflow.compile(el)
+  def compile_element(%{element: :select} = el), do: Select.compile(el)
+  def compile_element(%{element: :filter} = el), do: ConversationFilter.compile(el)
+  def compile_element(%{element: :option} = el), do: Option.compile(el)
+  def compile_element(%{element: :option_group} = el), do: OptionGroup.compile(el)
   def compile_element(%{element: :context} = el), do: Context.compile(el)
   def compile_element(%{element: :divider} = el), do: Divider.compile(el)
   def compile_element(%{element: :header} = el), do: Header.compile(el)
