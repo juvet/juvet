@@ -119,6 +119,7 @@ lib/juvet/template/
         file.ex                    # Compiler.Slack.Blocks.File
         header.ex                  # Compiler.Slack.Blocks.Header
         input.ex                   # Compiler.Slack.Blocks.Input
+        markdown.ex                # Compiler.Slack.Blocks.Markdown
         image.ex                   # Compiler.Slack.Blocks.Image
         section.ex                 # Compiler.Slack.Blocks.Section
       elements/
@@ -179,6 +180,7 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:workflow_button` | `"workflow_button"` |
 | `:file` | `"file"` |
 | `:input` | `"input"` |
+| `:markdown` | `"markdown"` |
 | `:actions` | `"actions"` |
 | `:view` | `"modal"`, `"home"` (from `type` attribute) |
 

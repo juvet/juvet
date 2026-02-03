@@ -17,6 +17,7 @@ defmodule Juvet.Template.Compiler.Slack do
     Header,
     Image,
     Input,
+    Markdown,
     Section
   }
 
@@ -76,6 +77,7 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :header} = el), do: Header.compile(el)
   def compile_element(%{element: :image} = el), do: Image.compile(el)
   def compile_element(%{element: :input} = el), do: Input.compile(el)
+  def compile_element(%{element: :markdown} = el), do: Markdown.compile(el)
   def compile_element(%{element: :section} = el), do: Section.compile(el)
 
   def compile_element(%{element: element, line: line, column: col}) do

@@ -3469,6 +3469,40 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with markdown" do
+    test "markdown block with text" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :markdown,
+            attributes: %{text: "# Hello World\n\nSome **bold** text."}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{type: "markdown", text: "# Hello World\n\nSome **bold** text."}
+               ])
+    end
+
+    test "markdown block with block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :markdown,
+            attributes: %{text: "Some text", block_id: "md_block_1"}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{type: "markdown", text: "Some text", block_id: "md_block_1"}
+               ])
+    end
+  end
+
   describe "compile/1 with input" do
     test "input block with label and plain_text_input element" do
       ast =
