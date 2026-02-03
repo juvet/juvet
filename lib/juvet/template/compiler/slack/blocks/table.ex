@@ -1,6 +1,8 @@
 defmodule Juvet.Template.Compiler.Slack.Blocks.Table do
   @moduledoc false
 
+  alias Juvet.Template.Compiler.Slack
+
   import Juvet.Template.Compiler.Encoder.Helpers, only: [maybe_put: 3]
 
   def compile(%{element: :table, children: %{rows: rows}} = el) do
@@ -21,7 +23,7 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Table do
     %{type: "raw_text", text: text}
   end
 
-  defp compile_cell(%{element: :rich_text, attributes: %{elements: elements}}) do
-    %{type: "rich_text", elements: elements}
+  defp compile_cell(%{element: :rich_text, children: %{elements: elements}}) do
+    %{type: "rich_text", elements: Enum.map(elements, &Slack.compile_element/1)}
   end
 end

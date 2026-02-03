@@ -38,6 +38,10 @@ defmodule Juvet.Template.Compiler.Slack do
     PlainTextInput,
     RadioButtons,
     RichTextInput,
+    RichTextList,
+    RichTextPreformatted,
+    RichTextQuote,
+    RichTextSection,
     Select,
     Timepicker,
     UrlInput,
@@ -66,6 +70,13 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :plain_text_input} = el), do: PlainTextInput.compile(el)
   def compile_element(%{element: :radio_buttons} = el), do: RadioButtons.compile(el)
   def compile_element(%{element: :rich_text_input} = el), do: RichTextInput.compile(el)
+  def compile_element(%{element: :rich_text_list} = el), do: RichTextList.compile(el)
+
+  def compile_element(%{element: :rich_text_preformatted} = el),
+    do: RichTextPreformatted.compile(el)
+
+  def compile_element(%{element: :rich_text_quote} = el), do: RichTextQuote.compile(el)
+  def compile_element(%{element: :rich_text_section} = el), do: RichTextSection.compile(el)
   def compile_element(%{element: :timepicker} = el), do: Timepicker.compile(el)
   def compile_element(%{element: :select} = el), do: Select.compile(el)
   def compile_element(%{element: :url_input} = el), do: UrlInput.compile(el)
