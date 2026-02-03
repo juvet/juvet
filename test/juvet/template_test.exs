@@ -507,6 +507,76 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "platform inheritance shorthand" do
+    defmodule ShorthandTemplates do
+      use Juvet.Template
+
+      template(:shorthand_view, """
+      :slack.view
+        type: :modal
+        blocks:
+          .header{text: "Hello"}
+          .divider
+          .section "Welcome"
+      """)
+
+      template(:shorthand_with_bindings, """
+      :slack.view
+        type: :modal
+        blocks:
+          .header{text: "Hello <%= name %>"}
+          .divider
+      """)
+
+      template(:mixed_syntax, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Full"}
+          .divider
+          .section "Short"
+      """)
+    end
+
+    test "shorthand elements compile to correct output" do
+      result = ShorthandTemplates.shorthand_view()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}},
+                 %{type: "divider"},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Welcome"}}
+               ]
+             }
+    end
+
+    test "shorthand elements with bindings" do
+      result = ShorthandTemplates.shorthand_with_bindings(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello World"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "mixed full and shorthand syntax produces identical output" do
+      result = ShorthandTemplates.mixed_syntax()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Full"}},
+                 %{type: "divider"},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Short"}}
+               ]
+             }
+    end
+  end
+
   describe "file-based partials" do
     defmodule FilePartialTemplates do
       use Juvet.Template
@@ -723,6 +793,80 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe ".slack.cheex file-based templates" do
+    defmodule SlackFileTemplates do
+      use Juvet.Template
+
+      partial(:shorthand_header, file: "templates/shorthand_partial.slack.cheex")
+
+      template(:home, file: "templates/home.slack.cheex")
+
+      template(:with_partial, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :shorthand_header, name: "<%= name %>"}
+          :slack.divider
+      """)
+    end
+
+    test "file template with shorthand compiles correctly" do
+      result = SlackFileTemplates.home(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello World"}},
+                 %{type: "divider"},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Welcome"}}
+               ]
+             }
+    end
+
+    test "file partial with shorthand works in a view" do
+      result = SlackFileTemplates.with_partial(name: "Alice")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello Alice"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "template with matching :slack.element in .slack.cheex is allowed" do
+      # Using full :slack.element syntax in a .slack.cheex file is allowed (just redundant)
+      {ast, _compiled} =
+        Template.compile_template!(
+          :matching,
+          ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Hello\"}",
+          [],
+          platform: :slack
+        )
+
+      assert [%{platform: :slack, element: :view}] = ast
+    end
+
+    test "template with mismatching platform in .slack.cheex raises CompileError" do
+      assert_raise CompileError,
+                   ~r/platform :discord in template does not match expected platform :slack/,
+                   fn ->
+                     Template.compile_template!(
+                       :bad,
+                       ":discord.header{text: \"Hello\"}",
+                       [],
+                       platform: :slack
+                     )
+                   end
+    end
+
+    test "regular .cheex files continue to work as before" do
+      result = SlackFileTemplates.__template_ast__(:home)
+      assert [%{platform: :slack, element: :view} | _] = result
+    end
+  end
+
   describe "file-based template with format override" do
     defmodule FileFormatTemplates do
       use Juvet.Template
@@ -751,6 +895,153 @@ defmodule Juvet.TemplateTest do
                  %{"type" => "divider"}
                ]
              })
+    end
+  end
+
+  describe "inline platform keyword syntax" do
+    defmodule InlinePlatformTemplates do
+      use Juvet.Template
+
+      template(:slack_shorthand,
+        slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}\n    .divider"
+      )
+
+      template(:slack_with_bindings,
+        slack:
+          ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello <%= name %>\"}\n    .divider"
+      )
+
+      template(:slack_with_json,
+        slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}",
+        format: :json
+      )
+
+      template(:inline_keyword,
+        inline:
+          ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Hello\"}\n    :slack.divider"
+      )
+
+      template(:slack_redundant_full_syntax,
+        slack:
+          ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Redundant\"}\n    .divider"
+      )
+
+      partial(:slack_partial_header, slack: ".header{text: \"Hello <%= name %>\"}")
+
+      partial(:inline_partial_header, inline: ":slack.header{text: \"Hello <%= name %>\"}")
+
+      template(:using_slack_partial, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :slack_partial_header, name: "<%= name %>"}
+          :slack.divider
+      """)
+
+      template(:using_inline_partial, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :inline_partial_header, name: "<%= name %>"}
+          :slack.divider
+      """)
+    end
+
+    test "slack: keyword compiles view with all-shorthand elements" do
+      result = InlinePlatformTemplates.slack_shorthand()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "slack: keyword with EEx bindings" do
+      result = InlinePlatformTemplates.slack_with_bindings(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello World"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "slack: keyword with format: :json override" do
+      result = InlinePlatformTemplates.slack_with_json()
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+               ]
+             })
+    end
+
+    test "inline: keyword works like bare string source" do
+      result = InlinePlatformTemplates.inline_keyword()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "slack: keyword with matching :slack.element is allowed (redundant)" do
+      result = InlinePlatformTemplates.slack_redundant_full_syntax()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Redundant"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "slack: keyword with mismatching :discord.element raises CompileError" do
+      assert_raise CompileError,
+                   ~r/platform :discord in template does not match expected platform :slack/,
+                   fn ->
+                     Code.compile_string("""
+                     defmodule MismatchInlinePlatform do
+                       use Juvet.Template
+                       template :bad, slack: ":discord.header{text: \\"Hello\\"}"
+                     end
+                     """)
+                   end
+    end
+
+    test "partial with slack: keyword works and can be referenced by templates" do
+      result = InlinePlatformTemplates.using_slack_partial(name: "Alice")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello Alice"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "partial with inline: keyword works" do
+      result = InlinePlatformTemplates.using_inline_partial(name: "Bob")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello Bob"}},
+                 %{type: "divider"}
+               ]
+             }
     end
   end
 end

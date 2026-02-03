@@ -257,6 +257,174 @@ defmodule Juvet.Template.ParserTest do
     end
   end
 
+  describe "parse/1 - Phase 8: Platform inheritance" do
+    test "child element inherits platform from parent" do
+      template = ":slack.section\n  accessory:\n    .image\n      url: \"http://ex.com\""
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :section,
+                 attributes: %{},
+                 children: %{
+                   accessory: %{
+                     platform: :slack,
+                     element: :image,
+                     attributes: %{url: "http://ex.com"}
+                   }
+                 }
+               }
+             ]
+    end
+
+    test "multiple children inherit platform" do
+      template =
+        ":slack.actions\n  elements:\n    .button\n      text: \"One\"\n    .button\n      text: \"Two\""
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :actions,
+                 attributes: %{},
+                 children: %{
+                   elements: [
+                     %{platform: :slack, element: :button, attributes: %{text: "One"}},
+                     %{platform: :slack, element: :button, attributes: %{text: "Two"}}
+                   ]
+                 }
+               }
+             ]
+    end
+
+    test "mixed full and shorthand syntax in children" do
+      template =
+        ":slack.actions\n  elements:\n    :slack.button\n      text: \"Full\"\n    .button\n      text: \"Short\""
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :actions,
+                 attributes: %{},
+                 children: %{
+                   elements: [
+                     %{platform: :slack, element: :button, attributes: %{text: "Full"}},
+                     %{platform: :slack, element: :button, attributes: %{text: "Short"}}
+                   ]
+                 }
+               }
+             ]
+    end
+
+    test "top-level dot element raises error" do
+      assert_raise Juvet.Template.Parser.Error,
+                   ~r/must be inside a parent/,
+                   fn ->
+                     parse(".header{text: \"Hello\"}")
+                   end
+    end
+
+    test "shorthand in view blocks" do
+      template =
+        ":slack.view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}\n    .divider\n    .section \"Welcome\""
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :view,
+                 attributes: %{type: :modal},
+                 children: %{
+                   blocks: [
+                     %{platform: :slack, element: :header, attributes: %{text: "Hello"}},
+                     %{platform: :slack, element: :divider, attributes: %{}},
+                     %{platform: :slack, element: :section, attributes: %{text: "Welcome"}}
+                   ]
+                 }
+               }
+             ]
+    end
+
+    test "shorthand with inline attributes" do
+      template =
+        ":slack.section\n  accessory:\n    .image{url: \"http://ex.com\", alt_text: \"Alt\"}"
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :section,
+                 attributes: %{},
+                 children: %{
+                   accessory: %{
+                     platform: :slack,
+                     element: :image,
+                     attributes: %{url: "http://ex.com", alt_text: "Alt"}
+                   }
+                 }
+               }
+             ]
+    end
+  end
+
+  describe "parse/2 - with default platform option" do
+    defp parse_with_platform(template, platform) do
+      template
+      |> Tokenizer.tokenize()
+      |> Parser.parse(platform: platform)
+      |> strip_positions()
+    end
+
+    test "top-level .element allowed when platform is provided" do
+      assert parse_with_platform(".header{text: \"Hello\"}", :slack) == [
+               %{platform: :slack, element: :header, attributes: %{text: "Hello"}}
+             ]
+    end
+
+    test "multiple top-level shorthand elements" do
+      template = ".header{text: \"Hello\"}\n.divider\n.section \"Welcome\""
+
+      assert parse_with_platform(template, :slack) == [
+               %{platform: :slack, element: :header, attributes: %{text: "Hello"}},
+               %{platform: :slack, element: :divider, attributes: %{}},
+               %{platform: :slack, element: :section, attributes: %{text: "Welcome"}}
+             ]
+    end
+
+    test "mixed full and shorthand at top level" do
+      template = ":slack.header{text: \"Hello\"}\n.divider\n.section \"Welcome\""
+
+      assert parse_with_platform(template, :slack) == [
+               %{platform: :slack, element: :header, attributes: %{text: "Hello"}},
+               %{platform: :slack, element: :divider, attributes: %{}},
+               %{platform: :slack, element: :section, attributes: %{text: "Welcome"}}
+             ]
+    end
+
+    test "shorthand view with nested children" do
+      template = ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}\n    .divider"
+
+      assert parse_with_platform(template, :slack) == [
+               %{
+                 platform: :slack,
+                 element: :view,
+                 attributes: %{type: :modal},
+                 children: %{
+                   blocks: [
+                     %{platform: :slack, element: :header, attributes: %{text: "Hello"}},
+                     %{platform: :slack, element: :divider, attributes: %{}}
+                   ]
+                 }
+               }
+             ]
+    end
+
+    test "top-level .element still errors without platform option" do
+      assert_raise Juvet.Template.Parser.Error,
+                   ~r/must be inside a parent/,
+                   fn ->
+                     parse(".header{text: \"Hello\"}")
+                   end
+    end
+  end
+
   describe "parse/1 - line/column tracking" do
     test "includes line and column in AST elements" do
       [element] = parse_with_positions(":slack.header{text: \"Hello\"}")

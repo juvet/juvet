@@ -187,7 +187,9 @@ Some attributes are renamed for Slack compatibility:
 
 ```
 template     -> element* eof
-element      -> colon keyword dot keyword element_body?
+element      -> full_element | short_element
+full_element -> colon keyword dot keyword element_body?
+short_element -> dot keyword element_body?       (valid inside a parent element, or at top level with file platform)
 element_body -> default_value? inline_attrs? (newline block)?
 default_value -> whitespace text
 inline_attrs -> open_brace attr_list close_brace
@@ -196,6 +198,10 @@ attr         -> whitespace? keyword colon whitespace? value
 value        -> text | boolean | atom | number
 block        -> indent (attr | element)+ dedent
 ```
+
+Short elements (`.element`) inherit their platform from the parent element.
+They can only appear as children — using `.element` at the top level is an error,
+unless a file-level platform is set (e.g., `.slack.cheex` files).
 
 ## Error Handling and Line Number Tracking
 
@@ -481,6 +487,148 @@ JSON: {
   }]
 }
 ```
+
+### Phase 8: Platform inheritance (`.element` shorthand)
+
+Child elements can inherit their platform from the parent element using `.element` syntax instead of `:platform.element`. This is purely syntactic sugar — the AST always includes an explicit `platform:` field.
+
+```
+Input:
+  :slack.view
+    type: :modal
+    blocks:
+      .header{text: "Hello"}
+      .divider
+      .section "Welcome"
+
+AST: [
+  %{
+    platform: :slack,
+    element: :view,
+    attributes: %{type: :modal},
+    children: %{
+      blocks: [
+        %{platform: :slack, element: :header, attributes: %{text: "Hello"}},
+        %{platform: :slack, element: :divider, attributes: %{}},
+        %{platform: :slack, element: :section, attributes: %{text: "Welcome"}}
+      ]
+    }
+  }
+]
+```
+
+Full and shorthand syntax can be mixed freely within the same block:
+
+```
+:slack.actions
+  elements:
+    :slack.button
+      text: "Full syntax"
+    .button
+      text: "Shorthand"
+```
+
+Using `.element` at the top level (no parent) raises a parser error:
+
+```
+.header{text: "Hello"}
+# => ** (Parser.Error) Element with '.' shorthand must be inside a parent element that specifies a platform
+```
+
+### Platform from Filename
+
+Files named with a `.slack.cheex` extension establish a file-level platform, allowing `.element` shorthand at the top level — including for the root element.
+
+**Before** (standard `.cheex`):
+```
+:slack.view
+  type: :modal
+  blocks:
+    .header{text: "Hello"}
+    .divider
+```
+
+**After** (`home.slack.cheex`):
+```
+.view
+  type: :modal
+  blocks:
+    .header{text: "Hello"}
+    .divider
+```
+
+```elixir
+defmodule MyApp.Templates do
+  use Juvet.Template
+
+  template :home, file: "templates/home.slack.cheex"
+end
+```
+
+**Naming convention:** The platform segment is the second-to-last part of the filename before `.cheex`:
+
+| Filename | Platform |
+|----------|----------|
+| `home.slack.cheex` | `:slack` |
+| `greeting.cheex` | none (standard) |
+| `my.template.slack.cheex` | `:slack` |
+| `home.discord.cheex` | none (`:discord` not yet recognized) |
+
+Currently only `:slack` is recognized as a platform in filenames.
+
+**Validation rules:**
+
+- Using the matching full syntax (`:slack.header`) in a `.slack.cheex` file is allowed — it's just redundant
+- Using a different platform (`:discord.header`) in a `.slack.cheex` file raises a compile-time error:
+  ```
+  ** (CompileError) platform :discord in template does not match expected platform :slack (line 1, column 1)
+  ```
+- Inline templates (`template(:name, "source")`) are unaffected — no filename to extract from
+- Partials from `.slack.cheex` files also support top-level shorthand
+
+### Inline Platform Keywords
+
+Inline templates can use platform keywords to enable the same `.element` shorthand as `.slack.cheex` files, without needing external files. The platform key sets a file-level platform context for the source string.
+
+**Platform keyword (`slack:`)** — enables `.element` shorthand:
+
+```elixir
+defmodule MyApp.Templates do
+  use Juvet.Template
+
+  template :bar_chart, slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}"
+end
+```
+
+This is equivalent to writing the same source in a `.slack.cheex` file. All `.element` shorthand forms are resolved to `:slack.element`.
+
+**Explicit inline keyword (`inline:`)** — no platform, must use full `:slack.element` syntax:
+
+```elixir
+template :bar_chart, inline: ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Hello\"}"
+```
+
+The `inline:` keyword behaves identically to passing a bare string as the second argument.
+
+**Platform keyword with format override:**
+
+```elixir
+template :bar_chart, slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}", format: :json
+```
+
+**Partials with platform keywords:**
+
+```elixir
+partial :user_header, slack: ".header{text: \"Hello <%= name %>\"}"
+partial :user_header, inline: ":slack.header{text: \"Hello <%= name %>\"}"
+```
+
+**Validation rules** (same as `.slack.cheex`):
+
+- Only `:slack` is recognized as a platform key
+- Conflicting platform in source is an error (`:discord.header` with `slack:` key raises `CompileError`)
+- Matching full syntax (`:slack.header`) with `slack:` key is allowed — just redundant
+- The existing API is unchanged: `template(:name, "source")`, `template(:name, "source", format: :json)`, and `template(:name, file: "path.cheex")` all continue to work
 
 ## Compiler Implementation Phases
 
@@ -1026,10 +1174,12 @@ Views are top-level containers used for Slack surfaces like modals and home tabs
   type: :modal
   private_metadata: "some metadata string"
   blocks:
-    :slack.header{text: "Hello <%= name %>"}
-    :slack.divider
-    :slack.section "Welcome"
+    .header{text: "Hello <%= name %>"}
+    .divider
+    .section "Welcome"
 ```
+
+Child elements use `.element` shorthand to inherit the `:slack` platform from the parent `:slack.view`. The full `:slack.header` syntax also works and is equivalent.
 
 ### Output
 

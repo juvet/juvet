@@ -1,0 +1,6 @@
+.view
+  type: :modal
+  blocks:
+    .header{text: "Hello <%= name %>"}
+    .divider
+    .section "Welcome"
