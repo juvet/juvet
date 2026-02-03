@@ -116,7 +116,13 @@ lib/juvet/template/
         context.ex                 # Compiler.Slack.Blocks.Context
         context_actions.ex         # Compiler.Slack.Blocks.ContextActions
         divider.ex                 # Compiler.Slack.Blocks.Divider
+        file.ex                    # Compiler.Slack.Blocks.File
         header.ex                  # Compiler.Slack.Blocks.Header
+        input.ex                   # Compiler.Slack.Blocks.Input
+        markdown.ex                # Compiler.Slack.Blocks.Markdown
+        rich_text.ex               # Compiler.Slack.Blocks.RichText
+        table.ex                   # Compiler.Slack.Blocks.Table
+        video.ex                   # Compiler.Slack.Blocks.Video
         image.ex                   # Compiler.Slack.Blocks.Image
         section.ex                 # Compiler.Slack.Blocks.Section
       elements/
@@ -125,11 +131,16 @@ lib/juvet/template/
         datetimepicker.ex          # Compiler.Slack.Elements.Datetimepicker
         image.ex                   # Compiler.Slack.Elements.Image
         overflow.ex                # Compiler.Slack.Elements.Overflow
+        rich_text_list.ex          # Compiler.Slack.Elements.RichTextList
+        rich_text_preformatted.ex  # Compiler.Slack.Elements.RichTextPreformatted
+        rich_text_quote.ex         # Compiler.Slack.Elements.RichTextQuote
+        rich_text_section.ex       # Compiler.Slack.Elements.RichTextSection
         select.ex                  # Compiler.Slack.Elements.Select
       objects/
         conversation_filter.ex     # Compiler.Slack.Objects.ConversationFilter
         option.ex                  # Compiler.Slack.Objects.Option
         option_group.ex            # Compiler.Slack.Objects.OptionGroup
+        rich_text_element.ex       # Compiler.Slack.Objects.RichTextElement
         text.ex                    # Compiler.Slack.Objects.Text
 ```
 
@@ -175,6 +186,16 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:icon_button` | `"icon_button"` |
 | `:overflow` | `"overflow"` |
 | `:workflow_button` | `"workflow_button"` |
+| `:file` | `"file"` |
+| `:input` | `"input"` |
+| `:markdown` | `"markdown"` |
+| `:rich_text` | `"rich_text"` |
+| `:rich_text_section` | `"rich_text_section"` |
+| `:rich_text_list` | `"rich_text_list"` |
+| `:rich_text_preformatted` | `"rich_text_preformatted"` |
+| `:rich_text_quote` | `"rich_text_quote"` |
+| `:video` | `"video"` |
+| `:table` | `"table"` |
 | `:actions` | `"actions"` |
 | `:view` | `"modal"`, `"home"` (from `type` attribute) |
 

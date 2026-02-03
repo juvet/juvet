@@ -13,9 +13,15 @@ defmodule Juvet.Template.Compiler.Slack do
     Context,
     ContextActions,
     Divider,
+    File,
     Header,
     Image,
-    Section
+    Input,
+    Markdown,
+    RichText,
+    Section,
+    Table,
+    Video
   }
 
   alias Juvet.Template.Compiler.Slack.Elements.{
@@ -32,13 +38,27 @@ defmodule Juvet.Template.Compiler.Slack do
     PlainTextInput,
     RadioButtons,
     RichTextInput,
+    RichTextList,
+    RichTextPreformatted,
+    RichTextQuote,
+    RichTextSection,
     Select,
     Timepicker,
     UrlInput,
     WorkflowButton
   }
 
-  alias Juvet.Template.Compiler.Slack.Objects.{ConversationFilter, Option, OptionGroup}
+  alias Juvet.Template.Compiler.Slack.Objects.{
+    ConfirmationDialog,
+    ConversationFilter,
+    DispatchActionConfig,
+    Option,
+    OptionGroup,
+    SlackFile,
+    Trigger,
+    Workflow
+  }
+
   alias Juvet.Template.Compiler.Slack.View
 
   @spec compile([Compiler.ast_element()]) :: map()
@@ -60,19 +80,40 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :plain_text_input} = el), do: PlainTextInput.compile(el)
   def compile_element(%{element: :radio_buttons} = el), do: RadioButtons.compile(el)
   def compile_element(%{element: :rich_text_input} = el), do: RichTextInput.compile(el)
+  def compile_element(%{element: :rich_text_list} = el), do: RichTextList.compile(el)
+
+  def compile_element(%{element: :rich_text_preformatted} = el),
+    do: RichTextPreformatted.compile(el)
+
+  def compile_element(%{element: :rich_text_quote} = el), do: RichTextQuote.compile(el)
+  def compile_element(%{element: :rich_text_section} = el), do: RichTextSection.compile(el)
   def compile_element(%{element: :timepicker} = el), do: Timepicker.compile(el)
   def compile_element(%{element: :select} = el), do: Select.compile(el)
   def compile_element(%{element: :url_input} = el), do: UrlInput.compile(el)
   def compile_element(%{element: :workflow_button} = el), do: WorkflowButton.compile(el)
+  def compile_element(%{element: :confirm} = el), do: ConfirmationDialog.compile(el)
+
+  def compile_element(%{element: :dispatch_action_config} = el),
+    do: DispatchActionConfig.compile(el)
+
   def compile_element(%{element: :filter} = el), do: ConversationFilter.compile(el)
+  def compile_element(%{element: :slack_file} = el), do: SlackFile.compile(el)
+  def compile_element(%{element: :trigger} = el), do: Trigger.compile(el)
+  def compile_element(%{element: :workflow} = el), do: Workflow.compile(el)
   def compile_element(%{element: :option} = el), do: Option.compile(el)
   def compile_element(%{element: :option_group} = el), do: OptionGroup.compile(el)
   def compile_element(%{element: :context} = el), do: Context.compile(el)
   def compile_element(%{element: :context_actions} = el), do: ContextActions.compile(el)
   def compile_element(%{element: :divider} = el), do: Divider.compile(el)
+  def compile_element(%{element: :file} = el), do: File.compile(el)
   def compile_element(%{element: :header} = el), do: Header.compile(el)
   def compile_element(%{element: :image} = el), do: Image.compile(el)
+  def compile_element(%{element: :input} = el), do: Input.compile(el)
+  def compile_element(%{element: :markdown} = el), do: Markdown.compile(el)
+  def compile_element(%{element: :rich_text} = el), do: RichText.compile(el)
   def compile_element(%{element: :section} = el), do: Section.compile(el)
+  def compile_element(%{element: :table} = el), do: Table.compile(el)
+  def compile_element(%{element: :video} = el), do: Video.compile(el)
 
   def compile_element(%{element: element, line: line, column: col}) do
     raise ArgumentError,

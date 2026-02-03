@@ -1610,7 +1610,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
               accessory: %{
                 platform: :slack,
                 element: :image,
-                attributes: %{slack_file: %{id: "F0123456"}, alt_text: "Avatar"}
+                attributes: %{alt_text: "Avatar"},
+                children: %{
+                  slack_file: %{
+                    element: :slack_file,
+                    attributes: %{id: "F0123456"}
+                  }
+                }
               }
             }
           }
@@ -1642,7 +1648,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
                 %{
                   platform: :slack,
                   element: :image,
-                  attributes: %{slack_file: %{id: "F0123456"}, alt_text: "Icon"}
+                  attributes: %{alt_text: "Icon"},
+                  children: %{
+                    slack_file: %{
+                      element: :slack_file,
+                      attributes: %{id: "F0123456"}
+                    }
+                  }
                 }
               ]
             }
@@ -3136,10 +3148,19 @@ defmodule Juvet.Template.Compiler.SlackTest do
                   element: :workflow_button,
                   attributes: %{
                     text: "Run Workflow",
-                    action_id: "wf_btn_1",
+                    action_id: "wf_btn_1"
+                  },
+                  children: %{
                     workflow: %{
-                      trigger: %{
-                        url: "https://slack.com/shortcuts/Ft123/xyz"
+                      element: :workflow,
+                      attributes: %{},
+                      children: %{
+                        trigger: %{
+                          element: :trigger,
+                          attributes: %{
+                            url: "https://slack.com/shortcuts/Ft123/xyz"
+                          }
+                        }
                       }
                     }
                   }
@@ -3179,13 +3200,22 @@ defmodule Juvet.Template.Compiler.SlackTest do
                   element: :workflow_button,
                   attributes: %{
                     text: "Start",
-                    action_id: "wf_btn_2",
+                    action_id: "wf_btn_2"
+                  },
+                  children: %{
                     workflow: %{
-                      trigger: %{
-                        url: "https://slack.com/shortcuts/Ft123/xyz",
-                        customizable_input_parameters: [
-                          %{name: "greeting", value: "Hello"}
-                        ]
+                      element: :workflow,
+                      attributes: %{},
+                      children: %{
+                        trigger: %{
+                          element: :trigger,
+                          attributes: %{
+                            url: "https://slack.com/shortcuts/Ft123/xyz",
+                            customizable_input_parameters: [
+                              %{name: "greeting", value: "Hello"}
+                            ]
+                          }
+                        }
                       }
                     }
                   }
@@ -3469,6 +3499,1078 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with table" do
+    test "table block with rows of raw_text cells" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :table,
+            attributes: %{},
+            children: %{
+              rows: [
+                [
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Name"}},
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Role"}}
+                ],
+                [
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Alice"}},
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Engineer"}}
+                ]
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "table",
+                   rows: [
+                     %{
+                       cells: [
+                         %{type: "raw_text", text: "Name"},
+                         %{type: "raw_text", text: "Role"}
+                       ]
+                     },
+                     %{
+                       cells: [
+                         %{type: "raw_text", text: "Alice"},
+                         %{type: "raw_text", text: "Engineer"}
+                       ]
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "table block with column_settings" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :table,
+            attributes: %{
+              column_settings: [
+                %{align: "left", is_wrapped: true},
+                %{align: "center", is_wrapped: false}
+              ]
+            },
+            children: %{
+              rows: [
+                [
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Name"}},
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Role"}}
+                ]
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "table",
+                   rows: [
+                     %{
+                       cells: [
+                         %{type: "raw_text", text: "Name"},
+                         %{type: "raw_text", text: "Role"}
+                       ]
+                     }
+                   ],
+                   column_settings: [
+                     %{align: "left", is_wrapped: true},
+                     %{align: "center", is_wrapped: false}
+                   ]
+                 }
+               ])
+    end
+
+    test "table block with rich_text cells" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :table,
+            attributes: %{},
+            children: %{
+              rows: [
+                [
+                  %{
+                    platform: :slack,
+                    element: :rich_text,
+                    children: %{
+                      elements: [
+                        %{
+                          platform: :slack,
+                          element: :rich_text_section,
+                          attributes: %{},
+                          children: %{
+                            elements: [
+                              %{
+                                platform: :slack,
+                                element: :text,
+                                attributes: %{text: "Hello", style: %{bold: true}}
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "table",
+                   rows: [
+                     %{
+                       cells: [
+                         %{
+                           type: "rich_text",
+                           elements: [
+                             %{
+                               type: "rich_text_section",
+                               elements: [
+                                 %{type: "text", text: "Hello", style: %{bold: true}}
+                               ]
+                             }
+                           ]
+                         }
+                       ]
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "table block with block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :table,
+            attributes: %{block_id: "table_block_1"},
+            children: %{
+              rows: [
+                [
+                  %{platform: :slack, element: :raw_text, attributes: %{text: "Cell"}}
+                ]
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "table",
+                   rows: [
+                     %{cells: [%{type: "raw_text", text: "Cell"}]}
+                   ],
+                   block_id: "table_block_1"
+                 }
+               ])
+    end
+  end
+
+  describe "compile/1 with video" do
+    test "video block with required fields" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: "Demo",
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo"},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4"
+                 }
+               ])
+    end
+
+    test "video block with description and author_name" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: "Demo",
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4",
+              description: "A short demo of the feature",
+              author_name: "Alice"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo"},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4",
+                   description: %{type: "plain_text", text: "A short demo of the feature"},
+                   author_name: "Alice"
+                 }
+               ])
+    end
+
+    test "video block with title_url, provider_name, provider_icon_url" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: "Demo",
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4",
+              title_url: "https://example.com/page",
+              provider_name: "Example",
+              provider_icon_url: "https://example.com/icon.png"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo"},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4",
+                   title_url: "https://example.com/page",
+                   provider_name: "Example",
+                   provider_icon_url: "https://example.com/icon.png"
+                 }
+               ])
+    end
+
+    test "video block with deep title" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: %{text: "Demo", emoji: true},
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo", emoji: true},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4"
+                 }
+               ])
+    end
+
+    test "video block with block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: "Demo",
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4",
+              block_id: "video_block_1"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo"},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4",
+                   block_id: "video_block_1"
+                 }
+               ])
+    end
+  end
+
+  describe "compile/1 with rich text inner elements" do
+    alias Juvet.Template.Compiler.Slack.Objects.RichTextElement
+
+    test "text element" do
+      assert RichTextElement.compile(%{element: :text, attributes: %{text: "hello"}}) ==
+               %{type: "text", text: "hello"}
+    end
+
+    test "text element with style" do
+      assert RichTextElement.compile(%{
+               element: :text,
+               attributes: %{text: "bold", style: %{bold: true}}
+             }) ==
+               %{type: "text", text: "bold", style: %{bold: true}}
+    end
+
+    test "link element" do
+      assert RichTextElement.compile(%{
+               element: :link,
+               attributes: %{url: "https://example.com"}
+             }) ==
+               %{type: "link", url: "https://example.com"}
+    end
+
+    test "link element with text, style, and unsafe" do
+      assert RichTextElement.compile(%{
+               element: :link,
+               attributes: %{
+                 url: "https://example.com",
+                 text: "Example",
+                 style: %{bold: true},
+                 unsafe: true
+               }
+             }) ==
+               %{
+                 type: "link",
+                 url: "https://example.com",
+                 text: "Example",
+                 style: %{bold: true},
+                 unsafe: true
+               }
+    end
+
+    test "emoji element" do
+      assert RichTextElement.compile(%{element: :emoji, attributes: %{name: "wave"}}) ==
+               %{type: "emoji", name: "wave"}
+    end
+
+    test "emoji element with unicode" do
+      assert RichTextElement.compile(%{
+               element: :emoji,
+               attributes: %{name: "wave", unicode: "1f44b"}
+             }) ==
+               %{type: "emoji", name: "wave", unicode: "1f44b"}
+    end
+
+    test "channel element" do
+      assert RichTextElement.compile(%{
+               element: :channel,
+               attributes: %{channel_id: "C123"}
+             }) ==
+               %{type: "channel", channel_id: "C123"}
+    end
+
+    test "channel element with style" do
+      assert RichTextElement.compile(%{
+               element: :channel,
+               attributes: %{channel_id: "C123", style: %{bold: true}}
+             }) ==
+               %{type: "channel", channel_id: "C123", style: %{bold: true}}
+    end
+
+    test "user element" do
+      assert RichTextElement.compile(%{element: :user, attributes: %{user_id: "U123"}}) ==
+               %{type: "user", user_id: "U123"}
+    end
+
+    test "user element with style" do
+      assert RichTextElement.compile(%{
+               element: :user,
+               attributes: %{user_id: "U123", style: %{italic: true}}
+             }) ==
+               %{type: "user", user_id: "U123", style: %{italic: true}}
+    end
+
+    test "usergroup element" do
+      assert RichTextElement.compile(%{
+               element: :usergroup,
+               attributes: %{usergroup_id: "S123"}
+             }) ==
+               %{type: "usergroup", usergroup_id: "S123"}
+    end
+
+    test "usergroup element with style" do
+      assert RichTextElement.compile(%{
+               element: :usergroup,
+               attributes: %{usergroup_id: "S123", style: %{bold: true}}
+             }) ==
+               %{type: "usergroup", usergroup_id: "S123", style: %{bold: true}}
+    end
+
+    test "date element" do
+      assert RichTextElement.compile(%{
+               element: :date,
+               attributes: %{timestamp: 1_628_633_820, format: "{date_long}"}
+             }) ==
+               %{type: "date", timestamp: 1_628_633_820, format: "{date_long}"}
+    end
+
+    test "date element with url and fallback" do
+      assert RichTextElement.compile(%{
+               element: :date,
+               attributes: %{
+                 timestamp: 1_628_633_820,
+                 format: "{date_long}",
+                 url: "https://example.com",
+                 fallback: "Aug 10, 2021"
+               }
+             }) ==
+               %{
+                 type: "date",
+                 timestamp: 1_628_633_820,
+                 format: "{date_long}",
+                 url: "https://example.com",
+                 fallback: "Aug 10, 2021"
+               }
+    end
+
+    test "broadcast element" do
+      assert RichTextElement.compile(%{element: :broadcast, attributes: %{range: "here"}}) ==
+               %{type: "broadcast", range: "here"}
+    end
+
+    test "color element" do
+      assert RichTextElement.compile(%{element: :color, attributes: %{value: "#FF5733"}}) ==
+               %{type: "color", value: "#FF5733"}
+    end
+  end
+
+  describe "compile/1 with rich text container elements" do
+    test "rich_text_section with text elements" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_section,
+                  attributes: %{},
+                  children: %{
+                    elements: [
+                      %{platform: :slack, element: :text, attributes: %{text: "Hello "}},
+                      %{
+                        platform: :slack,
+                        element: :link,
+                        attributes: %{url: "https://example.com", text: "link"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [block] = result.blocks
+      [section] = block.elements
+
+      assert section == %{
+               type: "rich_text_section",
+               elements: [
+                 %{type: "text", text: "Hello "},
+                 %{type: "link", url: "https://example.com", text: "link"}
+               ]
+             }
+    end
+
+    test "rich_text_list with style and section items" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_list,
+                  attributes: %{style: "ordered", indent: 1, offset: 0, border: 1},
+                  children: %{
+                    elements: [
+                      %{
+                        platform: :slack,
+                        element: :rich_text_section,
+                        attributes: %{},
+                        children: %{
+                          elements: [
+                            %{platform: :slack, element: :text, attributes: %{text: "First"}}
+                          ]
+                        }
+                      },
+                      %{
+                        platform: :slack,
+                        element: :rich_text_section,
+                        attributes: %{},
+                        children: %{
+                          elements: [
+                            %{platform: :slack, element: :text, attributes: %{text: "Second"}}
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [block] = result.blocks
+      [list] = block.elements
+
+      assert list == %{
+               type: "rich_text_list",
+               style: "ordered",
+               indent: 1,
+               offset: 0,
+               border: 1,
+               elements: [
+                 %{
+                   type: "rich_text_section",
+                   elements: [%{type: "text", text: "First"}]
+                 },
+                 %{
+                   type: "rich_text_section",
+                   elements: [%{type: "text", text: "Second"}]
+                 }
+               ]
+             }
+    end
+
+    test "rich_text_preformatted with text elements and border" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_preformatted,
+                  attributes: %{border: 1},
+                  children: %{
+                    elements: [
+                      %{platform: :slack, element: :text, attributes: %{text: "def hello"}}
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [block] = result.blocks
+      [pre] = block.elements
+
+      assert pre == %{
+               type: "rich_text_preformatted",
+               elements: [%{type: "text", text: "def hello"}],
+               border: 1
+             }
+    end
+
+    test "rich_text_quote with text elements and border" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_quote,
+                  attributes: %{border: 0},
+                  children: %{
+                    elements: [
+                      %{platform: :slack, element: :text, attributes: %{text: "A wise quote"}}
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [block] = result.blocks
+      [quote_el] = block.elements
+
+      assert quote_el == %{
+               type: "rich_text_quote",
+               elements: [%{type: "text", text: "A wise quote"}],
+               border: 0
+             }
+    end
+  end
+
+  describe "compile/1 with rich_text" do
+    test "rich text block with rich_text_section containing styled text" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_section,
+                  attributes: %{},
+                  children: %{
+                    elements: [
+                      %{platform: :slack, element: :text, attributes: %{text: "Hello "}},
+                      %{
+                        platform: :slack,
+                        element: :text,
+                        attributes: %{text: "world", style: %{bold: true}}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "rich_text",
+                   elements: [
+                     %{
+                       type: "rich_text_section",
+                       elements: [
+                         %{type: "text", text: "Hello "},
+                         %{type: "text", text: "world", style: %{bold: true}}
+                       ]
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "rich text block with rich_text_list" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_list,
+                  attributes: %{style: "bullet"},
+                  children: %{
+                    elements: [
+                      %{
+                        platform: :slack,
+                        element: :rich_text_section,
+                        attributes: %{},
+                        children: %{
+                          elements: [
+                            %{platform: :slack, element: :text, attributes: %{text: "Item 1"}}
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "rich_text",
+                   elements: [
+                     %{
+                       type: "rich_text_list",
+                       style: "bullet",
+                       elements: [
+                         %{
+                           type: "rich_text_section",
+                           elements: [%{type: "text", text: "Item 1"}]
+                         }
+                       ]
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "rich text block with rich_text_preformatted" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_preformatted,
+                  attributes: %{},
+                  children: %{
+                    elements: [
+                      %{platform: :slack, element: :text, attributes: %{text: "code here"}}
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "rich_text",
+                   elements: [
+                     %{
+                       type: "rich_text_preformatted",
+                       elements: [%{type: "text", text: "code here"}]
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "rich text block with rich_text_quote" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_quote,
+                  attributes: %{},
+                  children: %{
+                    elements: [
+                      %{platform: :slack, element: :text, attributes: %{text: "quoted text"}}
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "rich_text",
+                   elements: [
+                     %{
+                       type: "rich_text_quote",
+                       elements: [%{type: "text", text: "quoted text"}]
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "rich text block with block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{block_id: "rt_block_1"},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_section,
+                  attributes: %{},
+                  children: %{
+                    elements: [
+                      %{platform: :slack, element: :text, attributes: %{text: "Hello"}}
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "rich_text",
+                   elements: [
+                     %{
+                       type: "rich_text_section",
+                       elements: [%{type: "text", text: "Hello"}]
+                     }
+                   ],
+                   block_id: "rt_block_1"
+                 }
+               ])
+    end
+
+    test "rich text block with no children returns empty elements" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :rich_text,
+            attributes: %{}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{type: "rich_text", elements: []}
+               ])
+    end
+  end
+
+  describe "compile/1 with markdown" do
+    test "markdown block with text" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :markdown,
+            attributes: %{text: "# Hello World\n\nSome **bold** text."}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{type: "markdown", text: "# Hello World\n\nSome **bold** text."}
+               ])
+    end
+
+    test "markdown block with block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :markdown,
+            attributes: %{text: "Some text", block_id: "md_block_1"}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{type: "markdown", text: "Some text", block_id: "md_block_1"}
+               ])
+    end
+  end
+
+  describe "compile/1 with input" do
+    test "input block with label and plain_text_input element" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: "Your Name"},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :plain_text_input,
+                attributes: %{action_id: "name_input"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "input",
+                   label: %{type: "plain_text", text: "Your Name"},
+                   element: %{type: "plain_text_input", action_id: "name_input"}
+                 }
+               ])
+    end
+
+    test "input block with hint and optional" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: "Email", hint: "Enter your work email", optional: true},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :email_input,
+                attributes: %{action_id: "email_input"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "input",
+                   label: %{type: "plain_text", text: "Email"},
+                   element: %{type: "email_text_input", action_id: "email_input"},
+                   hint: %{type: "plain_text", text: "Enter your work email"},
+                   optional: true
+                 }
+               ])
+    end
+
+    test "input block with dispatch_action and block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{
+              label: "Search",
+              dispatch_action: true,
+              block_id: "input_block_1"
+            },
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :plain_text_input,
+                attributes: %{action_id: "search_input"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "input",
+                   label: %{type: "plain_text", text: "Search"},
+                   element: %{type: "plain_text_input", action_id: "search_input"},
+                   dispatch_action: true,
+                   block_id: "input_block_1"
+                 }
+               ])
+    end
+
+    test "input block with deep label" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: %{text: "Your Name", emoji: true}},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :plain_text_input,
+                attributes: %{action_id: "name_input"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "input",
+                   label: %{type: "plain_text", text: "Your Name", emoji: true},
+                   element: %{type: "plain_text_input", action_id: "name_input"}
+                 }
+               ])
+    end
+  end
+
+  describe "compile/1 with file" do
+    test "file block with external_id and source" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :file,
+            attributes: %{external_id: "ABCD1", source: "remote"}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{type: "file", external_id: "ABCD1", source: "remote"}
+               ])
+    end
+
+    test "file block with block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :file,
+            attributes: %{external_id: "ABCD1", source: "remote", block_id: "file_block_1"}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "file",
+                   external_id: "ABCD1",
+                   source: "remote",
+                   block_id: "file_block_1"
+                 }
+               ])
+    end
+  end
+
   describe "compile/1 with interpolation" do
     test "EEx interpolation in header text passes through" do
       ast =
@@ -3536,6 +4638,425 @@ defmodule Juvet.Template.Compiler.SlackTest do
                    ]
                  }
                ])
+    end
+  end
+
+  describe "compile/1 with confirmation dialog" do
+    alias Slack.Objects.ConfirmationDialog
+
+    test "confirmation dialog with all required fields" do
+      result =
+        ConfirmationDialog.compile(%{
+          element: :confirm,
+          attributes: %{
+            title: "Are you sure?",
+            text: "This action cannot be undone.",
+            confirm: "Yes, do it",
+            deny: "Cancel"
+          }
+        })
+
+      assert result == %{
+               title: %{type: "plain_text", text: "Are you sure?"},
+               text: %{type: "plain_text", text: "This action cannot be undone."},
+               confirm: %{type: "plain_text", text: "Yes, do it"},
+               deny: %{type: "plain_text", text: "Cancel"}
+             }
+    end
+
+    test "confirmation dialog with optional style" do
+      result =
+        ConfirmationDialog.compile(%{
+          element: :confirm,
+          attributes: %{
+            title: "Confirm",
+            text: "Are you sure?",
+            confirm: "Yes",
+            deny: "No",
+            style: "danger"
+          }
+        })
+
+      assert result.style == "danger"
+    end
+
+    test "button with confirm child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :button,
+                  attributes: %{text: "Delete", action_id: "delete_btn"},
+                  children: %{
+                    confirm: %{
+                      element: :confirm,
+                      attributes: %{
+                        title: "Are you sure?",
+                        text: "This will delete the item.",
+                        confirm: "Delete",
+                        deny: "Cancel",
+                        style: "danger"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [button] = actions.elements
+
+      assert button.confirm == %{
+               title: %{type: "plain_text", text: "Are you sure?"},
+               text: %{type: "plain_text", text: "This will delete the item."},
+               confirm: %{type: "plain_text", text: "Delete"},
+               deny: %{type: "plain_text", text: "Cancel"},
+               style: "danger"
+             }
+    end
+
+    test "checkboxes with confirm child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :checkboxes,
+                  attributes: %{action_id: "chk_1"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option 1", value: "opt_1"}
+                      }
+                    ],
+                    confirm: %{
+                      element: :confirm,
+                      attributes: %{
+                        title: "Confirm",
+                        text: "Change selection?",
+                        confirm: "Yes",
+                        deny: "No"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [checkboxes] = actions.elements
+
+      assert checkboxes.confirm == %{
+               title: %{type: "plain_text", text: "Confirm"},
+               text: %{type: "plain_text", text: "Change selection?"},
+               confirm: %{type: "plain_text", text: "Yes"},
+               deny: %{type: "plain_text", text: "No"}
+             }
+    end
+
+    test "select with confirm child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :select,
+                attributes: %{source: :static, action_id: "sel_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Option 1", value: "opt_1"}
+                    }
+                  ],
+                  confirm: %{
+                    element: :confirm,
+                    attributes: %{
+                      title: "Confirm",
+                      text: "Select this?",
+                      confirm: "Yes",
+                      deny: "No"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [section] = result.blocks
+
+      assert section.accessory.confirm == %{
+               title: %{type: "plain_text", text: "Confirm"},
+               text: %{type: "plain_text", text: "Select this?"},
+               confirm: %{type: "plain_text", text: "Yes"},
+               deny: %{type: "plain_text", text: "No"}
+             }
+    end
+
+    test "datepicker with confirm child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datepicker,
+                  attributes: %{action_id: "date_1"},
+                  children: %{
+                    confirm: %{
+                      element: :confirm,
+                      attributes: %{
+                        title: "Confirm Date",
+                        text: "Use this date?",
+                        confirm: "Yes",
+                        deny: "No"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datepicker] = actions.elements
+
+      assert datepicker.confirm == %{
+               title: %{type: "plain_text", text: "Confirm Date"},
+               text: %{type: "plain_text", text: "Use this date?"},
+               confirm: %{type: "plain_text", text: "Yes"},
+               deny: %{type: "plain_text", text: "No"}
+             }
+    end
+  end
+
+  describe "compile/1 with dispatch action configuration" do
+    alias Slack.Objects.DispatchActionConfig
+
+    test "dispatch action config with array value" do
+      result =
+        DispatchActionConfig.compile(%{
+          element: :dispatch_action_config,
+          attributes: %{
+            trigger_actions_on: ["on_enter_pressed", "on_character_entered"]
+          }
+        })
+
+      assert result == %{
+               trigger_actions_on: ["on_enter_pressed", "on_character_entered"]
+             }
+    end
+
+    test "dispatch action config with single string wraps in list" do
+      result =
+        DispatchActionConfig.compile(%{
+          element: :dispatch_action_config,
+          attributes: %{
+            trigger_actions_on: "on_enter_pressed"
+          }
+        })
+
+      assert result == %{trigger_actions_on: ["on_enter_pressed"]}
+    end
+
+    test "plain_text_input with dispatch_action_config child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: "Name"},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :plain_text_input,
+                attributes: %{action_id: "input_1"},
+                children: %{
+                  dispatch_action_config: %{
+                    element: :dispatch_action_config,
+                    attributes: %{
+                      trigger_actions_on: ["on_enter_pressed"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [input] = result.blocks
+
+      assert input.element.dispatch_action_config == %{
+               trigger_actions_on: ["on_enter_pressed"]
+             }
+    end
+
+    test "email_input with dispatch_action_config child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: "Email"},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :email_input,
+                attributes: %{action_id: "email_1"},
+                children: %{
+                  dispatch_action_config: %{
+                    element: :dispatch_action_config,
+                    attributes: %{
+                      trigger_actions_on: ["on_character_entered"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [input] = result.blocks
+
+      assert input.element.dispatch_action_config == %{
+               trigger_actions_on: ["on_character_entered"]
+             }
+    end
+  end
+
+  describe "compile/1 with trigger and workflow objects" do
+    alias Slack.Objects.{Trigger, Workflow}
+
+    test "trigger with url only" do
+      result =
+        Trigger.compile(%{
+          element: :trigger,
+          attributes: %{url: "https://slack.com/shortcuts/Ft123/xyz"}
+        })
+
+      assert result == %{url: "https://slack.com/shortcuts/Ft123/xyz"}
+    end
+
+    test "trigger with url and customizable_input_parameters" do
+      result =
+        Trigger.compile(%{
+          element: :trigger,
+          attributes: %{
+            url: "https://slack.com/shortcuts/Ft123/xyz",
+            customizable_input_parameters: [
+              %{name: "greeting", value: "Hello"}
+            ]
+          }
+        })
+
+      assert result == %{
+               url: "https://slack.com/shortcuts/Ft123/xyz",
+               customizable_input_parameters: [
+                 %{name: "greeting", value: "Hello"}
+               ]
+             }
+    end
+
+    test "workflow with trigger child" do
+      result =
+        Workflow.compile(%{
+          element: :workflow,
+          attributes: %{},
+          children: %{
+            trigger: %{
+              element: :trigger,
+              attributes: %{url: "https://slack.com/shortcuts/Ft123/xyz"}
+            }
+          }
+        })
+
+      assert result == %{
+               trigger: %{url: "https://slack.com/shortcuts/Ft123/xyz"}
+             }
+    end
+  end
+
+  describe "compile/1 with slack file object" do
+    alias Slack.Objects.SlackFile
+
+    test "slack file with url" do
+      result =
+        SlackFile.compile(%{
+          element: :slack_file,
+          attributes: %{url: "https://files.slack.com/files-pri/T123/img.png"}
+        })
+
+      assert result == %{url: "https://files.slack.com/files-pri/T123/img.png"}
+    end
+
+    test "slack file with id" do
+      result =
+        SlackFile.compile(%{
+          element: :slack_file,
+          attributes: %{id: "F0123456"}
+        })
+
+      assert result == %{id: "F0123456"}
+    end
+
+    test "image with slack_file child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :image,
+            attributes: %{alt_text: "Photo"},
+            children: %{
+              slack_file: %{
+                element: :slack_file,
+                attributes: %{url: "https://files.slack.com/files-pri/T123/img.png"}
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [image] = result.blocks
+
+      assert image == %{
+               type: "image",
+               alt_text: "Photo",
+               slack_file: %{url: "https://files.slack.com/files-pri/T123/img.png"}
+             }
     end
   end
 end
