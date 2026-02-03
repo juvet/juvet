@@ -356,6 +356,110 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "view templates" do
+    defmodule ViewTemplates do
+      use Juvet.Template
+
+      template(:simple_view, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello"}
+          :slack.divider
+      """)
+
+      template(:view_with_metadata, """
+      :slack.view
+        type: :modal
+        private_metadata: "some metadata"
+        blocks:
+          :slack.header{text: "Welcome"}
+          :slack.section "Content here"
+      """)
+
+      template(:view_with_bindings, """
+      :slack.view
+        type: :modal
+        private_metadata: "<%= metadata %>"
+        blocks:
+          :slack.header{text: "Hello <%= name %>"}
+          :slack.divider
+      """)
+
+      template(:user_greeting, ":slack.header{text: \"Hello <%= name %>\"}")
+
+      template(:view_with_partial, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :user_greeting, name: "<%= name %>"}
+          :slack.divider
+      """)
+    end
+
+    test "view with type and blocks" do
+      result = ViewTemplates.simple_view()
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}},
+                 %{"type" => "divider"}
+               ]
+             })
+    end
+
+    test "view with private_metadata" do
+      result = ViewTemplates.view_with_metadata()
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "private_metadata" => "some metadata",
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Welcome"}
+                 },
+                 %{
+                   "type" => "section",
+                   "text" => %{"type" => "mrkdwn", "text" => "Content here"}
+                 }
+               ]
+             })
+    end
+
+    test "view with EEx bindings" do
+      result = ViewTemplates.view_with_bindings(name: "World", metadata: "user_123")
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "private_metadata" => "user_123",
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             })
+    end
+
+    test "view with partial inside blocks" do
+      result = ViewTemplates.view_with_partial(name: "Alice")
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             })
+    end
+  end
+
   describe "partial error handling" do
     test "missing partial raises CompileError with line info" do
       assert_raise CompileError, ~r/partial :nonexistent not found \(line 1, column 1\)/, fn ->

@@ -229,9 +229,22 @@ defmodule Juvet.Template do
         %{element: :partial} ->
           resolve_partial(element, existing_asts, stack)
 
+        %{children: children} = el when is_map(children) ->
+          [%{el | children: resolve_partials_in_children(children, existing_asts, stack)}]
+
         other ->
           [other]
       end
+    end)
+  end
+
+  defp resolve_partials_in_children(children, existing_asts, stack) do
+    Map.new(children, fn
+      {key, elements} when is_list(elements) ->
+        {key, resolve_partials(elements, existing_asts, stack)}
+
+      {key, value} ->
+        {key, value}
     end)
   end
 

@@ -100,6 +100,7 @@ lib/juvet/template/
       helpers.ex                   # Shared utilities (maybe_put/3)
     slack.ex                       # Compiler.Slack - wraps in {"blocks":[...]}
     slack/
+      view.ex                      # Compiler.Slack.View - view container
       blocks/
         actions.ex                 # Compiler.Slack.Blocks.Actions
         context.ex                 # Compiler.Slack.Blocks.Context
@@ -149,6 +150,7 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:image` | `"image"` |
 | `:button` | `"button"` |
 | `:actions` | `"actions"` |
+| `:view` | `"modal"`, `"home"` (from `type` attribute) |
 
 #### Text Object Wrapping
 
@@ -971,6 +973,67 @@ end
 - Templates with dynamic structure (conditionals, loops in EEx) work naturally since EEx handles them at eval time
 - The Juvet template syntax itself is static; dynamism comes from EEx interpolation
 - For complex dynamic structures, users can use multiple templates or raw JSON construction
+
+## Views
+
+Views are top-level containers used for Slack surfaces like modals and home tabs. A view wraps blocks with additional metadata fields (`type`, `private_metadata`).
+
+### Syntax
+
+```
+:slack.view
+  type: :modal
+  private_metadata: "some metadata string"
+  blocks:
+    :slack.header{text: "Hello <%= name %>"}
+    :slack.divider
+    :slack.section "Welcome"
+```
+
+### Output
+
+```json
+{
+  "type": "modal",
+  "private_metadata": "some metadata string",
+  "blocks": [
+    {"type": "header", "text": {"type": "plain_text", "text": "Hello <%= name %>"}},
+    {"type": "divider"},
+    {"type": "section", "text": {"type": "mrkdwn", "text": "Welcome"}}
+  ]
+}
+```
+
+### Fields
+
+- `type` (required) - The view type as an atom. Converted to string in JSON. Common values: `:modal`, `:home`
+- `private_metadata` (optional) - Arbitrary string metadata. Supports EEx interpolation. Only included in output if present.
+- `blocks:` (child key) - List of block elements, compiled using standard block compilation.
+
+### Backward Compatibility
+
+Existing block-only templates continue to produce `{"blocks":[...]}` as before. The view wrapper is only applied when the template contains a single top-level `:slack.view` element.
+
+### AST
+
+The parser produces the following AST for a view template:
+
+```elixir
+[%{
+  platform: :slack,
+  element: :view,
+  attributes: %{type: :modal, private_metadata: "some metadata string"},
+  children: %{
+    blocks: [
+      %{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}},
+      %{platform: :slack, element: :divider, attributes: %{}},
+      %{platform: :slack, element: :section, attributes: %{text: "Welcome"}}
+    ]
+  }
+}]
+```
+
+No parser changes are required. The existing parser handles `:slack.view` as a regular element, `type:` and `private_metadata:` as block-style attributes, and `blocks:` as a child key with nested elements.
 
 ## Template Partials
 

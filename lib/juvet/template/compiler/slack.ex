@@ -10,9 +10,12 @@ defmodule Juvet.Template.Compiler.Slack do
   alias Juvet.Template.Compiler.Encoder
   alias Juvet.Template.Compiler.Slack.Blocks.{Actions, Context, Divider, Header, Image, Section}
   alias Juvet.Template.Compiler.Slack.Elements.Button
+  alias Juvet.Template.Compiler.Slack.View
 
   @spec compile([Compiler.ast_element()]) :: String.t()
   def compile([]), do: Encoder.encode!(%{blocks: []})
+
+  def compile([%{element: :view} = view]), do: View.compile(view)
 
   def compile(ast) do
     %{blocks: Enum.map(ast, &compile_element/1)}
