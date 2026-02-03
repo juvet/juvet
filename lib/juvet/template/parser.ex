@@ -190,8 +190,13 @@ defmodule Juvet.Template.Parser do
   #
   # Produces: %{placeholder: %{text: "Choose a color", emoji: true}}
   defp block(
-         [{:keyword, _, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _}, {:keyword, _, _} | _] =
-           tokens,
+         [
+           {:keyword, _, _},
+           {:colon, _, _},
+           {:newline, _, _},
+           {:indent, _, _},
+           {:keyword, _, _} | _
+         ] = tokens,
          attrs,
          children,
          platform

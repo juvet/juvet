@@ -753,6 +753,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
       assert select.type == "multi_static_select"
       assert select.max_selected_items == 3
+
       assert select.initial_options == [
                %{text: %{type: "plain_text", text: "Option 1"}, value: "opt_1"}
              ]
