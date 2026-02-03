@@ -3469,6 +3469,45 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with file" do
+    test "file block with external_id and source" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :file,
+            attributes: %{external_id: "ABCD1", source: "remote"}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{type: "file", external_id: "ABCD1", source: "remote"}
+               ])
+    end
+
+    test "file block with block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :file,
+            attributes: %{external_id: "ABCD1", source: "remote", block_id: "file_block_1"}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "file",
+                   external_id: "ABCD1",
+                   source: "remote",
+                   block_id: "file_block_1"
+                 }
+               ])
+    end
+  end
+
   describe "compile/1 with interpolation" do
     test "EEx interpolation in header text passes through" do
       ast =

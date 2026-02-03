@@ -13,6 +13,7 @@ defmodule Juvet.Template.Compiler.Slack do
     Context,
     ContextActions,
     Divider,
+    File,
     Header,
     Image,
     Section
@@ -70,6 +71,7 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :context} = el), do: Context.compile(el)
   def compile_element(%{element: :context_actions} = el), do: ContextActions.compile(el)
   def compile_element(%{element: :divider} = el), do: Divider.compile(el)
+  def compile_element(%{element: :file} = el), do: File.compile(el)
   def compile_element(%{element: :header} = el), do: Header.compile(el)
   def compile_element(%{element: :image} = el), do: Image.compile(el)
   def compile_element(%{element: :section} = el), do: Section.compile(el)
