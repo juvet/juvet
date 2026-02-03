@@ -121,6 +121,7 @@ lib/juvet/template/
         input.ex                   # Compiler.Slack.Blocks.Input
         markdown.ex                # Compiler.Slack.Blocks.Markdown
         rich_text.ex               # Compiler.Slack.Blocks.RichText
+        video.ex                   # Compiler.Slack.Blocks.Video
         image.ex                   # Compiler.Slack.Blocks.Image
         section.ex                 # Compiler.Slack.Blocks.Section
       elements/
@@ -183,6 +184,7 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:input` | `"input"` |
 | `:markdown` | `"markdown"` |
 | `:rich_text` | `"rich_text"` |
+| `:video` | `"video"` |
 | `:actions` | `"actions"` |
 | `:view` | `"modal"`, `"home"` (from `type` attribute) |
 

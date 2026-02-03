@@ -3469,6 +3469,155 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with video" do
+    test "video block with required fields" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: "Demo",
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo"},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4"
+                 }
+               ])
+    end
+
+    test "video block with description and author_name" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: "Demo",
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4",
+              description: "A short demo of the feature",
+              author_name: "Alice"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo"},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4",
+                   description: %{type: "plain_text", text: "A short demo of the feature"},
+                   author_name: "Alice"
+                 }
+               ])
+    end
+
+    test "video block with title_url, provider_name, provider_icon_url" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: "Demo",
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4",
+              title_url: "https://example.com/page",
+              provider_name: "Example",
+              provider_icon_url: "https://example.com/icon.png"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo"},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4",
+                   title_url: "https://example.com/page",
+                   provider_name: "Example",
+                   provider_icon_url: "https://example.com/icon.png"
+                 }
+               ])
+    end
+
+    test "video block with deep title" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: %{text: "Demo", emoji: true},
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo", emoji: true},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4"
+                 }
+               ])
+    end
+
+    test "video block with block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :video,
+            attributes: %{
+              alt_text: "A demo video",
+              title: "Demo",
+              thumbnail_url: "https://example.com/thumb.png",
+              video_url: "https://example.com/video.mp4",
+              block_id: "video_block_1"
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "video",
+                   alt_text: "A demo video",
+                   title: %{type: "plain_text", text: "Demo"},
+                   thumbnail_url: "https://example.com/thumb.png",
+                   video_url: "https://example.com/video.mp4",
+                   block_id: "video_block_1"
+                 }
+               ])
+    end
+  end
+
   describe "compile/1 with rich_text" do
     test "rich text block with elements passed through" do
       elements = [

@@ -19,7 +19,8 @@ defmodule Juvet.Template.Compiler.Slack do
     Input,
     Markdown,
     RichText,
-    Section
+    Section,
+    Video
   }
 
   alias Juvet.Template.Compiler.Slack.Elements.{
@@ -81,6 +82,7 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :markdown} = el), do: Markdown.compile(el)
   def compile_element(%{element: :rich_text} = el), do: RichText.compile(el)
   def compile_element(%{element: :section} = el), do: Section.compile(el)
+  def compile_element(%{element: :video} = el), do: Video.compile(el)
 
   def compile_element(%{element: element, line: line, column: col}) do
     raise ArgumentError,
