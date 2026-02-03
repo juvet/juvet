@@ -3136,10 +3136,19 @@ defmodule Juvet.Template.Compiler.SlackTest do
                   element: :workflow_button,
                   attributes: %{
                     text: "Run Workflow",
-                    action_id: "wf_btn_1",
+                    action_id: "wf_btn_1"
+                  },
+                  children: %{
                     workflow: %{
-                      trigger: %{
-                        url: "https://slack.com/shortcuts/Ft123/xyz"
+                      element: :workflow,
+                      attributes: %{},
+                      children: %{
+                        trigger: %{
+                          element: :trigger,
+                          attributes: %{
+                            url: "https://slack.com/shortcuts/Ft123/xyz"
+                          }
+                        }
                       }
                     }
                   }
@@ -3179,13 +3188,22 @@ defmodule Juvet.Template.Compiler.SlackTest do
                   element: :workflow_button,
                   attributes: %{
                     text: "Start",
-                    action_id: "wf_btn_2",
+                    action_id: "wf_btn_2"
+                  },
+                  children: %{
                     workflow: %{
-                      trigger: %{
-                        url: "https://slack.com/shortcuts/Ft123/xyz",
-                        customizable_input_parameters: [
-                          %{name: "greeting", value: "Hello"}
-                        ]
+                      element: :workflow,
+                      attributes: %{},
+                      children: %{
+                        trigger: %{
+                          element: :trigger,
+                          attributes: %{
+                            url: "https://slack.com/shortcuts/Ft123/xyz",
+                            customizable_input_parameters: [
+                              %{name: "greeting", value: "Hello"}
+                            ]
+                          }
+                        }
                       }
                     }
                   }
@@ -4920,6 +4938,56 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
       assert input.element.dispatch_action_config == %{
                trigger_actions_on: ["on_character_entered"]
+             }
+    end
+  end
+
+  describe "compile/1 with trigger and workflow objects" do
+    test "trigger with url only" do
+      result =
+        Juvet.Template.Compiler.Slack.Objects.Trigger.compile(%{
+          element: :trigger,
+          attributes: %{url: "https://slack.com/shortcuts/Ft123/xyz"}
+        })
+
+      assert result == %{url: "https://slack.com/shortcuts/Ft123/xyz"}
+    end
+
+    test "trigger with url and customizable_input_parameters" do
+      result =
+        Juvet.Template.Compiler.Slack.Objects.Trigger.compile(%{
+          element: :trigger,
+          attributes: %{
+            url: "https://slack.com/shortcuts/Ft123/xyz",
+            customizable_input_parameters: [
+              %{name: "greeting", value: "Hello"}
+            ]
+          }
+        })
+
+      assert result == %{
+               url: "https://slack.com/shortcuts/Ft123/xyz",
+               customizable_input_parameters: [
+                 %{name: "greeting", value: "Hello"}
+               ]
+             }
+    end
+
+    test "workflow with trigger child" do
+      result =
+        Juvet.Template.Compiler.Slack.Objects.Workflow.compile(%{
+          element: :workflow,
+          attributes: %{},
+          children: %{
+            trigger: %{
+              element: :trigger,
+              attributes: %{url: "https://slack.com/shortcuts/Ft123/xyz"}
+            }
+          }
+        })
+
+      assert result == %{
+               trigger: %{url: "https://slack.com/shortcuts/Ft123/xyz"}
              }
     end
   end

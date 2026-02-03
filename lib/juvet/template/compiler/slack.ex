@@ -53,7 +53,9 @@ defmodule Juvet.Template.Compiler.Slack do
     ConversationFilter,
     DispatchActionConfig,
     Option,
-    OptionGroup
+    OptionGroup,
+    Trigger,
+    Workflow
   }
 
   alias Juvet.Template.Compiler.Slack.View
@@ -94,6 +96,8 @@ defmodule Juvet.Template.Compiler.Slack do
     do: DispatchActionConfig.compile(el)
 
   def compile_element(%{element: :filter} = el), do: ConversationFilter.compile(el)
+  def compile_element(%{element: :trigger} = el), do: Trigger.compile(el)
+  def compile_element(%{element: :workflow} = el), do: Workflow.compile(el)
   def compile_element(%{element: :option} = el), do: Option.compile(el)
   def compile_element(%{element: :option_group} = el), do: OptionGroup.compile(el)
   def compile_element(%{element: :context} = el), do: Context.compile(el)
