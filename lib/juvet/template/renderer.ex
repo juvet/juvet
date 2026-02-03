@@ -6,7 +6,8 @@ defmodule Juvet.Template.Renderer do
   require EEx
 
   def eval(source, []), do: source
-  def eval(source, bindings), do: EEx.eval_string(source, bindings)
+  def eval(source, bindings) when is_binary(source), do: EEx.eval_string(source, bindings)
+  def eval(source, bindings) when is_map(source), do: Juvet.Template.eval_map(source, bindings)
 
   def precompile(template),
     do:

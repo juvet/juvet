@@ -2,22 +2,17 @@ defmodule Juvet.Template.Compiler.Slack do
   @moduledoc """
   Compiles AST elements for the Slack platform into Block Kit JSON.
 
-  Wraps compiled elements in `{"blocks":[...]}` format.
+  Requires a `:slack.view` as the top-level element.
   Delegates to element-specific modules for compilation.
   """
 
   alias Juvet.Template.Compiler
-  alias Juvet.Template.Compiler.Encoder
   alias Juvet.Template.Compiler.Slack.Blocks.{Actions, Context, Divider, Header, Image, Section}
   alias Juvet.Template.Compiler.Slack.Elements.Button
+  alias Juvet.Template.Compiler.Slack.View
 
-  @spec compile([Compiler.ast_element()]) :: String.t()
-  def compile([]), do: Encoder.encode!(%{blocks: []})
-
-  def compile(ast) do
-    %{blocks: Enum.map(ast, &compile_element/1)}
-    |> Encoder.encode!()
-  end
+  @spec compile([Compiler.ast_element()]) :: map()
+  def compile([%{element: :view} = view]), do: View.compile(view)
 
   @doc false
   @spec compile_element(Compiler.ast_element()) :: map()

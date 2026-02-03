@@ -6,8 +6,8 @@ defmodule Juvet.TemplateTest do
   import Juvet.Test.JsonHelpers, only: [json_equal?: 2]
 
   describe "render/1" do
-    test "empty template returns empty string" do
-      assert Template.render("") == ""
+    test "empty template returns empty map" do
+      assert Template.render("") == %{}
     end
   end
 
@@ -23,55 +23,72 @@ defmodule Juvet.TemplateTest do
     defmodule TestTemplates do
       use Juvet.Template
 
-      template(:simple_header, ":slack.header{text: \"Hello\"}")
-      template(:header_with_binding, ":slack.header{text: \"Hello <%= name %>\"}")
+      template(:simple_header, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello"}
+      """)
+
+      template(:header_with_binding, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello <%= name %>"}
+      """)
 
       template(:multi_element, """
-      :slack.header{text: "Welcome <%= name %>"}
-      :slack.divider
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Welcome <%= name %>"}
+          :slack.divider
       """)
     end
 
     test "compiles template and generates function" do
       result = TestTemplates.simple_header()
 
-      assert json_equal?(result, %{
-               "blocks" => [
-                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}}
                ]
-             })
+             }
     end
 
     test "generated function accepts bindings" do
       result = TestTemplates.header_with_binding(name: "World")
 
-      assert json_equal?(result, %{
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello World"}
                  }
                ]
-             })
+             }
     end
 
     test "bindings default to empty list" do
       result = TestTemplates.simple_header()
-      assert is_binary(result)
+      assert is_map(result)
     end
 
     test "multi-element template with bindings" do
       result = TestTemplates.multi_element(name: "Alice")
 
-      assert json_equal?(result, %{
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Welcome Alice"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Welcome Alice"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "template without interpolation ignores bindings" do
@@ -97,12 +114,12 @@ defmodule Juvet.TemplateTest do
 
     test "unknown element raises CompileError with line number" do
       assert_raise CompileError,
-                   ~r/template :unknown failed to compile.*Unknown Slack element.*line 1/,
+                   ~r/template :unknown failed to compile.*Unknown Slack element.*line 4/,
                    fn ->
                      Code.compile_string("""
                      defmodule UnknownElementTemplate do
                        use Juvet.Template
-                       template :unknown, ":slack.nonexistent{text: \\"Hello\\"}"
+                       template :unknown, \":slack.view\\n  type: :modal\\n  blocks:\\n    :slack.nonexistent{text: \\\"Hello\\\"}\"
                      end
                      """)
                    end
@@ -122,33 +139,34 @@ defmodule Juvet.TemplateTest do
     end
   end
 
-  describe "template_file/2" do
+  describe "template/2 with file: option" do
     defmodule FileTemplates do
       use Juvet.Template
 
-      template_file(:greeting, "templates/greeting.cheex")
+      template(:greeting, file: "templates/greeting.cheex")
     end
 
     test "loads and compiles template from file" do
       result = FileTemplates.greeting(name: "World")
 
-      assert json_equal?(result, %{
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello World"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "missing file raises CompileError" do
-      assert_raise CompileError, ~r/template_file :missing could not read/, fn ->
+      assert_raise CompileError, ~r/template :missing could not read/, fn ->
         Code.compile_string("""
         defmodule MissingFileTemplate do
           use Juvet.Template
-          template_file :missing, "nonexistent.cheex"
+          template :missing, file: "nonexistent.cheex"
         end
         """)
       end
@@ -160,52 +178,69 @@ defmodule Juvet.TemplateTest do
       use Juvet.Template
 
       # Inline templates
-      template(:header, ":slack.header{text: \"Welcome\"}")
-      template(:dynamic_section, ":slack.section{text: \"Hello <%= name %>\"}")
+      template(:header, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Welcome"}
+      """)
+
+      template(:dynamic_section, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.section{text: "Hello <%= name %>"}
+      """)
 
       # File-based templates
-      template_file(:greeting, "templates/greeting.cheex")
-      template_file(:static_divider, "templates/static.cheex")
+      template(:greeting, file: "templates/greeting.cheex")
+      template(:static_divider, file: "templates/static.cheex")
     end
 
     test "inline static template works" do
       result = MixedTemplates.header()
 
-      assert json_equal?(result, %{
-               "blocks" => [
-                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Welcome"}}
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Welcome"}}
                ]
-             })
+             }
     end
 
     test "inline dynamic template works" do
       result = MixedTemplates.dynamic_section(name: "World")
 
-      assert json_equal?(result, %{
-               "blocks" => [
-                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Hello World"}}
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "Hello World"}}
                ]
-             })
+             }
     end
 
     test "file-based dynamic template works" do
       result = MixedTemplates.greeting(name: "Alice")
 
-      assert json_equal?(result, %{
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Alice"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "file-based static template works" do
       result = MixedTemplates.static_divider()
 
-      assert json_equal?(result, %{"blocks" => [%{"type" => "divider"}]})
+      assert result == %{
+               type: "modal",
+               blocks: [%{type: "divider"}]
+             }
     end
 
     test "all templates in module are independent" do
@@ -215,14 +250,11 @@ defmodule Juvet.TemplateTest do
       greeting = MixedTemplates.greeting(name: "Bob")
       divider = MixedTemplates.static_divider()
 
-      # Each should be valid JSON with blocks
-      assert %{"blocks" => [%{"type" => "header"} | _]} = Poison.decode!(header)
-      assert %{"blocks" => [%{"type" => "section"} | _]} = Poison.decode!(section)
-
-      assert %{"blocks" => [%{"type" => "header"}, %{"type" => "divider"}]} =
-               Poison.decode!(greeting)
-
-      assert %{"blocks" => [%{"type" => "divider"}]} = Poison.decode!(divider)
+      # Each should be a map with type and blocks
+      assert %{type: "modal", blocks: [%{type: "header"} | _]} = header
+      assert %{type: "modal", blocks: [%{type: "section"} | _]} = section
+      assert %{type: "modal", blocks: [%{type: "header"}, %{type: "divider"}]} = greeting
+      assert %{type: "modal", blocks: [%{type: "divider"}]} = divider
     end
 
     test "__templates__/0 returns list of template names" do
@@ -237,7 +269,7 @@ defmodule Juvet.TemplateTest do
     test "__template_ast__/1 returns AST for a template" do
       ast = MixedTemplates.__template_ast__(:header)
 
-      assert [%{platform: :slack, element: :header, attributes: %{text: "Welcome"}} | _] = ast
+      assert [%{platform: :slack, element: :view, attributes: %{type: :modal}} | _] = ast
     end
 
     test "__template_ast__/1 raises for unknown template" do
@@ -252,18 +284,24 @@ defmodule Juvet.TemplateTest do
       use Juvet.Template
 
       # Define partial first (must come before templates that use it)
-      template(:user_header, ":slack.header{text: \"Hello <%= name %>\"}")
+      partial(:user_header, ":slack.header{text: \"Hello <%= name %>\"}")
 
       # Template using the partial with static binding
       template(:static_dashboard, """
-      :slack.partial{template: :user_header, name: "Alice"}
-      :slack.divider
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :user_header, name: "Alice"}
+          :slack.divider
       """)
 
       # Template using the partial with dynamic binding
       template(:dynamic_dashboard, """
-      :slack.partial{template: :user_header, name: "<%= user_name %>"}
-      :slack.divider
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :user_header, name: "<%= user_name %>"}
+          :slack.divider
       """)
     end
 
@@ -271,41 +309,41 @@ defmodule Juvet.TemplateTest do
       result = PartialTemplates.static_dashboard()
 
       assert %{
-               "blocks" => [
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Alice"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             } = Poison.decode!(result)
+             } = result
     end
 
     test "partial with dynamic binding passes through EEx" do
       result = PartialTemplates.dynamic_dashboard(user_name: "Bob")
 
       assert %{
-               "blocks" => [
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Bob"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Bob"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             } = Poison.decode!(result)
+             } = result
     end
 
-    test "partial can be used standalone" do
-      result = PartialTemplates.user_header(name: "World")
+    test "partials do not appear in __templates__ list" do
+      refute :user_header in PartialTemplates.__templates__()
+    end
 
-      assert %{
-               "blocks" => [
-                 %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
-                 }
-               ]
-             } = Poison.decode!(result)
+    test "partial AST is available via __template_ast__" do
+      ast = PartialTemplates.__template_ast__(:user_header)
+
+      assert [%{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}}] =
+               ast
     end
   end
 
@@ -313,16 +351,23 @@ defmodule Juvet.TemplateTest do
     defmodule NestedPartialTemplates do
       use Juvet.Template
 
-      template(:greeting, ":slack.header{text: \"Hello <%= name %>\"}")
+      partial(:greeting, ":slack.header{text: \"Hello <%= name %>\"}")
 
       template(:greeting_with_divider, """
-      :slack.partial{template: :greeting, name: "<%= name %>"}
-      :slack.divider
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :greeting, name: "<%= name %>"}
+          :slack.divider
       """)
 
       template(:full_page, """
-      :slack.partial{template: :greeting_with_divider, name: "<%= user %>"}
-      :slack.section "Content"
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :greeting, name: "<%= user %>"}
+          :slack.divider
+          :slack.section "Content"
       """)
     end
 
@@ -330,40 +375,199 @@ defmodule Juvet.TemplateTest do
       result = NestedPartialTemplates.full_page(user: "Alice")
 
       assert %{
-               "blocks" => [
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Alice"}
                  },
-                 %{"type" => "divider"},
-                 %{"type" => "section"}
+                 %{type: "divider"},
+                 %{type: "section"}
                ]
-             } = Poison.decode!(result)
+             } = result
     end
 
-    test "intermediate partial still works standalone" do
+    test "template using partial works" do
       result = NestedPartialTemplates.greeting_with_divider(name: "Bob")
 
       assert %{
-               "blocks" => [
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Bob"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Bob"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             } = Poison.decode!(result)
+             } = result
+    end
+  end
+
+  describe "view templates" do
+    defmodule ViewTemplates do
+      use Juvet.Template
+
+      template(:simple_view, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello"}
+          :slack.divider
+      """)
+
+      template(:view_with_metadata, """
+      :slack.view
+        type: :modal
+        private_metadata: "some metadata"
+        blocks:
+          :slack.header{text: "Welcome"}
+          :slack.section "Content here"
+      """)
+
+      template(:view_with_bindings, """
+      :slack.view
+        type: :modal
+        private_metadata: "<%= metadata %>"
+        blocks:
+          :slack.header{text: "Hello <%= name %>"}
+          :slack.divider
+      """)
+
+      partial(:user_greeting, ":slack.header{text: \"Hello <%= name %>\"}")
+
+      template(:view_with_partial, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :user_greeting, name: "<%= name %>"}
+          :slack.divider
+      """)
+    end
+
+    test "view with type and blocks" do
+      result = ViewTemplates.simple_view()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "view with private_metadata" do
+      result = ViewTemplates.view_with_metadata()
+
+      assert result == %{
+               type: "modal",
+               private_metadata: "some metadata",
+               blocks: [
+                 %{
+                   type: "header",
+                   text: %{type: "plain_text", text: "Welcome"}
+                 },
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Content here"}
+                 }
+               ]
+             }
+    end
+
+    test "view with EEx bindings" do
+      result = ViewTemplates.view_with_bindings(name: "World", metadata: "user_123")
+
+      assert result == %{
+               type: "modal",
+               private_metadata: "user_123",
+               blocks: [
+                 %{
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello World"}
+                 },
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "view with partial inside blocks" do
+      result = ViewTemplates.view_with_partial(name: "Alice")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Alice"}
+                 },
+                 %{type: "divider"}
+               ]
+             }
+    end
+  end
+
+  describe "file-based partials" do
+    defmodule FilePartialTemplates do
+      use Juvet.Template
+
+      partial(:user_header, file: "templates/user_header.cheex")
+
+      template(:dashboard, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :user_header, name: "<%= name %>"}
+          :slack.divider
+      """)
+    end
+
+    test "file-based partial is inlined into view template" do
+      result = FilePartialTemplates.dashboard(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello World"}
+                 },
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "file-based partial does not appear in __templates__ list" do
+      refute :user_header in FilePartialTemplates.__templates__()
+    end
+
+    test "file-based partial AST is available via __template_ast__" do
+      ast = FilePartialTemplates.__template_ast__(:user_header)
+
+      assert [%{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}}] =
+               ast
+    end
+
+    test "missing partial file raises CompileError" do
+      assert_raise CompileError, ~r/partial :missing could not read/, fn ->
+        Code.compile_string("""
+        defmodule MissingFilePartial do
+          use Juvet.Template
+          partial :missing, file: "nonexistent.cheex"
+        end
+        """)
+      end
     end
   end
 
   describe "partial error handling" do
     test "missing partial raises CompileError with line info" do
-      assert_raise CompileError, ~r/partial :nonexistent not found \(line 1, column 1\)/, fn ->
+      assert_raise CompileError, ~r/partial :nonexistent not found \(line 4, column 5\)/, fn ->
         Code.compile_string("""
         defmodule MissingPartialTest do
           use Juvet.Template
 
-          template :broken, \":slack.partial{template: :nonexistent}\"
+          template :broken, \":slack.view\\n  type: :modal\\n  blocks:\\n    :slack.partial{template: :nonexistent}\"
         end
         """)
       end
@@ -375,7 +579,7 @@ defmodule Juvet.TemplateTest do
         defmodule MissingAttrPartialTest do
           use Juvet.Template
 
-          template :broken, \":slack.partial{name: \\\"Alice\\\"}\"
+          template :broken, \":slack.view\\n  type: :modal\\n  blocks:\\n    :slack.partial{name: \\\"Alice\\\"}\"
         end
         """)
       end
@@ -395,10 +599,158 @@ defmodule Juvet.TemplateTest do
       assert_raise CompileError, ~r/circular partial reference detected: a -> b -> a/, fn ->
         Juvet.Template.compile_template!(
           :test,
-          ":slack.partial{template: :a}",
+          ":slack.view\n  type: :modal\n  blocks:\n    :slack.partial{template: :a}",
           cyclic_asts
         )
       end
+    end
+  end
+
+  describe "format: :json option" do
+    defmodule JsonTemplates do
+      use Juvet.Template, format: :json
+
+      template(:static_header, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello"}
+      """)
+
+      template(:dynamic_header, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello <%= name %>"}
+      """)
+    end
+
+    test "module-level format: :json returns JSON string for static template" do
+      result = JsonTemplates.static_header()
+
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+               ]
+             })
+    end
+
+    test "module-level format: :json returns JSON string for dynamic template" do
+      result = JsonTemplates.dynamic_header(name: "World")
+
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 }
+               ]
+             })
+    end
+  end
+
+  describe "per-template format override" do
+    defmodule MixedFormatTemplates do
+      use Juvet.Template
+
+      template(:map_header, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello"}
+      """)
+
+      template(
+        :json_header,
+        """
+        :slack.view
+          type: :modal
+          blocks:
+            :slack.header{text: "Hello"}
+        """,
+        format: :json
+      )
+
+      template(
+        :json_dynamic,
+        """
+        :slack.view
+          type: :modal
+          blocks:
+            :slack.header{text: "Hello <%= name %>"}
+        """,
+        format: :json
+      )
+    end
+
+    test "default format returns map" do
+      result = MixedFormatTemplates.map_header()
+      assert is_map(result)
+      assert result[:type] == "modal"
+    end
+
+    test "per-template format: :json returns JSON string" do
+      result = MixedFormatTemplates.json_header()
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+               ]
+             })
+    end
+
+    test "per-template format: :json with bindings returns JSON string" do
+      result = MixedFormatTemplates.json_dynamic(name: "World")
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 }
+               ]
+             })
+    end
+  end
+
+  describe "file-based template with format override" do
+    defmodule FileFormatTemplates do
+      use Juvet.Template
+
+      template(:greeting_map, file: "templates/greeting.cheex")
+      template(:greeting_json, file: "templates/greeting.cheex", format: :json)
+    end
+
+    test "file template defaults to map format" do
+      result = FileFormatTemplates.greeting_map(name: "World")
+      assert is_map(result)
+      assert result[:type] == "modal"
+    end
+
+    test "file template with format: :json returns JSON" do
+      result = FileFormatTemplates.greeting_json(name: "World")
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             })
     end
   end
 end

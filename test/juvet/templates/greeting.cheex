@@ -1,2 +1,5 @@
-:slack.header{text: "Hello <%= name %>"}
-:slack.divider
+:slack.view
+  type: :modal
+  blocks:
+    :slack.header{text: "Hello <%= name %>"}
+    :slack.divider

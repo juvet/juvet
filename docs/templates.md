@@ -23,13 +23,19 @@ AST (list of element maps)
 Compiler.compile/1
     |
     v
-JSON string (for Slack Block Kit, etc.)
+Atom-keyed map (for Slack Block Kit, etc.)
     |
     v
-Renderer.eval/2
+Template layer (format option)
+    |
+    +--> format: :map (default) --> return map directly
+    +--> format: :json          --> Encoder.encode!() --> JSON string
     |
     v
-Final output (with EEx bindings applied)
+EEx interpolation at runtime (if dynamic)
+    |
+    v
+Final output (map or JSON string with bindings applied)
 ```
 
 ## Token Format
@@ -56,20 +62,24 @@ Each element becomes a map:
 
 The `line` and `column` fields track where each element was defined in the original template source, enabling precise error messages during compilation.
 
-## JSON Output Format
+## Compiler Output Format
 
-The Compiler transforms the AST into JSON for the target platform.
-For Slack Block Kit, the final JSON looks like:
+The Compiler transforms the AST into atom-keyed maps for the target platform.
+For Slack Block Kit, the compiled output looks like:
 
-```json
-{
-  "blocks": [
-    {"type": "header", "text": {"type": "plain_text", "text": "Hello", "emoji": true}},
-    {"type": "divider"},
-    {"type": "section", "text": {"type": "mrkdwn", "text": "Content"}}
+```elixir
+%{
+  type: "modal",
+  blocks: [
+    %{type: "header", text: %{type: "plain_text", text: "Hello", emoji: true}},
+    %{type: "divider"},
+    %{type: "section", text: %{type: "mrkdwn", text: "Content"}}
   ]
 }
 ```
+
+The template layer then either returns the map directly (`:map` format, the default)
+or encodes it to JSON (`:json` format) via `Encoder.encode!/1`.
 
 ## Compiler Architecture
 
@@ -100,6 +110,7 @@ lib/juvet/template/
       helpers.ex                   # Shared utilities (maybe_put/3)
     slack.ex                       # Compiler.Slack - wraps in {"blocks":[...]}
     slack/
+      view.ex                      # Compiler.Slack.View - view container
       blocks/
         actions.ex                 # Compiler.Slack.Blocks.Actions
         context.ex                 # Compiler.Slack.Blocks.Context
@@ -116,14 +127,14 @@ lib/juvet/template/
 ### Compiler.compile/1
 
 - Takes AST (list of element maps)
-- Returns JSON string
+- Returns atom-keyed map
 - Delegates to platform-specific compiler based on `platform:` field
 
 ### Platform Compilers (e.g., Compiler.Slack)
 
-- `compile/1` - Takes list of AST elements, returns JSON string with platform-specific wrapper
+- `compile/1` - Takes list of AST elements, returns atom-keyed map with platform-specific wrapper
 - Delegates to block modules (e.g., `Blocks.Header.compile/1`)
-- Block modules return Elixir maps, platform compiler encodes to JSON
+- Block modules return Elixir maps, platform compiler assembles them into a map
 
 ### Slack Block Kit Hierarchy
 
@@ -149,6 +160,7 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:image` | `"image"` |
 | `:button` | `"button"` |
 | `:actions` | `"actions"` |
+| `:view` | `"modal"`, `"home"` (from `type` attribute) |
 
 #### Text Object Wrapping
 
@@ -250,7 +262,7 @@ Unknown Slack element: :unknown (line 2, column 1)
 
 ### Compile-Time Error Reporting
 
-When using the `template/2` or `template_file/2` macros, errors are converted to `CompileError` with the template name and line number:
+When using the `template/2` macro, errors are converted to `CompileError` with the template name and line number:
 
 ```elixir
 defmodule MyTemplates do
@@ -751,17 +763,20 @@ For optimal performance, templates can be compiled at compile-time rather than r
 
 ```
 # Every request
-Template → Tokenizer → Parser → Compiler → JSON with <%= %> → EEx.eval_string → Final output
+Template → Tokenizer → Parser → Compiler → Map with <%= %> → eval_map/EEx → Final output
 ```
 
-### Proposed Compile-Time Flow
+### Compile-Time Flow
 
 ```
 # At compile time (once)
-Template → Tokenizer → Parser → Compiler → JSON with <%= %> markers (stored in module)
+Template → Tokenizer → Parser → Compiler → Map with <%= %> markers (stored in module)
 
-# At runtime (every request)
-Stored JSON + bindings → EEx.eval_string → Final output
+# At runtime (every request, format: :map)
+Stored map + bindings → eval_map → Final map output
+
+# At runtime (every request, format: :json)
+Stored JSON + bindings → EEx.eval_string → Final JSON string
 ```
 
 ### Target API
@@ -771,15 +786,41 @@ defmodule MyApp.Templates.Welcome do
   use Juvet.Template
 
   template :welcome, """
-  :slack.header{text: "Hello <%= name %>"}
-  :slack.divider
-  :slack.section "Welcome to <%= team %>!"
+  :slack.view
+    type: :modal
+    blocks:
+      :slack.header{text: "Hello <%= name %>"}
+      :slack.divider
+      :slack.section "Welcome to <%= team %>!"
   """
 end
 
-# Usage
+# Usage (default format: :map)
 MyApp.Templates.Welcome.welcome(name: "Alice", team: "Acme")
-# => {"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello Alice"}},...]}
+#=> %{type: "modal", blocks: [%{type: "header", text: %{type: "plain_text", text: "Hello Alice"}}, ...]}
+
+# With format: :json
+defmodule MyApp.Templates.Json do
+  use Juvet.Template, format: :json
+
+  template :welcome, """
+  :slack.view
+    type: :modal
+    blocks:
+      :slack.header{text: "Hello <%= name %>"}
+  """
+end
+
+MyApp.Templates.Json.welcome(name: "Alice")
+#=> "{\"type\":\"modal\",\"blocks\":[...]}"
+
+# Per-template override
+defmodule MyApp.Templates.Mixed do
+  use Juvet.Template
+
+  template :map_template, ":slack.view ..."
+  template :json_template, ":slack.view ...", format: :json
+end
 ```
 
 ### Benefits
@@ -793,29 +834,29 @@ MyApp.Templates.Welcome.welcome(name: "Alice", team: "Acme")
 #### Phase 0: Basic `use` and `template/2` macro
 
 Create `Juvet.Template` module with:
-- `__using__/1` macro that imports the `template` macro
-- `template/2` macro that compiles template at compile-time and generates a function
+- `__using__/1` macro that imports the `template` macro and accepts a `format:` option
+- `template/2` and `template/3` macros that compile templates at compile-time and generate functions
 
 ```elixir
 defmodule Juvet.Template do
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
+    format = Keyword.get(opts, :format, :map)
+
     quote do
-      import Juvet.Template, only: [template: 2]
+      import Juvet.Template, only: [template: 2, template: 3]
+      Module.put_attribute(__MODULE__, :juvet_template_format, unquote(format))
     end
   end
 
   defmacro template(name, source) do
-    # Compile template to JSON at macro expansion time
-    json = source
+    format = Module.get_attribute(__CALLER__.module, :juvet_template_format)
+    # Compile template to map at macro expansion time
+    compiled = source
       |> Juvet.Template.Tokenizer.tokenize()
       |> Juvet.Template.Parser.parse()
       |> Juvet.Template.Compiler.compile()
 
-    quote do
-      def unquote(name)(bindings \\ []) do
-        EEx.eval_string(unquote(json), bindings)
-      end
-    end
+    generate_template_function(name, compiled, format)
   end
 end
 ```
@@ -826,33 +867,34 @@ end
 defmodule MyApp.WelcomeTemplate do
   use Juvet.Template
 
-  template :welcome, ":slack.header{text: \"Hello <%= name %>\"}"
+  template :welcome, ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Hello <%= name %>\"}"
 end
 
 MyApp.WelcomeTemplate.welcome(name: "World")
-# => {"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello World"}}]}
+#=> %{type: "modal", blocks: [%{type: "header", text: %{type: "plain_text", text: "Hello World"}}]}
 ```
 
 #### Phase 1: No-bindings optimization
 
-Skip `EEx.eval_string` when there are no interpolations in the template. If the compiled JSON contains no `<%=` markers, return the pre-compiled string directly.
+Skip runtime evaluation when there are no interpolations in the template.
+
+For `:map` format: if the compiled map contains no `<%` markers, return the map literal directly via `Macro.escape/1`. Otherwise, use `eval_map/2` at runtime to walk the map and evaluate EEx in string values.
+
+For `:json` format: if the compiled JSON string contains no `<%` markers, return the string directly. Otherwise, use `EEx.eval_string/2` at runtime.
 
 ```elixir
-defmacro template(name, source) do
-  json = compile_template(source)
-  has_interpolation = String.contains?(json, "<%")
+defp generate_template_function(name, compiled, :map) do
+  escaped = Macro.escape(compiled)
 
-  if has_interpolation do
+  if map_contains_eex?(compiled) do
     quote do
       def unquote(name)(bindings \\ []) do
-        EEx.eval_string(unquote(json), bindings)
+        Juvet.Template.eval_map(unquote(escaped), bindings)
       end
     end
   else
     quote do
-      def unquote(name)(_bindings \\ []) do
-        unquote(json)
-      end
+      def unquote(name)(_bindings \\ []), do: unquote(escaped)
     end
   end
 end
@@ -895,25 +937,25 @@ All errors include line numbers when available, enabling IDE navigation to the s
 
 #### Phase 3: Template from file
 
-Add `template_file/2` macro to load templates from external `.cheex` files (similar to Phoenix's `.eex` files).
+The `template/2` macro accepts a `file:` option (and optional `format:` override) to load templates from external `.cheex` files (similar to Phoenix's `.eex` files).
 
 ```elixir
-defmacro template_file(name, path) do
+defmacro template(name, opts) when is_list(opts) do
+  format = Keyword.get(opts, :format,
+    Module.get_attribute(__CALLER__.module, :juvet_template_format))
+  path = Keyword.fetch!(opts, :file)
   # Path is relative to the calling module's file
   caller_dir = Path.dirname(__CALLER__.file)
   full_path = Path.expand(path, caller_dir)
 
   # Read and compile at compile time
   source = File.read!(full_path)
-  json = compile_template(source)
+  compiled = compile_template(source)
 
   # Register external resource for recompilation
   quote do
     @external_resource unquote(full_path)
-
-    def unquote(name)(bindings \\ []) do
-      EEx.eval_string(unquote(json), bindings)
-    end
+    unquote(generate_template_function(name, compiled, format))
   end
 end
 ```
@@ -924,8 +966,9 @@ end
 defmodule MyApp.Templates do
   use Juvet.Template
 
-  template_file :welcome, "templates/welcome.cheex"
-  template_file :goodbye, "templates/goodbye.cheex"
+  template :welcome, file: "templates/welcome.cheex"
+  template :goodbye, file: "templates/goodbye.cheex"
+  template :legacy, file: "templates/legacy.cheex", format: :json
 end
 ```
 
@@ -972,9 +1015,66 @@ end
 - The Juvet template syntax itself is static; dynamism comes from EEx interpolation
 - For complex dynamic structures, users can use multiple templates or raw JSON construction
 
+## Views
+
+Views are top-level containers used for Slack surfaces like modals and home tabs. A view wraps blocks with additional metadata fields (`type`, `private_metadata`).
+
+### Syntax
+
+```
+:slack.view
+  type: :modal
+  private_metadata: "some metadata string"
+  blocks:
+    :slack.header{text: "Hello <%= name %>"}
+    :slack.divider
+    :slack.section "Welcome"
+```
+
+### Output
+
+```json
+{
+  "type": "modal",
+  "private_metadata": "some metadata string",
+  "blocks": [
+    {"type": "header", "text": {"type": "plain_text", "text": "Hello <%= name %>"}},
+    {"type": "divider"},
+    {"type": "section", "text": {"type": "mrkdwn", "text": "Welcome"}}
+  ]
+}
+```
+
+### Fields
+
+- `type` (required) - The view type as an atom. Converted to string in JSON. Common values: `:modal`, `:home`
+- `private_metadata` (optional) - Arbitrary string metadata. Supports EEx interpolation. Only included in output if present.
+- `blocks:` (child key) - List of block elements, compiled using standard block compilation.
+
+### AST
+
+The parser produces the following AST for a view template:
+
+```elixir
+[%{
+  platform: :slack,
+  element: :view,
+  attributes: %{type: :modal, private_metadata: "some metadata string"},
+  children: %{
+    blocks: [
+      %{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}},
+      %{platform: :slack, element: :divider, attributes: %{}},
+      %{platform: :slack, element: :section, attributes: %{text: "Welcome"}}
+    ]
+  }
+}]
+```
+
+No parser changes are required. The existing parser handles `:slack.view` as a regular element, `type:` and `private_metadata:` as block-style attributes, and `blocks:` as a child key with nested elements.
+
 ## Template Partials
 
-Template partials allow reusable template fragments to be included in other templates, using native cheex syntax. Partials are resolved at compile time by inlining the referenced template's AST before JSON generation.
+Template partials allow reusable block-level fragments to be included inside views. Partials are defined with the `partial/2` macro, which stores AST for inlining into parent templates at compile time. Partials don't compile to standalone JSON or generate callable functions.
 
 ### Syntax
 
@@ -993,21 +1093,30 @@ Template partials allow reusable template fragments to be included in other temp
 defmodule MyTemplates do
   use Juvet.Template
 
-  # Define reusable partial
-  template :user_header, ":slack.header{text: \"Hello <%= name %>\"}"
+  # Define reusable partial (block-level fragment)
+  partial :user_header, ":slack.header{text: \"Hello <%= name %>\"}"
 
-  # Use with static binding
+  # Or from a file
+  # partial :user_header, file: "templates/user_header.cheex"
+
+  # Use with static binding inside a view
   template :welcome_page, """
-  :slack.partial{template: :user_header, name: "Alice"}
-  :slack.divider
-  :slack.section "Welcome to the app"
+  :slack.view
+    type: :modal
+    blocks:
+      :slack.partial{template: :user_header, name: "Alice"}
+      :slack.divider
+      :slack.section "Welcome to the app"
   """
 
   # Use with dynamic binding (EEx passthrough)
   template :dashboard, """
-  :slack.partial{template: :user_header, name: "<%= user_name %>"}
-  :slack.divider
-  :slack.section "Your dashboard"
+  :slack.view
+    type: :modal
+    blocks:
+      :slack.partial{template: :user_header, name: "<%= user_name %>"}
+      :slack.divider
+      :slack.section "Your dashboard"
   """
 end
 
@@ -1048,16 +1157,15 @@ Runtime: Only EEx evaluation (no JSON parsing/merging)
 Partials can include other partials. Resolution is recursive:
 
 ```elixir
-template :greeting, ":slack.header{text: \"Hello <%= name %>\"}"
-
-template :greeting_card, """
-:slack.partial{template: :greeting, name: "<%= name %>"}
-:slack.divider
-"""
+partial :greeting, ":slack.header{text: \"Hello <%= name %>\"}"
 
 template :full_page, """
-:slack.partial{template: :greeting_card, name: "<%= user %>"}
-:slack.section "Page content"
+:slack.view
+  type: :modal
+  blocks:
+    :slack.partial{template: :greeting, name: "<%= user %>"}
+    :slack.divider
+    :slack.section "Page content"
 """
 ```
 
@@ -1091,13 +1199,23 @@ Partials must be defined before templates that reference them. This is because r
 
 ```elixir
 # Correct: partial defined first
-template :header, ":slack.header{text: \"<%= title %>\"}"
-template :page, ":slack.partial{template: :header, title: \"Welcome\"}"
+partial :header, ":slack.header{text: \"<%= title %>\"}"
+template :page, """
+:slack.view
+  type: :modal
+  blocks:
+    :slack.partial{template: :header, title: "Welcome"}
+"""
 
 # Error: partial not yet defined
-template :page, ":slack.partial{template: :header, title: \"Welcome\"}"
-template :header, ":slack.header{text: \"<%= title %>\"}"
-# => ** (CompileError) partial :header not found (line 1, column 1)
+template :page, """
+:slack.view
+  type: :modal
+  blocks:
+    :slack.partial{template: :header, title: "Welcome"}
+"""
+partial :header, ":slack.header{text: \"<%= title %>\"}"
+# => ** (CompileError) partial :header not found (line 4, column 5)
 ```
 
 ### Error Handling
