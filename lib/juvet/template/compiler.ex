@@ -7,9 +7,9 @@ defmodule Juvet.Template.Compiler do
 
   ## Example
 
-      iex> ast = [%{platform: :slack, element: :divider, attributes: %{}}]
+      iex> ast = [%{platform: :slack, element: :view, attributes: %{type: :modal}, children: %{blocks: [%{platform: :slack, element: :divider, attributes: %{}}]}}]
       iex> Juvet.Template.Compiler.compile(ast)
-      ~s({"blocks":[{"type":"divider"}]})
+      ~s({"blocks":[{"type":"divider"}],"type":"modal"})
 
   See `docs/templates.md` for the full pipeline documentation.
   """

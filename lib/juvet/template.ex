@@ -49,12 +49,13 @@ defmodule Juvet.Template do
   @doc """
   Sets up compile-time template support.
 
-  Imports the `template/2` and `template_file/2` macros for defining compiled templates.
+  Imports the `template/2`, `template_file/2`, and `partial/2` macros for defining
+  compiled templates and partials.
   Also generates a `__templates__/0` function that returns a list of defined template names.
   """
   defmacro __using__(_opts) do
     quote do
-      import Juvet.Template, only: [template: 2, template_file: 2]
+      import Juvet.Template, only: [template: 2, template_file: 2, partial: 2]
       Module.register_attribute(__MODULE__, :juvet_templates, accumulate: true)
       Module.register_attribute(__MODULE__, :juvet_template_asts, [])
       @before_compile Juvet.Template
@@ -165,6 +166,82 @@ defmodule Juvet.Template do
   end
 
   @doc """
+  Defines a partial template for inlining into other templates.
+
+  Partials are block-level fragments — they store AST for reference by other
+  templates but don't compile to standalone JSON or generate callable functions.
+
+  ## Inline partial
+
+      partial :user_header, ":slack.header{text: \\"Hello <%= name %>\\"}"
+
+  ## File-based partial
+
+      partial :user_header, file: "templates/user_header.cheex"
+
+  The file path is relative to the module's source file.
+  """
+  defmacro partial(name, source) when is_binary(source) do
+    store_partial(name, source, __CALLER__)
+  end
+
+  defmacro partial(name, opts) when is_list(opts) do
+    path = Keyword.fetch!(opts, :file)
+    caller_dir = Path.dirname(__CALLER__.file)
+    full_path = Path.expand(path, caller_dir)
+
+    source =
+      case File.read(full_path) do
+        {:ok, content} ->
+          content
+
+        {:error, reason} ->
+          raise CompileError,
+            description: "partial #{inspect(name)} could not read #{path}: #{inspect(reason)}"
+      end
+
+    store_partial(name, source, __CALLER__)
+
+    quote do
+      @external_resource unquote(full_path)
+    end
+  end
+
+  @doc false
+  def store_partial(name, source, caller) do
+    existing_asts = Module.get_attribute(caller.module, :juvet_template_asts) || %{}
+
+    ast =
+      source
+      |> Tokenizer.tokenize()
+      |> Parser.parse()
+
+    Module.put_attribute(
+      caller.module,
+      :juvet_template_asts,
+      Map.put(existing_asts, name, ast)
+    )
+  rescue
+    e in Tokenizer.Error ->
+      reraise CompileError,
+              [
+                description:
+                  "partial #{inspect(name)} has a syntax error: #{Exception.message(e)}",
+                line: e.line
+              ],
+              __STACKTRACE__
+
+    e in Parser.Error ->
+      reraise CompileError,
+              [
+                description:
+                  "partial #{inspect(name)} has a parse error: #{Exception.message(e)}",
+                line: e.line
+              ],
+              __STACKTRACE__
+  end
+
+  @doc """
   Compiles template source to AST and JSON, raising on errors.
 
   Runs the template through the tokenizer, parser, and compiler pipeline.
@@ -242,6 +319,12 @@ defmodule Juvet.Template do
     Map.new(children, fn
       {key, elements} when is_list(elements) ->
         {key, resolve_partials(elements, existing_asts, stack)}
+
+      {key, %{element: :partial} = element} ->
+        {key, resolve_partial(element, existing_asts, stack)}
+
+      {key, %{children: nested} = element} when is_map(nested) ->
+        {key, %{element | children: resolve_partials_in_children(nested, existing_asts, stack)}}
 
       {key, value} ->
         {key, value}

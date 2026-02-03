@@ -1010,10 +1010,6 @@ Views are top-level containers used for Slack surfaces like modals and home tabs
 - `private_metadata` (optional) - Arbitrary string metadata. Supports EEx interpolation. Only included in output if present.
 - `blocks:` (child key) - List of block elements, compiled using standard block compilation.
 
-### Backward Compatibility
-
-Existing block-only templates continue to produce `{"blocks":[...]}` as before. The view wrapper is only applied when the template contains a single top-level `:slack.view` element.
-
 ### AST
 
 The parser produces the following AST for a view template:
@@ -1037,7 +1033,7 @@ No parser changes are required. The existing parser handles `:slack.view` as a r
 
 ## Template Partials
 
-Template partials allow reusable template fragments to be included in other templates, using native cheex syntax. Partials are resolved at compile time by inlining the referenced template's AST before JSON generation.
+Template partials allow reusable block-level fragments to be included inside views. Partials are defined with the `partial/2` macro, which stores AST for inlining into parent templates at compile time. Partials don't compile to standalone JSON or generate callable functions.
 
 ### Syntax
 
@@ -1056,21 +1052,30 @@ Template partials allow reusable template fragments to be included in other temp
 defmodule MyTemplates do
   use Juvet.Template
 
-  # Define reusable partial
-  template :user_header, ":slack.header{text: \"Hello <%= name %>\"}"
+  # Define reusable partial (block-level fragment)
+  partial :user_header, ":slack.header{text: \"Hello <%= name %>\"}"
 
-  # Use with static binding
+  # Or from a file
+  # partial :user_header, file: "templates/user_header.cheex"
+
+  # Use with static binding inside a view
   template :welcome_page, """
-  :slack.partial{template: :user_header, name: "Alice"}
-  :slack.divider
-  :slack.section "Welcome to the app"
+  :slack.view
+    type: :modal
+    blocks:
+      :slack.partial{template: :user_header, name: "Alice"}
+      :slack.divider
+      :slack.section "Welcome to the app"
   """
 
   # Use with dynamic binding (EEx passthrough)
   template :dashboard, """
-  :slack.partial{template: :user_header, name: "<%= user_name %>"}
-  :slack.divider
-  :slack.section "Your dashboard"
+  :slack.view
+    type: :modal
+    blocks:
+      :slack.partial{template: :user_header, name: "<%= user_name %>"}
+      :slack.divider
+      :slack.section "Your dashboard"
   """
 end
 
@@ -1111,16 +1116,15 @@ Runtime: Only EEx evaluation (no JSON parsing/merging)
 Partials can include other partials. Resolution is recursive:
 
 ```elixir
-template :greeting, ":slack.header{text: \"Hello <%= name %>\"}"
-
-template :greeting_card, """
-:slack.partial{template: :greeting, name: "<%= name %>"}
-:slack.divider
-"""
+partial :greeting, ":slack.header{text: \"Hello <%= name %>\"}"
 
 template :full_page, """
-:slack.partial{template: :greeting_card, name: "<%= user %>"}
-:slack.section "Page content"
+:slack.view
+  type: :modal
+  blocks:
+    :slack.partial{template: :greeting, name: "<%= user %>"}
+    :slack.divider
+    :slack.section "Page content"
 """
 ```
 
@@ -1154,13 +1158,23 @@ Partials must be defined before templates that reference them. This is because r
 
 ```elixir
 # Correct: partial defined first
-template :header, ":slack.header{text: \"<%= title %>\"}"
-template :page, ":slack.partial{template: :header, title: \"Welcome\"}"
+partial :header, ":slack.header{text: \"<%= title %>\"}"
+template :page, """
+:slack.view
+  type: :modal
+  blocks:
+    :slack.partial{template: :header, title: "Welcome"}
+"""
 
 # Error: partial not yet defined
-template :page, ":slack.partial{template: :header, title: \"Welcome\"}"
-template :header, ":slack.header{text: \"<%= title %>\"}"
-# => ** (CompileError) partial :header not found (line 1, column 1)
+template :page, """
+:slack.view
+  type: :modal
+  blocks:
+    :slack.partial{template: :header, title: "Welcome"}
+"""
+partial :header, ":slack.header{text: \"<%= title %>\"}"
+# => ** (CompileError) partial :header not found (line 4, column 5)
 ```
 
 ### Error Handling

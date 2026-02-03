@@ -1,1 +1,4 @@
-:slack.divider
+:slack.view
+  type: :modal
+  blocks:
+    :slack.divider

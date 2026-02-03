@@ -17,5 +17,9 @@ defmodule Juvet.Template.Compiler.Slack.View do
     Enum.map(blocks, &Slack.compile_element/1)
   end
 
+  defp compile_blocks(%{children: %{blocks: block}}) when is_map(block) do
+    [Slack.compile_element(block)]
+  end
+
   defp compile_blocks(_), do: []
 end
