@@ -1480,6 +1480,188 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with datepicker" do
+    test "datepicker with action_id and initial_date in actions block" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datepicker,
+                  attributes: %{action_id: "date_1", initial_date: "2024-01-15"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datepicker] = actions.elements
+
+      assert datepicker == %{
+               type: "datepicker",
+               action_id: "date_1",
+               initial_date: "2024-01-15"
+             }
+    end
+
+    test "datepicker as section accessory" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick a date"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :datepicker,
+                attributes: %{action_id: "date_1", initial_date: "2024-06-01"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Pick a date"},
+                   accessory: %{
+                     type: "datepicker",
+                     action_id: "date_1",
+                     initial_date: "2024-06-01"
+                   }
+                 }
+               ])
+    end
+
+    test "datepicker with scalar placeholder" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datepicker,
+                  attributes: %{action_id: "date_1", placeholder: "Select a date"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datepicker] = actions.elements
+
+      assert datepicker == %{
+               type: "datepicker",
+               action_id: "date_1",
+               placeholder: %{type: "plain_text", text: "Select a date"}
+             }
+    end
+
+    test "datepicker with deep placeholder" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datepicker,
+                  attributes: %{
+                    action_id: "date_1",
+                    placeholder: %{text: "Choose a date", emoji: true}
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datepicker] = actions.elements
+
+      assert datepicker == %{
+               type: "datepicker",
+               action_id: "date_1",
+               placeholder: %{type: "plain_text", text: "Choose a date", emoji: true}
+             }
+    end
+
+    test "datepicker with focus_on_load" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datepicker,
+                  attributes: %{action_id: "date_1", focus_on_load: true}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datepicker] = actions.elements
+
+      assert datepicker == %{
+               type: "datepicker",
+               action_id: "date_1",
+               focus_on_load: true
+             }
+    end
+
+    test "datepicker with only action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datepicker,
+                  attributes: %{action_id: "date_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datepicker] = actions.elements
+
+      assert datepicker == %{type: "datepicker", action_id: "date_1"}
+    end
+  end
+
   describe "compile/1 with deep attributes" do
     test "select with placeholder as deep attribute" do
       ast =

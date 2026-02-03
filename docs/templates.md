@@ -120,6 +120,7 @@ lib/juvet/template/
         section.ex                 # Compiler.Slack.Blocks.Section
       elements/
         button.ex                  # Compiler.Slack.Elements.Button
+        datepicker.ex              # Compiler.Slack.Elements.Datepicker
         overflow.ex                # Compiler.Slack.Elements.Overflow
         select.ex                  # Compiler.Slack.Elements.Select
       objects/
@@ -164,6 +165,7 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:context` | `"context"` |
 | `:image` | `"image"` |
 | `:button` | `"button"` |
+| `:datepicker` | `"datepicker"` |
 | `:overflow` | `"overflow"` |
 | `:actions` | `"actions"` |
 | `:view` | `"modal"`, `"home"` (from `type` attribute) |
@@ -1592,14 +1594,28 @@ Single-select with radio buttons.
 
 #### Date and Time Pickers
 
+The datepicker element has been implemented. It supports `action_id`, `initial_date` (YYYY-MM-DD format), `placeholder` (scalar or deep attribute), and `focus_on_load`.
+
 ```elixir
-# Date picker
+# Date picker AST
 %{platform: :slack, element: :datepicker, attributes: %{
   action_id: "date_1",
   initial_date: "2024-01-15",
   placeholder: "Select a date"
 }}
 
+# Output JSON
+{
+  "type": "datepicker",
+  "action_id": "date_1",
+  "initial_date": "2024-01-15",
+  "placeholder": {"type": "plain_text", "text": "Select a date"}
+}
+```
+
+The following date/time pickers are planned for future implementation:
+
+```elixir
 # Time picker
 %{platform: :slack, element: :timepicker, attributes: %{
   action_id: "time_1",
