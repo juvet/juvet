@@ -3,8 +3,6 @@ defmodule Juvet.Template.Compiler.Slack.ViewTest do
 
   alias Juvet.Template.Compiler.Slack
 
-  import Juvet.Test.JsonHelpers, only: [json_equal?: 2]
-
   describe "compile/1 with view" do
     test "view with type and blocks" do
       ast = [
@@ -21,13 +19,13 @@ defmodule Juvet.Template.Compiler.Slack.ViewTest do
         }
       ]
 
-      assert json_equal?(Slack.compile(ast), %{
-               "type" => "modal",
-               "blocks" => [
-                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}},
-                 %{"type" => "divider"}
+      assert Slack.compile(ast) == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}},
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "view with type, private_metadata, and blocks" do
@@ -44,16 +42,16 @@ defmodule Juvet.Template.Compiler.Slack.ViewTest do
         }
       ]
 
-      assert json_equal?(Slack.compile(ast), %{
-               "type" => "modal",
-               "private_metadata" => "some metadata string",
-               "blocks" => [
+      assert Slack.compile(ast) == %{
+               type: "modal",
+               private_metadata: "some metadata string",
+               blocks: [
                  %{
-                   "type" => "section",
-                   "text" => %{"type" => "mrkdwn", "text" => "Welcome"}
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Welcome"}
                  }
                ]
-             })
+             }
     end
 
     test "view with empty blocks" do
@@ -65,10 +63,10 @@ defmodule Juvet.Template.Compiler.Slack.ViewTest do
         }
       ]
 
-      assert json_equal?(Slack.compile(ast), %{
-               "type" => "modal",
-               "blocks" => []
-             })
+      assert Slack.compile(ast) == %{
+               type: "modal",
+               blocks: []
+             }
     end
 
     test "view without private_metadata omits the field" do
@@ -85,11 +83,11 @@ defmodule Juvet.Template.Compiler.Slack.ViewTest do
         }
       ]
 
-      result = Poison.decode!(Slack.compile(ast))
+      result = Slack.compile(ast)
 
-      assert result["type"] == "home"
-      assert result["blocks"] == [%{"type" => "divider"}]
-      refute Map.has_key?(result, "private_metadata")
+      assert result[:type] == "home"
+      assert result[:blocks] == [%{type: "divider"}]
+      refute Map.has_key?(result, :private_metadata)
     end
 
     test "view with EEx interpolation in private_metadata passes through" do
@@ -106,16 +104,16 @@ defmodule Juvet.Template.Compiler.Slack.ViewTest do
         }
       ]
 
-      assert json_equal?(Slack.compile(ast), %{
-               "type" => "modal",
-               "private_metadata" => "<%= metadata %>",
-               "blocks" => [
+      assert Slack.compile(ast) == %{
+               type: "modal",
+               private_metadata: "<%= metadata %>",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello <%= name %>"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello <%= name %>"}
                  }
                ]
-             })
+             }
     end
 
     test "view with multiple block types inside blocks" do
@@ -148,30 +146,30 @@ defmodule Juvet.Template.Compiler.Slack.ViewTest do
         }
       ]
 
-      assert json_equal?(Slack.compile(ast), %{
-               "type" => "modal",
-               "blocks" => [
+      assert Slack.compile(ast) == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Title"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Title"}
                  },
-                 %{"type" => "divider"},
+                 %{type: "divider"},
                  %{
-                   "type" => "section",
-                   "text" => %{"type" => "mrkdwn", "text" => "Content"}
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Content"}
                  },
                  %{
-                   "type" => "actions",
-                   "elements" => [
+                   type: "actions",
+                   elements: [
                      %{
-                       "type" => "button",
-                       "text" => %{"type" => "plain_text", "text" => "Click"},
-                       "action_id" => "btn_1"
+                       type: "button",
+                       text: %{type: "plain_text", text: "Click"},
+                       action_id: "btn_1"
                      }
                    ]
                  }
                ]
-             })
+             }
     end
   end
 end

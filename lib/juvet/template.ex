@@ -2,8 +2,8 @@ defmodule Juvet.Template do
   @moduledoc """
   Compile-time template compilation for Juvet templates.
 
-  Templates are compiled to JSON at compile time, with only EEx interpolation
-  happening at runtime.
+  Templates are compiled at compile time, with only EEx interpolation
+  happening at runtime. By default, template functions return atom-keyed maps.
 
   ## Usage
 
@@ -17,7 +17,17 @@ defmodule Juvet.Template do
       end
 
       MyApp.Templates.welcome(name: "World")
-      # => {"blocks":[{"type":"header","text":{"type":"plain_text","text":"Hello World"}},{"type":"divider"}]}
+      #=> %{type: "modal", blocks: [%{type: "header", text: %{type: "plain_text", text: "Hello World"}}, ...]}
+
+  ## Format option
+
+  The `format` option controls the return type. Default is `:map`.
+
+      # Module-level default
+      use Juvet.Template, format: :json
+
+      # Per-template override
+      template :greeting, ":slack.view ...", format: :json
 
   ## Templates from files
 
@@ -49,13 +59,22 @@ defmodule Juvet.Template do
   @doc """
   Sets up compile-time template support.
 
-  Imports the `template/2` and `partial/2` macros for defining compiled templates
-  and partials.
+  Imports the `template/2`, `template/3`, and `partial/2` macros for defining
+  compiled templates and partials.
+
+  ## Options
+
+    * `:format` - The default output format for templates in this module.
+      `:map` (default) returns atom-keyed maps, `:json` returns JSON strings.
+
   Also generates a `__templates__/0` function that returns a list of defined template names.
   """
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
+    format = Keyword.get(opts, :format, :map)
+    Module.put_attribute(__CALLER__.module, :juvet_template_format, format)
+
     quote do
-      import Juvet.Template, only: [template: 2, partial: 2]
+      import Juvet.Template, only: [template: 2, template: 3, partial: 2]
       Module.register_attribute(__MODULE__, :juvet_templates, accumulate: true)
       Module.register_attribute(__MODULE__, :juvet_template_asts, [])
       @before_compile Juvet.Template
@@ -96,9 +115,8 @@ defmodule Juvet.Template do
   @doc """
   Defines a compiled template function.
 
-  The template source is compiled to JSON at compile time. At runtime,
-  only EEx interpolation is performed. If the template has no interpolations,
-  the compiled JSON is returned directly without EEx evaluation.
+  The template source is compiled at compile time. At runtime,
+  only EEx interpolation is performed. By default, returns an atom-keyed map.
 
   ## Inline template
 
@@ -108,28 +126,28 @@ defmodule Juvet.Template do
 
       template :greeting, file: "templates/greeting.cheex"
 
+  ## With format override
+
+      template :greeting, ":slack.header{text: \\"Hello\\"}", format: :json
+
   The file path is relative to the file containing the module. The module
   will be recompiled when the template file changes.
 
   Generates a function `greeting/1` that accepts a keyword list of bindings.
   """
   defmacro template(name, source) when is_binary(source) do
-    existing_asts = Module.get_attribute(__CALLER__.module, :juvet_template_asts) || %{}
-    {ast, json} = compile_template!(name, source, existing_asts)
-
-    Module.put_attribute(
-      __CALLER__.module,
-      :juvet_template_asts,
-      Map.put(existing_asts, name, ast)
-    )
-
-    quote do
-      @juvet_templates unquote(name)
-      unquote(generate_template_function(name, json))
-    end
+    format = Module.get_attribute(__CALLER__.module, :juvet_template_format) || :map
+    do_compile_template(name, source, format, __CALLER__)
   end
 
   defmacro template(name, opts) when is_list(opts) do
+    format =
+      Keyword.get(
+        opts,
+        :format,
+        Module.get_attribute(__CALLER__.module, :juvet_template_format) || :map
+      )
+
     path = Keyword.fetch!(opts, :file)
     caller_dir = Path.dirname(__CALLER__.file)
     full_path = Path.expand(path, caller_dir)
@@ -145,7 +163,7 @@ defmodule Juvet.Template do
       end
 
     existing_asts = Module.get_attribute(__CALLER__.module, :juvet_template_asts) || %{}
-    {ast, json} = compile_template!(name, source, existing_asts)
+    {ast, compiled} = compile_template!(name, source, existing_asts)
 
     Module.put_attribute(
       __CALLER__.module,
@@ -156,8 +174,33 @@ defmodule Juvet.Template do
     quote do
       @juvet_templates unquote(name)
       @external_resource unquote(full_path)
-      unquote(generate_template_function(name, json))
+      unquote(generate_template_function(name, compiled, format))
     end
+  end
+
+  @doc """
+  Defines a compiled template function with options.
+
+  Accepts inline source and a keyword list of options.
+
+  ## Options
+
+    * `:format` - Override the module-level format for this template.
+      `:map` returns atom-keyed maps, `:json` returns JSON strings.
+
+  ## Example
+
+      template :greeting, ":slack.view ...", format: :json
+  """
+  defmacro template(name, source, opts) when is_binary(source) and is_list(opts) do
+    format =
+      Keyword.get(
+        opts,
+        :format,
+        Module.get_attribute(__CALLER__.module, :juvet_template_format) || :map
+      )
+
+    do_compile_template(name, source, format, __CALLER__)
   end
 
   @doc """
@@ -237,14 +280,14 @@ defmodule Juvet.Template do
   end
 
   @doc """
-  Compiles template source to AST and JSON, raising on errors.
+  Compiles template source to AST and compiled map, raising on errors.
 
   Runs the template through the tokenizer, parser, and compiler pipeline.
   Resolves any `:partial` elements by inlining referenced template ASTs.
 
-  Returns `{ast, json}` tuple where:
+  Returns `{ast, compiled_map}` tuple where:
   - `ast` is the parsed AST (before partial resolution)
-  - `json` is the compiled JSON string (with partials resolved)
+  - `compiled_map` is the compiled atom-keyed map (with partials resolved)
 
   Errors are caught and re-raised as `CompileError` with helpful context.
 
@@ -257,8 +300,8 @@ defmodule Juvet.Template do
       |> Parser.parse()
 
     resolved_ast = resolve_partials(ast, existing_asts)
-    json = Compiler.compile(resolved_ast)
-    {ast, json}
+    compiled = Compiler.compile(resolved_ast)
+    {ast, compiled}
   rescue
     e in Juvet.Template.Tokenizer.Error ->
       reraise CompileError,
@@ -421,22 +464,98 @@ defmodule Juvet.Template do
     substitute_bindings(value, bindings)
   end
 
-  # Generates the quoted function definition for a template.
-  #
-  # If the compiled JSON contains EEx interpolation markers (`<%`),
-  # generates a function that calls `EEx.eval_string/2` at runtime.
-  # Otherwise, generates a function that returns the static JSON directly.
-  defp generate_template_function(name, json) do
-    if String.contains?(json, "<%") do
-      quote do
-        def unquote(name)(bindings \\ []) do
-          EEx.eval_string(unquote(json), bindings)
-        end
-      end
+  @doc """
+  Evaluates EEx interpolations within a nested map/list structure at runtime.
+
+  Walks the data structure and evaluates any string values containing EEx
+  markers (`<%`) using the provided bindings. Non-string values are returned
+  as-is.
+  """
+  def eval_map(data, bindings) when is_map(data) do
+    Map.new(data, fn {k, v} -> {k, eval_map(v, bindings)} end)
+  end
+
+  def eval_map(data, bindings) when is_list(data) do
+    Enum.map(data, &eval_map(&1, bindings))
+  end
+
+  def eval_map(data, bindings) when is_binary(data) do
+    if String.contains?(data, "<%") do
+      EEx.eval_string(data, bindings)
     else
-      quote do
-        def unquote(name)(_bindings \\ []), do: unquote(json)
-      end
+      data
     end
   end
+
+  def eval_map(data, _bindings), do: data
+
+  # Shared implementation for compiling inline template source.
+  defp do_compile_template(name, source, format, caller) do
+    existing_asts = Module.get_attribute(caller.module, :juvet_template_asts) || %{}
+    {ast, compiled} = compile_template!(name, source, existing_asts)
+
+    Module.put_attribute(
+      caller.module,
+      :juvet_template_asts,
+      Map.put(existing_asts, name, ast)
+    )
+
+    quote do
+      @juvet_templates unquote(name)
+      unquote(generate_template_function(name, compiled, format))
+    end
+  end
+
+  # Generates the quoted function definition for a template.
+  #
+  # For `:json` format: encodes the map to JSON, then uses EEx.eval_string
+  # for dynamic templates or returns the static JSON string directly.
+  #
+  # For `:map` format: uses Macro.escape to embed the map, then uses
+  # eval_map/2 for dynamic templates or returns the map directly.
+  defp generate_template_function(name, compiled, format) do
+    case format do
+      :json ->
+        json = Compiler.Encoder.encode!(compiled)
+
+        if String.contains?(json, "<%") do
+          quote do
+            def unquote(name)(bindings \\ []) do
+              EEx.eval_string(unquote(json), bindings)
+            end
+          end
+        else
+          quote do
+            def unquote(name)(_bindings \\ []), do: unquote(json)
+          end
+        end
+
+      :map ->
+        escaped = Macro.escape(compiled)
+
+        if map_contains_eex?(compiled) do
+          quote do
+            def unquote(name)(bindings \\ []) do
+              Juvet.Template.eval_map(unquote(escaped), bindings)
+            end
+          end
+        else
+          quote do
+            def unquote(name)(_bindings \\ []), do: unquote(escaped)
+          end
+        end
+    end
+  end
+
+  # Checks if a map/list structure contains any EEx interpolation markers.
+  defp map_contains_eex?(map) when is_map(map),
+    do: Enum.any?(map, fn {_k, v} -> map_contains_eex?(v) end)
+
+  defp map_contains_eex?(list) when is_list(list),
+    do: Enum.any?(list, &map_contains_eex?/1)
+
+  defp map_contains_eex?(s) when is_binary(s),
+    do: String.contains?(s, "<%")
+
+  defp map_contains_eex?(_), do: false
 end

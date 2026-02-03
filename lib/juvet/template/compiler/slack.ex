@@ -11,7 +11,7 @@ defmodule Juvet.Template.Compiler.Slack do
   alias Juvet.Template.Compiler.Slack.Elements.Button
   alias Juvet.Template.Compiler.Slack.View
 
-  @spec compile([Compiler.ast_element()]) :: String.t()
+  @spec compile([Compiler.ast_element()]) :: map()
   def compile([%{element: :view} = view]), do: View.compile(view)
 
   @doc false

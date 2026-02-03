@@ -4,8 +4,8 @@ defmodule Juvet.Template.CompilerTest do
   alias Juvet.Template.Compiler
 
   describe "compile/1" do
-    test "empty AST returns empty string" do
-      assert Compiler.compile([]) == ""
+    test "empty AST returns empty map" do
+      assert Compiler.compile([]) == %{}
     end
 
     test "delegates slack elements to Slack compiler" do
@@ -20,10 +20,10 @@ defmodule Juvet.Template.CompilerTest do
         }
       ]
 
-      result = Poison.decode!(Compiler.compile(ast))
+      result = Compiler.compile(ast)
 
-      assert result["type"] == "modal"
-      assert result["blocks"] == [%{"type" => "divider"}]
+      assert result[:type] == "modal"
+      assert result[:blocks] == [%{type: "divider"}]
     end
   end
 end

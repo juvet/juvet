@@ -6,8 +6,8 @@ defmodule Juvet.TemplateTest do
   import Juvet.Test.JsonHelpers, only: [json_equal?: 2]
 
   describe "render/1" do
-    test "empty template returns empty string" do
-      assert Template.render("") == ""
+    test "empty template returns empty map" do
+      assert Template.render("") == %{}
     end
   end
 
@@ -49,46 +49,46 @@ defmodule Juvet.TemplateTest do
     test "compiles template and generates function" do
       result = TestTemplates.simple_header()
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
-                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}}
                ]
-             })
+             }
     end
 
     test "generated function accepts bindings" do
       result = TestTemplates.header_with_binding(name: "World")
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello World"}
                  }
                ]
-             })
+             }
     end
 
     test "bindings default to empty list" do
       result = TestTemplates.simple_header()
-      assert is_binary(result)
+      assert is_map(result)
     end
 
     test "multi-element template with bindings" do
       result = TestTemplates.multi_element(name: "Alice")
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Welcome Alice"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Welcome Alice"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "template without interpolation ignores bindings" do
@@ -149,16 +149,16 @@ defmodule Juvet.TemplateTest do
     test "loads and compiles template from file" do
       result = FileTemplates.greeting(name: "World")
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello World"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "missing file raises CompileError" do
@@ -200,47 +200,47 @@ defmodule Juvet.TemplateTest do
     test "inline static template works" do
       result = MixedTemplates.header()
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
-                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Welcome"}}
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Welcome"}}
                ]
-             })
+             }
     end
 
     test "inline dynamic template works" do
       result = MixedTemplates.dynamic_section(name: "World")
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
-                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Hello World"}}
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "Hello World"}}
                ]
-             })
+             }
     end
 
     test "file-based dynamic template works" do
       result = MixedTemplates.greeting(name: "Alice")
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Alice"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "file-based static template works" do
       result = MixedTemplates.static_divider()
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [%{"type" => "divider"}]
-             })
+      assert result == %{
+               type: "modal",
+               blocks: [%{type: "divider"}]
+             }
     end
 
     test "all templates in module are independent" do
@@ -250,17 +250,11 @@ defmodule Juvet.TemplateTest do
       greeting = MixedTemplates.greeting(name: "Bob")
       divider = MixedTemplates.static_divider()
 
-      # Each should be valid JSON with type and blocks
-      assert %{"type" => "modal", "blocks" => [%{"type" => "header"} | _]} =
-               Poison.decode!(header)
-
-      assert %{"type" => "modal", "blocks" => [%{"type" => "section"} | _]} =
-               Poison.decode!(section)
-
-      assert %{"type" => "modal", "blocks" => [%{"type" => "header"}, %{"type" => "divider"}]} =
-               Poison.decode!(greeting)
-
-      assert %{"type" => "modal", "blocks" => [%{"type" => "divider"}]} = Poison.decode!(divider)
+      # Each should be a map with type and blocks
+      assert %{type: "modal", blocks: [%{type: "header"} | _]} = header
+      assert %{type: "modal", blocks: [%{type: "section"} | _]} = section
+      assert %{type: "modal", blocks: [%{type: "header"}, %{type: "divider"}]} = greeting
+      assert %{type: "modal", blocks: [%{type: "divider"}]} = divider
     end
 
     test "__templates__/0 returns list of template names" do
@@ -315,30 +309,30 @@ defmodule Juvet.TemplateTest do
       result = PartialTemplates.static_dashboard()
 
       assert %{
-               "type" => "modal",
-               "blocks" => [
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Alice"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             } = Poison.decode!(result)
+             } = result
     end
 
     test "partial with dynamic binding passes through EEx" do
       result = PartialTemplates.dynamic_dashboard(user_name: "Bob")
 
       assert %{
-               "type" => "modal",
-               "blocks" => [
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Bob"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Bob"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             } = Poison.decode!(result)
+             } = result
     end
 
     test "partials do not appear in __templates__ list" do
@@ -381,31 +375,31 @@ defmodule Juvet.TemplateTest do
       result = NestedPartialTemplates.full_page(user: "Alice")
 
       assert %{
-               "type" => "modal",
-               "blocks" => [
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Alice"}
                  },
-                 %{"type" => "divider"},
-                 %{"type" => "section"}
+                 %{type: "divider"},
+                 %{type: "section"}
                ]
-             } = Poison.decode!(result)
+             } = result
     end
 
     test "template using partial works" do
       result = NestedPartialTemplates.greeting_with_divider(name: "Bob")
 
       assert %{
-               "type" => "modal",
-               "blocks" => [
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Bob"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Bob"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             } = Poison.decode!(result)
+             } = result
     end
   end
 
@@ -453,63 +447,63 @@ defmodule Juvet.TemplateTest do
     test "view with type and blocks" do
       result = ViewTemplates.simple_view()
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
-                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}},
-                 %{"type" => "divider"}
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}},
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "view with private_metadata" do
       result = ViewTemplates.view_with_metadata()
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "private_metadata" => "some metadata",
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               private_metadata: "some metadata",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Welcome"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Welcome"}
                  },
                  %{
-                   "type" => "section",
-                   "text" => %{"type" => "mrkdwn", "text" => "Content here"}
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Content here"}
                  }
                ]
-             })
+             }
     end
 
     test "view with EEx bindings" do
       result = ViewTemplates.view_with_bindings(name: "World", metadata: "user_123")
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "private_metadata" => "user_123",
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               private_metadata: "user_123",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello World"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "view with partial inside blocks" do
       result = ViewTemplates.view_with_partial(name: "Alice")
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello Alice"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello Alice"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             })
+             }
     end
   end
 
@@ -531,16 +525,16 @@ defmodule Juvet.TemplateTest do
     test "file-based partial is inlined into view template" do
       result = FilePartialTemplates.dashboard(name: "World")
 
-      assert json_equal?(result, %{
-               "type" => "modal",
-               "blocks" => [
+      assert result == %{
+               type: "modal",
+               blocks: [
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello World"}
                  },
-                 %{"type" => "divider"}
+                 %{type: "divider"}
                ]
-             })
+             }
     end
 
     test "file-based partial does not appear in __templates__ list" do
@@ -609,6 +603,154 @@ defmodule Juvet.TemplateTest do
           cyclic_asts
         )
       end
+    end
+  end
+
+  describe "format: :json option" do
+    defmodule JsonTemplates do
+      use Juvet.Template, format: :json
+
+      template(:static_header, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello"}
+      """)
+
+      template(:dynamic_header, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello <%= name %>"}
+      """)
+    end
+
+    test "module-level format: :json returns JSON string for static template" do
+      result = JsonTemplates.static_header()
+
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+               ]
+             })
+    end
+
+    test "module-level format: :json returns JSON string for dynamic template" do
+      result = JsonTemplates.dynamic_header(name: "World")
+
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 }
+               ]
+             })
+    end
+  end
+
+  describe "per-template format override" do
+    defmodule MixedFormatTemplates do
+      use Juvet.Template
+
+      template(:map_header, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello"}
+      """)
+
+      template(
+        :json_header,
+        """
+        :slack.view
+          type: :modal
+          blocks:
+            :slack.header{text: "Hello"}
+        """,
+        format: :json
+      )
+
+      template(
+        :json_dynamic,
+        """
+        :slack.view
+          type: :modal
+          blocks:
+            :slack.header{text: "Hello <%= name %>"}
+        """,
+        format: :json
+      )
+    end
+
+    test "default format returns map" do
+      result = MixedFormatTemplates.map_header()
+      assert is_map(result)
+      assert result[:type] == "modal"
+    end
+
+    test "per-template format: :json returns JSON string" do
+      result = MixedFormatTemplates.json_header()
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+               ]
+             })
+    end
+
+    test "per-template format: :json with bindings returns JSON string" do
+      result = MixedFormatTemplates.json_dynamic(name: "World")
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 }
+               ]
+             })
+    end
+  end
+
+  describe "file-based template with format override" do
+    defmodule FileFormatTemplates do
+      use Juvet.Template
+
+      template(:greeting_map, file: "templates/greeting.cheex")
+      template(:greeting_json, file: "templates/greeting.cheex", format: :json)
+    end
+
+    test "file template defaults to map format" do
+      result = FileFormatTemplates.greeting_map(name: "World")
+      assert is_map(result)
+      assert result[:type] == "modal"
+    end
+
+    test "file template with format: :json returns JSON" do
+      result = FileFormatTemplates.greeting_json(name: "World")
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{
+                   "type" => "header",
+                   "text" => %{"type" => "plain_text", "text" => "Hello World"}
+                 },
+                 %{"type" => "divider"}
+               ]
+             })
     end
   end
 end

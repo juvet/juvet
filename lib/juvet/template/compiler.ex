@@ -25,7 +25,7 @@ defmodule Juvet.Template.Compiler do
           optional(:column) => pos_integer()
         }
 
-  @spec compile([ast_element()]) :: String.t()
-  def compile([]), do: ""
+  @spec compile([ast_element()]) :: map()
+  def compile([]), do: %{}
   def compile([%{platform: :slack} | _] = ast), do: Slack.compile(ast)
 end

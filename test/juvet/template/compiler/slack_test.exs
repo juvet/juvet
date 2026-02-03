@@ -3,8 +3,6 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
   alias Juvet.Template.Compiler.Slack
 
-  import Juvet.Test.JsonHelpers, only: [json_equal?: 2]
-
   defp view_ast(blocks, attrs \\ %{type: :modal}) do
     [
       %{
@@ -17,14 +15,14 @@ defmodule Juvet.Template.Compiler.SlackTest do
   end
 
   defp view_expected(blocks, extra \\ %{}) do
-    Map.merge(%{"type" => "modal", "blocks" => blocks}, extra)
+    Map.merge(%{type: "modal", blocks: blocks}, extra)
   end
 
   describe "compile/1 with basic structure" do
     test "divider element" do
       ast = view_ast([%{platform: :slack, element: :divider, attributes: %{}}])
 
-      assert json_equal?(Slack.compile(ast), view_expected([%{"type" => "divider"}]))
+      assert Slack.compile(ast) == view_expected([%{type: "divider"}])
     end
 
     test "unknown element raises ArgumentError" do
@@ -40,12 +38,10 @@ defmodule Juvet.Template.Compiler.SlackTest do
     test "header with text" do
       ast = view_ast([%{platform: :slack, element: :header, attributes: %{text: "Hello"}}])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
-                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}}
                ])
-             )
     end
 
     test "header with text and emoji" do
@@ -54,15 +50,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
           %{platform: :slack, element: :header, attributes: %{text: "Hello", emoji: true}}
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello", "emoji" => true}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello", emoji: true}
                  }
                ])
-             )
     end
   end
 
@@ -71,15 +65,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
       ast =
         view_ast([%{platform: :slack, element: :section, attributes: %{text: "Hello *world*"}}])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "section",
-                   "text" => %{"type" => "mrkdwn", "text" => "Hello *world*"}
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Hello *world*"}
                  }
                ])
-             )
     end
 
     test "section with text and verbatim" do
@@ -92,15 +84,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "section",
-                   "text" => %{"type" => "mrkdwn", "text" => "Hello", "verbatim" => true}
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Hello", verbatim: true}
                  }
                ])
-             )
     end
 
     test "section with image accessory" do
@@ -120,35 +110,31 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "section",
-                   "text" => %{"type" => "mrkdwn", "text" => "Content"},
-                   "accessory" => %{
-                     "type" => "image",
-                     "image_url" => "http://example.com/img.png",
-                     "alt_text" => "Alt"
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Content"},
+                   accessory: %{
+                     type: "image",
+                     image_url: "http://example.com/img.png",
+                     alt_text: "Alt"
                    }
                  }
                ])
-             )
     end
 
     test "section without accessory still works" do
       ast =
         view_ast([%{platform: :slack, element: :section, attributes: %{text: "No accessory"}}])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "section",
-                   "text" => %{"type" => "mrkdwn", "text" => "No accessory"}
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "No accessory"}
                  }
                ])
-             )
     end
   end
 
@@ -163,16 +149,14 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "image",
-                   "image_url" => "http://example.com/img.png",
-                   "alt_text" => "Example"
+                   type: "image",
+                   image_url: "http://example.com/img.png",
+                   alt_text: "Example"
                  }
                ])
-             )
     end
 
     test "image with only url" do
@@ -181,12 +165,10 @@ defmodule Juvet.Template.Compiler.SlackTest do
           %{platform: :slack, element: :image, attributes: %{url: "http://example.com/img.png"}}
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
-                 %{"type" => "image", "image_url" => "http://example.com/img.png"}
+                 %{type: "image", image_url: "http://example.com/img.png"}
                ])
-             )
     end
   end
 
@@ -210,21 +192,19 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "actions",
-                   "elements" => [
+                   type: "actions",
+                   elements: [
                      %{
-                       "type" => "button",
-                       "text" => %{"type" => "plain_text", "text" => "Click"},
-                       "action_id" => "btn_1"
+                       type: "button",
+                       text: %{type: "plain_text", text: "Click"},
+                       action_id: "btn_1"
                      }
                    ]
                  }
                ])
-             )
     end
 
     test "actions with multiple buttons" do
@@ -251,35 +231,31 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "actions",
-                   "elements" => [
+                   type: "actions",
+                   elements: [
                      %{
-                       "type" => "button",
-                       "text" => %{"type" => "plain_text", "text" => "Button 1"},
-                       "action_id" => "btn_1"
+                       type: "button",
+                       text: %{type: "plain_text", text: "Button 1"},
+                       action_id: "btn_1"
                      },
                      %{
-                       "type" => "button",
-                       "text" => %{"type" => "plain_text", "text" => "Button 2"},
-                       "action_id" => "btn_2"
+                       type: "button",
+                       text: %{type: "plain_text", text: "Button 2"},
+                       action_id: "btn_2"
                      }
                    ]
                  }
                ])
-             )
     end
 
     test "actions with no elements returns empty array" do
       ast = view_ast([%{platform: :slack, element: :actions, attributes: %{}}])
 
-      assert json_equal?(
-               Slack.compile(ast),
-               view_expected([%{"type" => "actions", "elements" => []}])
-             )
+      assert Slack.compile(ast) ==
+               view_expected([%{type: "actions", elements: []}])
     end
   end
 
@@ -303,17 +279,15 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "context",
-                   "elements" => [
-                     %{"type" => "mrkdwn", "text" => "Some context"}
+                   type: "context",
+                   elements: [
+                     %{type: "mrkdwn", text: "Some context"}
                    ]
                  }
                ])
-             )
     end
 
     test "context with image element" do
@@ -335,21 +309,19 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "context",
-                   "elements" => [
+                   type: "context",
+                   elements: [
                      %{
-                       "type" => "image",
-                       "image_url" => "http://example.com/icon.png",
-                       "alt_text" => "Icon"
+                       type: "image",
+                       image_url: "http://example.com/icon.png",
+                       alt_text: "Icon"
                      }
                    ]
                  }
                ])
-             )
     end
 
     test "context with mixed image and text elements" do
@@ -376,31 +348,27 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "context",
-                   "elements" => [
+                   type: "context",
+                   elements: [
                      %{
-                       "type" => "image",
-                       "image_url" => "http://example.com/avatar.png",
-                       "alt_text" => "Avatar"
+                       type: "image",
+                       image_url: "http://example.com/avatar.png",
+                       alt_text: "Avatar"
                      },
-                     %{"type" => "mrkdwn", "text" => "Posted by *John*"}
+                     %{type: "mrkdwn", text: "Posted by *John*"}
                    ]
                  }
                ])
-             )
     end
 
     test "context with no elements returns empty array" do
       ast = view_ast([%{platform: :slack, element: :context, attributes: %{}}])
 
-      assert json_equal?(
-               Slack.compile(ast),
-               view_expected([%{"type" => "context", "elements" => []}])
-             )
+      assert Slack.compile(ast) ==
+               view_expected([%{type: "context", elements: []}])
     end
 
     test "context with plain_text type" do
@@ -422,17 +390,15 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "context",
-                   "elements" => [
-                     %{"type" => "plain_text", "text" => "Plain text"}
+                   type: "context",
+                   elements: [
+                     %{type: "plain_text", text: "Plain text"}
                    ]
                  }
                ])
-             )
     end
   end
 
@@ -445,17 +411,15 @@ defmodule Juvet.Template.Compiler.SlackTest do
           %{platform: :slack, element: :section, attributes: %{text: "Content"}}
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Welcome"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Welcome"}
                  },
-                 %{"type" => "divider"},
-                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Content"}}
+                 %{type: "divider"},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Content"}}
                ])
-             )
     end
 
     test "multiple sections" do
@@ -466,14 +430,12 @@ defmodule Juvet.Template.Compiler.SlackTest do
           %{platform: :slack, element: :section, attributes: %{text: "Third"}}
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
-                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "First"}},
-                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Second"}},
-                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Third"}}
+                 %{type: "section", text: %{type: "mrkdwn", text: "First"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Second"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Third"}}
                ])
-             )
     end
   end
 
@@ -484,15 +446,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
           %{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}}
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "header",
-                   "text" => %{"type" => "plain_text", "text" => "Hello <%= name %>"}
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello <%= name %>"}
                  }
                ])
-             )
     end
 
     test "EEx interpolation in section text passes through" do
@@ -505,15 +465,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "section",
-                   "text" => %{"type" => "mrkdwn", "text" => "Welcome <%= user %>!"}
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Welcome <%= user %>!"}
                  }
                ])
-             )
     end
 
     test "EEx interpolation in button text passes through" do
@@ -535,21 +493,19 @@ defmodule Juvet.Template.Compiler.SlackTest do
           }
         ])
 
-      assert json_equal?(
-               Slack.compile(ast),
+      assert Slack.compile(ast) ==
                view_expected([
                  %{
-                   "type" => "actions",
-                   "elements" => [
+                   type: "actions",
+                   elements: [
                      %{
-                       "type" => "button",
-                       "text" => %{"type" => "plain_text", "text" => "<%= action_label %>"},
-                       "action_id" => "btn_<%= id %>"
+                       type: "button",
+                       text: %{type: "plain_text", text: "<%= action_label %>"},
+                       action_id: "btn_<%= id %>"
                      }
                    ]
                  }
                ])
-             )
     end
   end
 end
