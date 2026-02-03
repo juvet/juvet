@@ -4642,9 +4642,11 @@ defmodule Juvet.Template.Compiler.SlackTest do
   end
 
   describe "compile/1 with confirmation dialog" do
+    alias Slack.Objects.ConfirmationDialog
+
     test "confirmation dialog with all required fields" do
       result =
-        Juvet.Template.Compiler.Slack.Objects.ConfirmationDialog.compile(%{
+        ConfirmationDialog.compile(%{
           element: :confirm,
           attributes: %{
             title: "Are you sure?",
@@ -4664,7 +4666,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
     test "confirmation dialog with optional style" do
       result =
-        Juvet.Template.Compiler.Slack.Objects.ConfirmationDialog.compile(%{
+        ConfirmationDialog.compile(%{
           element: :confirm,
           attributes: %{
             title: "Confirm",
@@ -4861,9 +4863,11 @@ defmodule Juvet.Template.Compiler.SlackTest do
   end
 
   describe "compile/1 with dispatch action configuration" do
+    alias Slack.Objects.DispatchActionConfig
+
     test "dispatch action config with array value" do
       result =
-        Juvet.Template.Compiler.Slack.Objects.DispatchActionConfig.compile(%{
+        DispatchActionConfig.compile(%{
           element: :dispatch_action_config,
           attributes: %{
             trigger_actions_on: ["on_enter_pressed", "on_character_entered"]
@@ -4877,7 +4881,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
     test "dispatch action config with single string wraps in list" do
       result =
-        Juvet.Template.Compiler.Slack.Objects.DispatchActionConfig.compile(%{
+        DispatchActionConfig.compile(%{
           element: :dispatch_action_config,
           attributes: %{
             trigger_actions_on: "on_enter_pressed"
@@ -4955,9 +4959,11 @@ defmodule Juvet.Template.Compiler.SlackTest do
   end
 
   describe "compile/1 with trigger and workflow objects" do
+    alias Slack.Objects.{Trigger, Workflow}
+
     test "trigger with url only" do
       result =
-        Juvet.Template.Compiler.Slack.Objects.Trigger.compile(%{
+        Trigger.compile(%{
           element: :trigger,
           attributes: %{url: "https://slack.com/shortcuts/Ft123/xyz"}
         })
@@ -4967,7 +4973,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
     test "trigger with url and customizable_input_parameters" do
       result =
-        Juvet.Template.Compiler.Slack.Objects.Trigger.compile(%{
+        Trigger.compile(%{
           element: :trigger,
           attributes: %{
             url: "https://slack.com/shortcuts/Ft123/xyz",
@@ -4987,7 +4993,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
     test "workflow with trigger child" do
       result =
-        Juvet.Template.Compiler.Slack.Objects.Workflow.compile(%{
+        Workflow.compile(%{
           element: :workflow,
           attributes: %{},
           children: %{
@@ -5005,9 +5011,11 @@ defmodule Juvet.Template.Compiler.SlackTest do
   end
 
   describe "compile/1 with slack file object" do
+    alias Slack.Objects.SlackFile
+
     test "slack file with url" do
       result =
-        Juvet.Template.Compiler.Slack.Objects.SlackFile.compile(%{
+        SlackFile.compile(%{
           element: :slack_file,
           attributes: %{url: "https://files.slack.com/files-pri/T123/img.png"}
         })
@@ -5017,7 +5025,7 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
     test "slack file with id" do
       result =
-        Juvet.Template.Compiler.Slack.Objects.SlackFile.compile(%{
+        SlackFile.compile(%{
           element: :slack_file,
           attributes: %{id: "F0123456"}
         })
