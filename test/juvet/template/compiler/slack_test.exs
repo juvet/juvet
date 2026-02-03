@@ -402,6 +402,484 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with option" do
+    test "option with text and value" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :static_select,
+                attributes: %{action_id: "sel_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Option 1", value: "opt_1"}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [section] = result.blocks
+      [option] = section.accessory.options
+
+      assert option == %{
+               text: %{type: "plain_text", text: "Option 1"},
+               value: "opt_1"
+             }
+    end
+
+    test "option with description" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :static_select,
+                attributes: %{action_id: "sel_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{
+                        text: "Option 1",
+                        value: "opt_1",
+                        description: "First option"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [section] = result.blocks
+      [option] = section.accessory.options
+
+      assert option == %{
+               text: %{type: "plain_text", text: "Option 1"},
+               value: "opt_1",
+               description: %{type: "plain_text", text: "First option"}
+             }
+    end
+  end
+
+  describe "compile/1 with option_group" do
+    test "option group with label and options" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :static_select,
+                attributes: %{action_id: "sel_1"},
+                children: %{
+                  option_groups: [
+                    %{
+                      platform: :slack,
+                      element: :option_group,
+                      attributes: %{label: "Group 1"},
+                      children: %{
+                        options: [
+                          %{
+                            platform: :slack,
+                            element: :option,
+                            attributes: %{text: "Option A", value: "a"}
+                          },
+                          %{
+                            platform: :slack,
+                            element: :option,
+                            attributes: %{text: "Option B", value: "b"}
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [section] = result.blocks
+      [group] = section.accessory.option_groups
+
+      assert group == %{
+               label: %{type: "plain_text", text: "Group 1"},
+               options: [
+                 %{text: %{type: "plain_text", text: "Option A"}, value: "a"},
+                 %{text: %{type: "plain_text", text: "Option B"}, value: "b"}
+               ]
+             }
+    end
+  end
+
+  describe "compile/1 with static_select" do
+    test "basic static_select with options" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :static_select,
+                  attributes: %{action_id: "sel_1"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option 1", value: "opt_1"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option 2", value: "opt_2"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "actions",
+                   elements: [
+                     %{
+                       type: "static_select",
+                       action_id: "sel_1",
+                       options: [
+                         %{text: %{type: "plain_text", text: "Option 1"}, value: "opt_1"},
+                         %{text: %{type: "plain_text", text: "Option 2"}, value: "opt_2"}
+                       ]
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "static_select with placeholder" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :static_select,
+                  attributes: %{action_id: "sel_1", placeholder: "Choose an option"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option 1", value: "opt_1"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.placeholder == %{type: "plain_text", text: "Choose an option"}
+    end
+
+    test "static_select with action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :static_select,
+                  attributes: %{action_id: "my_select"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Opt", value: "v"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.action_id == "my_select"
+    end
+
+    test "static_select with option_groups instead of options" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :static_select,
+                  attributes: %{action_id: "sel_1"},
+                  children: %{
+                    option_groups: [
+                      %{
+                        platform: :slack,
+                        element: :option_group,
+                        attributes: %{label: "Group 1"},
+                        children: %{
+                          options: [
+                            %{
+                              platform: :slack,
+                              element: :option,
+                              attributes: %{text: "A", value: "a"}
+                            }
+                          ]
+                        }
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option_group,
+                        attributes: %{label: "Group 2"},
+                        children: %{
+                          options: [
+                            %{
+                              platform: :slack,
+                              element: :option,
+                              attributes: %{text: "B", value: "b"}
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.option_groups == [
+               %{
+                 label: %{type: "plain_text", text: "Group 1"},
+                 options: [%{text: %{type: "plain_text", text: "A"}, value: "a"}]
+               },
+               %{
+                 label: %{type: "plain_text", text: "Group 2"},
+                 options: [%{text: %{type: "plain_text", text: "B"}, value: "b"}]
+               }
+             ]
+
+      refute Map.has_key?(select, :options)
+    end
+
+    test "static_select with initial_option" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :static_select,
+                  attributes: %{action_id: "sel_1"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option 1", value: "opt_1"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option 2", value: "opt_2"}
+                      }
+                    ],
+                    initial_option: %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Option 1", value: "opt_1"}
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.initial_option == %{
+               text: %{type: "plain_text", text: "Option 1"},
+               value: "opt_1"
+             }
+    end
+
+    test "static_select with focus_on_load" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :static_select,
+                  attributes: %{action_id: "sel_1", focus_on_load: true},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Opt", value: "v"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.focus_on_load == true
+    end
+
+    test "static_select with no options" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :static_select,
+                  attributes: %{action_id: "sel_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select == %{type: "static_select", action_id: "sel_1"}
+    end
+
+    test "static_select as section accessory" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :static_select,
+                attributes: %{action_id: "sel_1", placeholder: "Choose"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Option 1", value: "opt_1"}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Pick one"},
+                   accessory: %{
+                     type: "static_select",
+                     action_id: "sel_1",
+                     placeholder: %{type: "plain_text", text: "Choose"},
+                     options: [
+                       %{text: %{type: "plain_text", text: "Option 1"}, value: "opt_1"}
+                     ]
+                   }
+                 }
+               ])
+    end
+  end
+
   describe "compile/1 with multiple top-level elements" do
     test "header, divider, and section" do
       ast =
