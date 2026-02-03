@@ -21,12 +21,12 @@ defmodule Juvet.Template do
 
   ## Templates from files
 
-  Templates can also be loaded from external files using `template_file/2`:
+  Templates can also be loaded from external files using the `file:` option:
 
       defmodule MyApp.Templates do
         use Juvet.Template
 
-        template_file :welcome, "templates/welcome.cheex"
+        template :welcome, file: "templates/welcome.cheex"
       end
 
   The file path is relative to the module's source file. The module will be
@@ -49,13 +49,13 @@ defmodule Juvet.Template do
   @doc """
   Sets up compile-time template support.
 
-  Imports the `template/2`, `template_file/2`, and `partial/2` macros for defining
-  compiled templates and partials.
+  Imports the `template/2` and `partial/2` macros for defining compiled templates
+  and partials.
   Also generates a `__templates__/0` function that returns a list of defined template names.
   """
   defmacro __using__(_opts) do
     quote do
-      import Juvet.Template, only: [template: 2, template_file: 2, partial: 2]
+      import Juvet.Template, only: [template: 2, partial: 2]
       Module.register_attribute(__MODULE__, :juvet_templates, accumulate: true)
       Module.register_attribute(__MODULE__, :juvet_template_asts, [])
       @before_compile Juvet.Template
@@ -100,13 +100,20 @@ defmodule Juvet.Template do
   only EEx interpolation is performed. If the template has no interpolations,
   the compiled JSON is returned directly without EEx evaluation.
 
-  ## Example
+  ## Inline template
 
       template :greeting, ":slack.header{text: \\"Hello <%= name %>\\"}"
 
+  ## File-based template
+
+      template :greeting, file: "templates/greeting.cheex"
+
+  The file path is relative to the file containing the module. The module
+  will be recompiled when the template file changes.
+
   Generates a function `greeting/1` that accepts a keyword list of bindings.
   """
-  defmacro template(name, source) do
+  defmacro template(name, source) when is_binary(source) do
     existing_asts = Module.get_attribute(__CALLER__.module, :juvet_template_asts) || %{}
     {ast, json} = compile_template!(name, source, existing_asts)
 
@@ -122,19 +129,8 @@ defmodule Juvet.Template do
     end
   end
 
-  @doc """
-  Defines a compiled template function from an external file.
-
-  The file is read and compiled at compile time. The module will be
-  recompiled when the template file changes.
-
-  ## Example
-
-      template_file :welcome, "templates/welcome.cheex"
-
-  The path is relative to the file containing the module.
-  """
-  defmacro template_file(name, path) do
+  defmacro template(name, opts) when is_list(opts) do
+    path = Keyword.fetch!(opts, :file)
     caller_dir = Path.dirname(__CALLER__.file)
     full_path = Path.expand(path, caller_dir)
 
@@ -145,8 +141,7 @@ defmodule Juvet.Template do
 
         {:error, reason} ->
           raise CompileError,
-            description:
-              "template_file #{inspect(name)} could not read #{path}: #{inspect(reason)}"
+            description: "template #{inspect(name)} could not read #{path}: #{inspect(reason)}"
       end
 
     existing_asts = Module.get_attribute(__CALLER__.module, :juvet_template_asts) || %{}
@@ -253,8 +248,7 @@ defmodule Juvet.Template do
 
   Errors are caught and re-raised as `CompileError` with helpful context.
 
-  This is an internal function used by the `template/2` and `template_file/2`
-  macros at compile time.
+  This is an internal function used by the `template/2` macro at compile time.
   """
   def compile_template!(name, source, existing_asts \\ []) do
     ast =

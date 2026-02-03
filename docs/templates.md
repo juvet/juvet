@@ -252,7 +252,7 @@ Unknown Slack element: :unknown (line 2, column 1)
 
 ### Compile-Time Error Reporting
 
-When using the `template/2` or `template_file/2` macros, errors are converted to `CompileError` with the template name and line number:
+When using the `template/2` macro, errors are converted to `CompileError` with the template name and line number:
 
 ```elixir
 defmodule MyTemplates do
@@ -897,10 +897,11 @@ All errors include line numbers when available, enabling IDE navigation to the s
 
 #### Phase 3: Template from file
 
-Add `template_file/2` macro to load templates from external `.cheex` files (similar to Phoenix's `.eex` files).
+The `template/2` macro accepts a `file:` option to load templates from external `.cheex` files (similar to Phoenix's `.eex` files).
 
 ```elixir
-defmacro template_file(name, path) do
+defmacro template(name, opts) when is_list(opts) do
+  path = Keyword.fetch!(opts, :file)
   # Path is relative to the calling module's file
   caller_dir = Path.dirname(__CALLER__.file)
   full_path = Path.expand(path, caller_dir)
@@ -926,8 +927,8 @@ end
 defmodule MyApp.Templates do
   use Juvet.Template
 
-  template_file :welcome, "templates/welcome.cheex"
-  template_file :goodbye, "templates/goodbye.cheex"
+  template :welcome, file: "templates/welcome.cheex"
+  template :goodbye, file: "templates/goodbye.cheex"
 end
 ```
 

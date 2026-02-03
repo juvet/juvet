@@ -139,11 +139,11 @@ defmodule Juvet.TemplateTest do
     end
   end
 
-  describe "template_file/2" do
+  describe "template/2 with file: option" do
     defmodule FileTemplates do
       use Juvet.Template
 
-      template_file(:greeting, "templates/greeting.cheex")
+      template(:greeting, file: "templates/greeting.cheex")
     end
 
     test "loads and compiles template from file" do
@@ -162,11 +162,11 @@ defmodule Juvet.TemplateTest do
     end
 
     test "missing file raises CompileError" do
-      assert_raise CompileError, ~r/template_file :missing could not read/, fn ->
+      assert_raise CompileError, ~r/template :missing could not read/, fn ->
         Code.compile_string("""
         defmodule MissingFileTemplate do
           use Juvet.Template
-          template_file :missing, "nonexistent.cheex"
+          template :missing, file: "nonexistent.cheex"
         end
         """)
       end
@@ -193,8 +193,8 @@ defmodule Juvet.TemplateTest do
       """)
 
       # File-based templates
-      template_file(:greeting, "templates/greeting.cheex")
-      template_file(:static_divider, "templates/static.cheex")
+      template(:greeting, file: "templates/greeting.cheex")
+      template(:static_divider, file: "templates/static.cheex")
     end
 
     test "inline static template works" do
