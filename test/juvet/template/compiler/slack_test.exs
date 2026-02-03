@@ -1851,6 +1851,854 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with checkboxes" do
+    test "checkboxes with options in actions block" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :checkboxes,
+                  attributes: %{action_id: "chk_1"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Email", value: "email"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "SMS", value: "sms"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [checkboxes] = actions.elements
+
+      assert checkboxes == %{
+               type: "checkboxes",
+               action_id: "chk_1",
+               options: [
+                 %{text: %{type: "plain_text", text: "Email"}, value: "email"},
+                 %{text: %{type: "plain_text", text: "SMS"}, value: "sms"}
+               ]
+             }
+    end
+
+    test "checkboxes with initial_options" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :checkboxes,
+                  attributes: %{action_id: "chk_1"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Email", value: "email"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "SMS", value: "sms"}
+                      }
+                    ],
+                    initial_options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Email", value: "email"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [checkboxes] = actions.elements
+
+      assert checkboxes.initial_options == [
+               %{text: %{type: "plain_text", text: "Email"}, value: "email"}
+             ]
+    end
+
+    test "checkboxes as section accessory" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Notifications"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :checkboxes,
+                attributes: %{action_id: "chk_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Email", value: "email"}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Notifications"},
+                   accessory: %{
+                     type: "checkboxes",
+                     action_id: "chk_1",
+                     options: [
+                       %{text: %{type: "plain_text", text: "Email"}, value: "email"}
+                     ]
+                   }
+                 }
+               ])
+    end
+
+    test "checkboxes with focus_on_load" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :checkboxes,
+                  attributes: %{action_id: "chk_1", focus_on_load: true},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option", value: "opt"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [checkboxes] = actions.elements
+
+      assert checkboxes.focus_on_load == true
+    end
+  end
+
+  describe "compile/1 with radio_buttons" do
+    test "radio_buttons with options in actions block" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :radio_buttons,
+                  attributes: %{action_id: "radio_1"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Small", value: "sm"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Medium", value: "md"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Large", value: "lg"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [radio] = actions.elements
+
+      assert radio == %{
+               type: "radio_buttons",
+               action_id: "radio_1",
+               options: [
+                 %{text: %{type: "plain_text", text: "Small"}, value: "sm"},
+                 %{text: %{type: "plain_text", text: "Medium"}, value: "md"},
+                 %{text: %{type: "plain_text", text: "Large"}, value: "lg"}
+               ]
+             }
+    end
+
+    test "radio_buttons with initial_option" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :radio_buttons,
+                  attributes: %{action_id: "radio_1"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Small", value: "sm"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Large", value: "lg"}
+                      }
+                    ],
+                    initial_option: %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Small", value: "sm"}
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [radio] = actions.elements
+
+      assert radio.initial_option == %{
+               text: %{type: "plain_text", text: "Small"},
+               value: "sm"
+             }
+    end
+
+    test "radio_buttons as section accessory" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick a size"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :radio_buttons,
+                attributes: %{action_id: "radio_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Small", value: "sm"}
+                    },
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Large", value: "lg"}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Pick a size"},
+                   accessory: %{
+                     type: "radio_buttons",
+                     action_id: "radio_1",
+                     options: [
+                       %{text: %{type: "plain_text", text: "Small"}, value: "sm"},
+                       %{text: %{type: "plain_text", text: "Large"}, value: "lg"}
+                     ]
+                   }
+                 }
+               ])
+    end
+  end
+
+  describe "compile/1 with plain_text_input" do
+    test "plain_text_input with action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :plain_text_input,
+                  attributes: %{action_id: "input_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{type: "plain_text_input", action_id: "input_1"}
+    end
+
+    test "plain_text_input with all optional fields" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :plain_text_input,
+                  attributes: %{
+                    action_id: "input_1",
+                    initial_value: "Hello",
+                    multiline: true,
+                    min_length: 5,
+                    max_length: 100,
+                    placeholder: "Enter text",
+                    focus_on_load: true
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "plain_text_input",
+               action_id: "input_1",
+               initial_value: "Hello",
+               multiline: true,
+               min_length: 5,
+               max_length: 100,
+               placeholder: %{type: "plain_text", text: "Enter text"},
+               focus_on_load: true
+             }
+    end
+
+    test "plain_text_input with deep placeholder" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :plain_text_input,
+                  attributes: %{
+                    action_id: "input_1",
+                    placeholder: %{text: "Type here", emoji: true}
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input.placeholder == %{
+               type: "plain_text",
+               text: "Type here",
+               emoji: true
+             }
+    end
+  end
+
+  describe "compile/1 with email_input" do
+    test "email_input with action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :email_input,
+                  attributes: %{action_id: "email_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{type: "email_text_input", action_id: "email_1"}
+    end
+
+    test "email_input with initial_value and placeholder" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :email_input,
+                  attributes: %{
+                    action_id: "email_1",
+                    initial_value: "user@example.com",
+                    placeholder: "Enter email"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "email_text_input",
+               action_id: "email_1",
+               initial_value: "user@example.com",
+               placeholder: %{type: "plain_text", text: "Enter email"}
+             }
+    end
+
+    test "email_input with focus_on_load" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :email_input,
+                  attributes: %{action_id: "email_1", focus_on_load: true}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "email_text_input",
+               action_id: "email_1",
+               focus_on_load: true
+             }
+    end
+  end
+
+  describe "compile/1 with url_input" do
+    test "url_input with action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :url_input,
+                  attributes: %{action_id: "url_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{type: "url_text_input", action_id: "url_1"}
+    end
+
+    test "url_input with initial_value and placeholder" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :url_input,
+                  attributes: %{
+                    action_id: "url_1",
+                    initial_value: "https://example.com",
+                    placeholder: "Enter URL"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "url_text_input",
+               action_id: "url_1",
+               initial_value: "https://example.com",
+               placeholder: %{type: "plain_text", text: "Enter URL"}
+             }
+    end
+
+    test "url_input with focus_on_load" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :url_input,
+                  attributes: %{action_id: "url_1", focus_on_load: true}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "url_text_input",
+               action_id: "url_1",
+               focus_on_load: true
+             }
+    end
+  end
+
+  describe "compile/1 with number_input" do
+    test "number_input with is_decimal_allowed" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :number_input,
+                  attributes: %{action_id: "num_1", is_decimal_allowed: true}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "number_input",
+               action_id: "num_1",
+               is_decimal_allowed: true
+             }
+    end
+
+    test "number_input with min_value and max_value" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :number_input,
+                  attributes: %{
+                    action_id: "num_1",
+                    is_decimal_allowed: false,
+                    min_value: "0",
+                    max_value: "100"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "number_input",
+               action_id: "num_1",
+               is_decimal_allowed: false,
+               min_value: "0",
+               max_value: "100"
+             }
+    end
+
+    test "number_input with initial_value and placeholder" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :number_input,
+                  attributes: %{
+                    action_id: "num_1",
+                    is_decimal_allowed: true,
+                    initial_value: "42",
+                    placeholder: "Enter a number"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "number_input",
+               action_id: "num_1",
+               is_decimal_allowed: true,
+               initial_value: "42",
+               placeholder: %{type: "plain_text", text: "Enter a number"}
+             }
+    end
+  end
+
+  describe "compile/1 with file_input" do
+    test "file_input with action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :file_input,
+                  attributes: %{action_id: "file_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{type: "file_input", action_id: "file_1"}
+    end
+
+    test "file_input with filetypes and max_files" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :file_input,
+                  attributes: %{
+                    action_id: "file_1",
+                    filetypes: ["pdf", "jpg", "png"],
+                    max_files: 3
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "file_input",
+               action_id: "file_1",
+               filetypes: ["pdf", "jpg", "png"],
+               max_files: 3
+             }
+    end
+  end
+
+  describe "compile/1 with rich_text_input" do
+    test "rich_text_input with action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_input,
+                  attributes: %{action_id: "rich_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{type: "rich_text_input", action_id: "rich_1"}
+    end
+
+    test "rich_text_input with placeholder and focus_on_load" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :rich_text_input,
+                  attributes: %{
+                    action_id: "rich_1",
+                    placeholder: "Write something",
+                    focus_on_load: true
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [input] = actions.elements
+
+      assert input == %{
+               type: "rich_text_input",
+               action_id: "rich_1",
+               placeholder: %{type: "plain_text", text: "Write something"},
+               focus_on_load: true
+             }
+    end
+  end
+
   describe "compile/1 with datepicker" do
     test "datepicker with action_id and initial_date in actions block" do
       ast =
