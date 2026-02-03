@@ -481,6 +481,134 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with option missing required attributes" do
+    test "option missing value raises ArgumentError" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :select,
+                attributes: %{source: :static, action_id: "sel_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Option 1"}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      assert_raise ArgumentError,
+                   "option element is missing required attribute(s): value",
+                   fn -> Slack.compile(ast) end
+    end
+
+    test "option missing text raises ArgumentError" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :select,
+                attributes: %{source: :static, action_id: "sel_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{value: "opt_1"}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      assert_raise ArgumentError,
+                   "option element is missing required attribute(s): text",
+                   fn -> Slack.compile(ast) end
+    end
+
+    test "option missing both text and value raises ArgumentError" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :select,
+                attributes: %{source: :static, action_id: "sel_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      assert_raise ArgumentError,
+                   "option element is missing required attribute(s): text, value",
+                   fn -> Slack.compile(ast) end
+    end
+
+    test "option missing value includes location when available" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :select,
+                attributes: %{source: :static, action_id: "sel_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Option 1"},
+                      line: 5,
+                      column: 7
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      assert_raise ArgumentError,
+                   "option element is missing required attribute(s): value (line 5, column 7)",
+                   fn -> Slack.compile(ast) end
+    end
+  end
+
   describe "compile/1 with option_group" do
     test "option group with label and options" do
       ast =
