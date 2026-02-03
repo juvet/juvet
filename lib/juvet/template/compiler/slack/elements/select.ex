@@ -1,7 +1,14 @@
 defmodule Juvet.Template.Compiler.Slack.Elements.Select do
   @moduledoc false
 
-  alias Juvet.Template.Compiler.Slack.Objects.{ConversationFilter, Option, OptionGroup, Text}
+  alias Juvet.Template.Compiler.Slack.Objects.{
+    ConfirmationDialog,
+    ConversationFilter,
+    Option,
+    OptionGroup,
+    Text
+  }
+
   import Juvet.Template.Compiler.Encoder.Helpers, only: [maybe_put: 3]
 
   @type_map %{
@@ -35,6 +42,7 @@ defmodule Juvet.Template.Compiler.Slack.Elements.Select do
     |> maybe_put(:focus_on_load, attrs[:focus_on_load])
     |> maybe_put(:max_selected_items, if(multiple, do: attrs[:max_selected_items]))
     |> compile_source(source, multiple, el)
+    |> maybe_put(:confirm, compile_confirm(el))
   end
 
   defp compile_placeholder(%{placeholder: %{text: _} = attrs}),
@@ -121,4 +129,9 @@ defmodule Juvet.Template.Compiler.Slack.Elements.Select do
     do: ConversationFilter.compile(filter)
 
   defp compile_filter(_), do: nil
+
+  defp compile_confirm(%{children: %{confirm: confirm}}),
+    do: ConfirmationDialog.compile(confirm)
+
+  defp compile_confirm(_), do: nil
 end

@@ -4610,4 +4610,223 @@ defmodule Juvet.Template.Compiler.SlackTest do
                ])
     end
   end
+
+  describe "compile/1 with confirmation dialog" do
+    test "confirmation dialog with all required fields" do
+      result =
+        Juvet.Template.Compiler.Slack.Objects.ConfirmationDialog.compile(%{
+          element: :confirm,
+          attributes: %{
+            title: "Are you sure?",
+            text: "This action cannot be undone.",
+            confirm: "Yes, do it",
+            deny: "Cancel"
+          }
+        })
+
+      assert result == %{
+               title: %{type: "plain_text", text: "Are you sure?"},
+               text: %{type: "plain_text", text: "This action cannot be undone."},
+               confirm: %{type: "plain_text", text: "Yes, do it"},
+               deny: %{type: "plain_text", text: "Cancel"}
+             }
+    end
+
+    test "confirmation dialog with optional style" do
+      result =
+        Juvet.Template.Compiler.Slack.Objects.ConfirmationDialog.compile(%{
+          element: :confirm,
+          attributes: %{
+            title: "Confirm",
+            text: "Are you sure?",
+            confirm: "Yes",
+            deny: "No",
+            style: "danger"
+          }
+        })
+
+      assert result.style == "danger"
+    end
+
+    test "button with confirm child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :button,
+                  attributes: %{text: "Delete", action_id: "delete_btn"},
+                  children: %{
+                    confirm: %{
+                      element: :confirm,
+                      attributes: %{
+                        title: "Are you sure?",
+                        text: "This will delete the item.",
+                        confirm: "Delete",
+                        deny: "Cancel",
+                        style: "danger"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [button] = actions.elements
+
+      assert button.confirm == %{
+               title: %{type: "plain_text", text: "Are you sure?"},
+               text: %{type: "plain_text", text: "This will delete the item."},
+               confirm: %{type: "plain_text", text: "Delete"},
+               deny: %{type: "plain_text", text: "Cancel"},
+               style: "danger"
+             }
+    end
+
+    test "checkboxes with confirm child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :checkboxes,
+                  attributes: %{action_id: "chk_1"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option 1", value: "opt_1"}
+                      }
+                    ],
+                    confirm: %{
+                      element: :confirm,
+                      attributes: %{
+                        title: "Confirm",
+                        text: "Change selection?",
+                        confirm: "Yes",
+                        deny: "No"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [checkboxes] = actions.elements
+
+      assert checkboxes.confirm == %{
+               title: %{type: "plain_text", text: "Confirm"},
+               text: %{type: "plain_text", text: "Change selection?"},
+               confirm: %{type: "plain_text", text: "Yes"},
+               deny: %{type: "plain_text", text: "No"}
+             }
+    end
+
+    test "select with confirm child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick one"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :select,
+                attributes: %{source: :static, action_id: "sel_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Option 1", value: "opt_1"}
+                    }
+                  ],
+                  confirm: %{
+                    element: :confirm,
+                    attributes: %{
+                      title: "Confirm",
+                      text: "Select this?",
+                      confirm: "Yes",
+                      deny: "No"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [section] = result.blocks
+
+      assert section.accessory.confirm == %{
+               title: %{type: "plain_text", text: "Confirm"},
+               text: %{type: "plain_text", text: "Select this?"},
+               confirm: %{type: "plain_text", text: "Yes"},
+               deny: %{type: "plain_text", text: "No"}
+             }
+    end
+
+    test "datepicker with confirm child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datepicker,
+                  attributes: %{action_id: "date_1"},
+                  children: %{
+                    confirm: %{
+                      element: :confirm,
+                      attributes: %{
+                        title: "Confirm Date",
+                        text: "Use this date?",
+                        confirm: "Yes",
+                        deny: "No"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datepicker] = actions.elements
+
+      assert datepicker.confirm == %{
+               title: %{type: "plain_text", text: "Confirm Date"},
+               text: %{type: "plain_text", text: "Use this date?"},
+               confirm: %{type: "plain_text", text: "Yes"},
+               deny: %{type: "plain_text", text: "No"}
+             }
+    end
+  end
 end

@@ -48,7 +48,13 @@ defmodule Juvet.Template.Compiler.Slack do
     WorkflowButton
   }
 
-  alias Juvet.Template.Compiler.Slack.Objects.{ConversationFilter, Option, OptionGroup}
+  alias Juvet.Template.Compiler.Slack.Objects.{
+    ConfirmationDialog,
+    ConversationFilter,
+    Option,
+    OptionGroup
+  }
+
   alias Juvet.Template.Compiler.Slack.View
 
   @spec compile([Compiler.ast_element()]) :: map()
@@ -81,6 +87,7 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :select} = el), do: Select.compile(el)
   def compile_element(%{element: :url_input} = el), do: UrlInput.compile(el)
   def compile_element(%{element: :workflow_button} = el), do: WorkflowButton.compile(el)
+  def compile_element(%{element: :confirm} = el), do: ConfirmationDialog.compile(el)
   def compile_element(%{element: :filter} = el), do: ConversationFilter.compile(el)
   def compile_element(%{element: :option} = el), do: Option.compile(el)
   def compile_element(%{element: :option_group} = el), do: OptionGroup.compile(el)
