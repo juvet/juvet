@@ -413,8 +413,8 @@ defmodule Juvet.Template.Compiler.SlackTest do
             children: %{
               accessory: %{
                 platform: :slack,
-                element: :static_select,
-                attributes: %{action_id: "sel_1"},
+                element: :select,
+                attributes: %{source: :static, action_id: "sel_1"},
                 children: %{
                   options: [
                     %{
@@ -449,8 +449,8 @@ defmodule Juvet.Template.Compiler.SlackTest do
             children: %{
               accessory: %{
                 platform: :slack,
-                element: :static_select,
-                attributes: %{action_id: "sel_1"},
+                element: :select,
+                attributes: %{source: :static, action_id: "sel_1"},
                 children: %{
                   options: [
                     %{
@@ -492,8 +492,8 @@ defmodule Juvet.Template.Compiler.SlackTest do
             children: %{
               accessory: %{
                 platform: :slack,
-                element: :static_select,
-                attributes: %{action_id: "sel_1"},
+                element: :select,
+                attributes: %{source: :static, action_id: "sel_1"},
                 children: %{
                   option_groups: [
                     %{
@@ -536,8 +536,8 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
-  describe "compile/1 with static_select" do
-    test "basic static_select with options" do
+  describe "compile/1 with select source: :static" do
+    test "compiles to static_select type" do
       ast =
         view_ast([
           %{
@@ -548,59 +548,8 @@ defmodule Juvet.Template.Compiler.SlackTest do
               elements: [
                 %{
                   platform: :slack,
-                  element: :static_select,
-                  attributes: %{action_id: "sel_1"},
-                  children: %{
-                    options: [
-                      %{
-                        platform: :slack,
-                        element: :option,
-                        attributes: %{text: "Option 1", value: "opt_1"}
-                      },
-                      %{
-                        platform: :slack,
-                        element: :option,
-                        attributes: %{text: "Option 2", value: "opt_2"}
-                      }
-                    ]
-                  }
-                }
-              ]
-            }
-          }
-        ])
-
-      assert Slack.compile(ast) ==
-               view_expected([
-                 %{
-                   type: "actions",
-                   elements: [
-                     %{
-                       type: "static_select",
-                       action_id: "sel_1",
-                       options: [
-                         %{text: %{type: "plain_text", text: "Option 1"}, value: "opt_1"},
-                         %{text: %{type: "plain_text", text: "Option 2"}, value: "opt_2"}
-                       ]
-                     }
-                   ]
-                 }
-               ])
-    end
-
-    test "static_select with placeholder" do
-      ast =
-        view_ast([
-          %{
-            platform: :slack,
-            element: :actions,
-            attributes: %{},
-            children: %{
-              elements: [
-                %{
-                  platform: :slack,
-                  element: :static_select,
-                  attributes: %{action_id: "sel_1", placeholder: "Choose an option"},
+                  element: :select,
+                  attributes: %{source: :static, action_id: "sel_1"},
                   children: %{
                     options: [
                       %{
@@ -620,10 +569,12 @@ defmodule Juvet.Template.Compiler.SlackTest do
       [actions] = result.blocks
       [select] = actions.elements
 
-      assert select.placeholder == %{type: "plain_text", text: "Choose an option"}
+      assert select.type == "static_select"
+      assert select.action_id == "sel_1"
+      assert length(select.options) == 1
     end
 
-    test "static_select with action_id" do
+    test "multi-select compiles to multi_static_select" do
       ast =
         view_ast([
           %{
@@ -634,112 +585,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
               elements: [
                 %{
                   platform: :slack,
-                  element: :static_select,
-                  attributes: %{action_id: "my_select"},
-                  children: %{
-                    options: [
-                      %{
-                        platform: :slack,
-                        element: :option,
-                        attributes: %{text: "Opt", value: "v"}
-                      }
-                    ]
-                  }
-                }
-              ]
-            }
-          }
-        ])
-
-      result = Slack.compile(ast)
-      [actions] = result.blocks
-      [select] = actions.elements
-
-      assert select.action_id == "my_select"
-    end
-
-    test "static_select with option_groups instead of options" do
-      ast =
-        view_ast([
-          %{
-            platform: :slack,
-            element: :actions,
-            attributes: %{},
-            children: %{
-              elements: [
-                %{
-                  platform: :slack,
-                  element: :static_select,
-                  attributes: %{action_id: "sel_1"},
-                  children: %{
-                    option_groups: [
-                      %{
-                        platform: :slack,
-                        element: :option_group,
-                        attributes: %{label: "Group 1"},
-                        children: %{
-                          options: [
-                            %{
-                              platform: :slack,
-                              element: :option,
-                              attributes: %{text: "A", value: "a"}
-                            }
-                          ]
-                        }
-                      },
-                      %{
-                        platform: :slack,
-                        element: :option_group,
-                        attributes: %{label: "Group 2"},
-                        children: %{
-                          options: [
-                            %{
-                              platform: :slack,
-                              element: :option,
-                              attributes: %{text: "B", value: "b"}
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                }
-              ]
-            }
-          }
-        ])
-
-      result = Slack.compile(ast)
-      [actions] = result.blocks
-      [select] = actions.elements
-
-      assert select.option_groups == [
-               %{
-                 label: %{type: "plain_text", text: "Group 1"},
-                 options: [%{text: %{type: "plain_text", text: "A"}, value: "a"}]
-               },
-               %{
-                 label: %{type: "plain_text", text: "Group 2"},
-                 options: [%{text: %{type: "plain_text", text: "B"}, value: "b"}]
-               }
-             ]
-
-      refute Map.has_key?(select, :options)
-    end
-
-    test "static_select with initial_option" do
-      ast =
-        view_ast([
-          %{
-            platform: :slack,
-            element: :actions,
-            attributes: %{},
-            children: %{
-              elements: [
-                %{
-                  platform: :slack,
-                  element: :static_select,
-                  attributes: %{action_id: "sel_1"},
+                  element: :select,
+                  attributes: %{
+                    source: :static,
+                    multiple: true,
+                    action_id: "sel_1",
+                    max_selected_items: 3
+                  },
                   children: %{
                     options: [
                       %{
@@ -753,47 +605,11 @@ defmodule Juvet.Template.Compiler.SlackTest do
                         attributes: %{text: "Option 2", value: "opt_2"}
                       }
                     ],
-                    initial_option: %{
-                      platform: :slack,
-                      element: :option,
-                      attributes: %{text: "Option 1", value: "opt_1"}
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        ])
-
-      result = Slack.compile(ast)
-      [actions] = result.blocks
-      [select] = actions.elements
-
-      assert select.initial_option == %{
-               text: %{type: "plain_text", text: "Option 1"},
-               value: "opt_1"
-             }
-    end
-
-    test "static_select with focus_on_load" do
-      ast =
-        view_ast([
-          %{
-            platform: :slack,
-            element: :actions,
-            attributes: %{},
-            children: %{
-              elements: [
-                %{
-                  platform: :slack,
-                  element: :static_select,
-                  attributes: %{action_id: "sel_1", focus_on_load: true},
-                  children: %{
-                    options: [
+                    initial_options: [
                       %{
                         platform: :slack,
                         element: :option,
-                        attributes: %{text: "Opt", value: "v"}
+                        attributes: %{text: "Option 1", value: "opt_1"}
                       }
                     ]
                   }
@@ -807,10 +623,16 @@ defmodule Juvet.Template.Compiler.SlackTest do
       [actions] = result.blocks
       [select] = actions.elements
 
-      assert select.focus_on_load == true
+      assert select.type == "multi_static_select"
+      assert select.max_selected_items == 3
+      assert select.initial_options == [
+               %{text: %{type: "plain_text", text: "Option 1"}, value: "opt_1"}
+             ]
     end
+  end
 
-    test "static_select with no options" do
+  describe "compile/1 with select source: :external" do
+    test "compiles to external_select type" do
       ast =
         view_ast([
           %{
@@ -821,8 +643,8 @@ defmodule Juvet.Template.Compiler.SlackTest do
               elements: [
                 %{
                   platform: :slack,
-                  element: :static_select,
-                  attributes: %{action_id: "sel_1"}
+                  element: :select,
+                  attributes: %{source: :external, action_id: "sel_1"}
                 }
               ]
             }
@@ -833,30 +655,506 @@ defmodule Juvet.Template.Compiler.SlackTest do
       [actions] = result.blocks
       [select] = actions.elements
 
-      assert select == %{type: "static_select", action_id: "sel_1"}
+      assert select == %{type: "external_select", action_id: "sel_1"}
     end
 
-    test "static_select as section accessory" do
+    test "with min_query_length" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{
+                    source: :external,
+                    action_id: "sel_1",
+                    min_query_length: 3
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "external_select"
+      assert select.min_query_length == 3
+    end
+
+    test "with initial_option" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{source: :external, action_id: "sel_1"},
+                  children: %{
+                    initial_option: %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Preloaded", value: "pre"}
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.initial_option == %{
+               text: %{type: "plain_text", text: "Preloaded"},
+               value: "pre"
+             }
+    end
+
+    test "multi-select with initial_options" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{source: :external, multiple: true, action_id: "sel_1"},
+                  children: %{
+                    initial_options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "A", value: "a"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "B", value: "b"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "multi_external_select"
+
+      assert select.initial_options == [
+               %{text: %{type: "plain_text", text: "A"}, value: "a"},
+               %{text: %{type: "plain_text", text: "B"}, value: "b"}
+             ]
+    end
+  end
+
+  describe "compile/1 with select source: :users" do
+    test "compiles to users_select type" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{source: :users, action_id: "sel_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select == %{type: "users_select", action_id: "sel_1"}
+    end
+
+    test "with initial_user" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{source: :users, action_id: "sel_1", initial_user: "U12345"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "users_select"
+      assert select.initial_user == "U12345"
+    end
+
+    test "multi-select with initial_users and max_selected_items" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{
+                    source: :users,
+                    multiple: true,
+                    action_id: "sel_1",
+                    initial_users: ["U111", "U222"],
+                    max_selected_items: 5
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "multi_users_select"
+      assert select.initial_users == ["U111", "U222"]
+      assert select.max_selected_items == 5
+    end
+  end
+
+  describe "compile/1 with select source: :conversations" do
+    test "compiles to conversations_select type" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{source: :conversations, action_id: "sel_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select == %{type: "conversations_select", action_id: "sel_1"}
+    end
+
+    test "with initial_conversation" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{
+                    source: :conversations,
+                    action_id: "sel_1",
+                    initial_conversation: "C12345"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "conversations_select"
+      assert select.initial_conversation == "C12345"
+    end
+
+    test "with default_to_current_conversation" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{
+                    source: :conversations,
+                    action_id: "sel_1",
+                    default_to_current_conversation: true
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "conversations_select"
+      assert select.default_to_current_conversation == true
+    end
+
+    test "with filter" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{source: :conversations, action_id: "sel_1"},
+                  children: %{
+                    filter: %{
+                      platform: :slack,
+                      element: :filter,
+                      attributes: %{
+                        include: ["im", "public"],
+                        exclude_external_shared_channels: true,
+                        exclude_bot_users: true
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "conversations_select"
+
+      assert select.filter == %{
+               include: ["im", "public"],
+               exclude_external_shared_channels: true,
+               exclude_bot_users: true
+             }
+    end
+
+    test "multi-select with initial_conversations" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{
+                    source: :conversations,
+                    multiple: true,
+                    action_id: "sel_1",
+                    initial_conversations: ["C111", "C222"]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "multi_conversations_select"
+      assert select.initial_conversations == ["C111", "C222"]
+    end
+  end
+
+  describe "compile/1 with select source: :channels" do
+    test "compiles to channels_select type" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{source: :channels, action_id: "sel_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select == %{type: "channels_select", action_id: "sel_1"}
+    end
+
+    test "with initial_channel" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{
+                    source: :channels,
+                    action_id: "sel_1",
+                    initial_channel: "C12345"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "channels_select"
+      assert select.initial_channel == "C12345"
+    end
+
+    test "multi-select with initial_channels" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{
+                    source: :channels,
+                    multiple: true,
+                    action_id: "sel_1",
+                    initial_channels: ["C111", "C222"]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "multi_channels_select"
+      assert select.initial_channels == ["C111", "C222"]
+    end
+  end
+
+  describe "compile/1 with select in different contexts" do
+    test "select as actions element" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{source: :users, action_id: "user_sel"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select == %{type: "users_select", action_id: "user_sel"}
+    end
+
+    test "select as section accessory" do
       ast =
         view_ast([
           %{
             platform: :slack,
             element: :section,
-            attributes: %{text: "Pick one"},
+            attributes: %{text: "Pick a user"},
             children: %{
               accessory: %{
                 platform: :slack,
-                element: :static_select,
-                attributes: %{action_id: "sel_1", placeholder: "Choose"},
-                children: %{
-                  options: [
-                    %{
-                      platform: :slack,
-                      element: :option,
-                      attributes: %{text: "Option 1", value: "opt_1"}
-                    }
-                  ]
-                }
+                element: :select,
+                attributes: %{source: :users, action_id: "user_sel"}
               }
             }
           }
@@ -866,14 +1164,10 @@ defmodule Juvet.Template.Compiler.SlackTest do
                view_expected([
                  %{
                    type: "section",
-                   text: %{type: "mrkdwn", text: "Pick one"},
+                   text: %{type: "mrkdwn", text: "Pick a user"},
                    accessory: %{
-                     type: "static_select",
-                     action_id: "sel_1",
-                     placeholder: %{type: "plain_text", text: "Choose"},
-                     options: [
-                       %{text: %{type: "plain_text", text: "Option 1"}, value: "opt_1"}
-                     ]
+                     type: "users_select",
+                     action_id: "user_sel"
                    }
                  }
                ])
