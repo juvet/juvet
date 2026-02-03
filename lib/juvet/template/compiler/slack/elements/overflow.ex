@@ -13,5 +13,8 @@ defmodule Juvet.Template.Compiler.Slack.Elements.Overflow do
   defp put_options(map, %{children: %{options: options}}) when is_list(options),
     do: Map.put(map, :options, Enum.map(options, &Option.compile/1))
 
+  defp put_options(map, %{children: %{options: %{} = option}}),
+    do: Map.put(map, :options, [Option.compile(option)])
+
   defp put_options(map, _), do: map
 end

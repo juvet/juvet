@@ -1303,6 +1303,45 @@ defmodule Juvet.Template.Compiler.SlackTest do
   end
 
   describe "compile/1 with overflow" do
+    test "overflow with single option" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :overflow,
+                  attributes: %{action_id: "overflow_1"},
+                  children: %{
+                    options: %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Edit", value: "edit"}
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [overflow] = actions.elements
+
+      assert overflow == %{
+               type: "overflow",
+               action_id: "overflow_1",
+               options: [
+                 %{text: %{type: "plain_text", text: "Edit"}, value: "edit"}
+               ]
+             }
+    end
+
     test "overflow with options in actions block" do
       ast =
         view_ast([
