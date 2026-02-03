@@ -6,6 +6,11 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Section do
 
   import Juvet.Template.Compiler.Encoder.Helpers, only: [maybe_put: 3]
 
+  def compile(%{element: :section, attributes: %{text: %{text: _} = text_attrs}} = el) do
+    %{type: "section", text: Text.compile(text_attrs.text, text_attrs)}
+    |> maybe_put(:accessory, compile_child(el, :accessory))
+  end
+
   def compile(%{element: :section, attributes: %{text: text} = attrs} = el) do
     %{type: "section", text: Text.compile(text, attrs)}
     |> maybe_put(:accessory, compile_child(el, :accessory))

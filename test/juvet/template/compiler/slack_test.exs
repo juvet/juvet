@@ -1174,6 +1174,119 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with deep attributes" do
+    test "select with placeholder as deep attribute" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :select,
+                  attributes: %{
+                    source: :static,
+                    action_id: "sel_1",
+                    placeholder: %{text: "Choose a color", emoji: true}
+                  },
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Red", value: "red"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.placeholder == %{
+               type: "plain_text",
+               text: "Choose a color",
+               emoji: true
+             }
+    end
+
+    test "button with text as deep attribute" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :button,
+                  attributes: %{
+                    text: %{text: "Click me", emoji: true},
+                    action_id: "btn_1"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [button] = actions.elements
+
+      assert button.text == %{type: "plain_text", text: "Click me", emoji: true}
+      assert button.action_id == "btn_1"
+    end
+
+    test "header with text as deep attribute" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :header,
+            attributes: %{text: %{text: "Hello", emoji: true}}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "header",
+                   text: %{type: "plain_text", text: "Hello", emoji: true}
+                 }
+               ])
+    end
+
+    test "section with text as deep attribute" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: %{text: "Hello", verbatim: true}}
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Hello", verbatim: true}
+                 }
+               ])
+    end
+  end
+
   describe "compile/1 with multiple top-level elements" do
     test "header, divider, and section" do
       ast =

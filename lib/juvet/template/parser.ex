@@ -181,6 +181,26 @@ defmodule Juvet.Template.Parser do
     block(rest, attrs, Map.put(children, String.to_atom(key), child_value(nested)), platform)
   end
 
+  # Nested attributes - key followed by newline+indent+keyword (not element start)
+  #
+  # Example cheex:
+  #   placeholder:
+  #     text: "Choose a color"
+  #     emoji: true
+  #
+  # Produces: %{placeholder: %{text: "Choose a color", emoji: true}}
+  defp block(
+         [{:keyword, _, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _}, {:keyword, _, _} | _] =
+           tokens,
+         attrs,
+         children,
+         platform
+       ) do
+    [{:keyword, key, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _} | rest] = tokens
+    {nested_map, rest} = nested_attrs(rest, %{})
+    block(rest, Map.put(attrs, String.to_atom(key), nested_map), children, platform)
+  end
+
   # Regular attribute
   defp block([{:keyword, key, _}, {:colon, _, _} | rest], attrs, children, platform) do
     {val, rest} = value(rest)
@@ -207,6 +227,22 @@ defmodule Juvet.Template.Parser do
   defp nested_elements([{:dot, _, _} | _] = tokens, acc, platform) do
     {el, rest} = element(tokens, platform)
     nested_elements(rest, [el | acc], platform)
+  end
+
+  # Collect nested key-value pairs into a map until dedent.
+  #
+  # Example token stream for:
+  #   text: "Choose"
+  #   emoji: true
+  #
+  # Returns: {%{text: "Choose", emoji: true}, remaining_tokens}
+  defp nested_attrs([{:dedent, _, _} | rest], acc), do: {acc, rest}
+  defp nested_attrs([{:newline, _, _} | rest], acc), do: nested_attrs(rest, acc)
+  defp nested_attrs([{:whitespace, _, _} | rest], acc), do: nested_attrs(rest, acc)
+
+  defp nested_attrs([{:keyword, key, _}, {:colon, _, _} | rest], acc) do
+    {val, rest} = value(rest)
+    nested_attrs(rest, Map.put(acc, String.to_atom(key), val))
   end
 
   # Inline attributes - parse {key: value, ...}

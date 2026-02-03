@@ -37,7 +37,10 @@ defmodule Juvet.Template.Compiler.Slack.Elements.Select do
     |> compile_source(source, multiple, el)
   end
 
-  defp compile_placeholder(%{placeholder: text}),
+  defp compile_placeholder(%{placeholder: %{text: _} = attrs}),
+    do: Text.compile(attrs.text, Map.put_new(attrs, :type, :plain_text))
+
+  defp compile_placeholder(%{placeholder: text}) when is_binary(text),
     do: Text.compile(text, %{type: :plain_text})
 
   defp compile_placeholder(_), do: nil

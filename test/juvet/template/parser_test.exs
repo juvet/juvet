@@ -364,6 +364,87 @@ defmodule Juvet.Template.ParserTest do
     end
   end
 
+  describe "parse/1 - Phase 9: Nested attributes (deep attributes)" do
+    test "basic nested attribute produces a map value" do
+      template = ":slack.select\n  placeholder:\n    text: \"Choose a color\""
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :select,
+                 attributes: %{placeholder: %{text: "Choose a color"}}
+               }
+             ]
+    end
+
+    test "nested attribute with multiple keys" do
+      template = ":slack.select\n  placeholder:\n    text: \"Choose a color\"\n    emoji: true"
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :select,
+                 attributes: %{placeholder: %{text: "Choose a color", emoji: true}}
+               }
+             ]
+    end
+
+    test "nested attribute alongside scalar attributes" do
+      template =
+        ":slack.select\n  source: :static\n  action_id: \"color_sel\"\n  placeholder:\n    text: \"Choose a color\"\n    emoji: true"
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :select,
+                 attributes: %{
+                   source: :static,
+                   action_id: "color_sel",
+                   placeholder: %{text: "Choose a color", emoji: true}
+                 }
+               }
+             ]
+    end
+
+    test "nested attribute alongside child elements" do
+      template =
+        ":slack.select\n  source: :static\n  placeholder:\n    text: \"Choose\"\n    emoji: true\n  options:\n    .option{text: \"Red\", value: \"red\"}"
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :select,
+                 attributes: %{
+                   source: :static,
+                   placeholder: %{text: "Choose", emoji: true}
+                 },
+                 children: %{
+                   options: %{
+                     platform: :slack,
+                     element: :option,
+                     attributes: %{text: "Red", value: "red"}
+                   }
+                 }
+               }
+             ]
+    end
+
+    test "nested attribute with different value types" do
+      template =
+        ":slack.element\n  config:\n    name: \"test\"\n    enabled: true\n    type: :plain_text\n    count: 42"
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :element,
+                 attributes: %{
+                   config: %{name: "test", enabled: true, type: :plain_text, count: 42}
+                 }
+               }
+             ]
+    end
+  end
+
   describe "parse/2 - with default platform option" do
     defp parse_with_platform(template, platform) do
       template

@@ -120,7 +120,11 @@ lib/juvet/template/
         section.ex                 # Compiler.Slack.Blocks.Section
       elements/
         button.ex                  # Compiler.Slack.Elements.Button
+        select.ex                  # Compiler.Slack.Elements.Select
       objects/
+        conversation_filter.ex     # Compiler.Slack.Objects.ConversationFilter
+        option.ex                  # Compiler.Slack.Objects.Option
+        option_group.ex            # Compiler.Slack.Objects.OptionGroup
         text.ex                    # Compiler.Slack.Objects.Text
 ```
 
@@ -196,7 +200,8 @@ inline_attrs -> open_brace attr_list close_brace
 attr_list    -> (attr (comma attr)*)?
 attr         -> whitespace? keyword colon whitespace? value
 value        -> text | boolean | atom | number
-block        -> indent (attr | element)+ dedent
+block        -> indent (nested_attr | attr | element)+ dedent
+nested_attr  -> keyword colon newline indent attr+ dedent
 ```
 
 Short elements (`.element`) inherit their platform from the parent element.
@@ -629,6 +634,67 @@ partial :user_header, inline: ":slack.header{text: \"Hello <%= name %>\"}"
 - Conflicting platform in source is an error (`:discord.header` with `slack:` key raises `CompileError`)
 - Matching full syntax (`:slack.header`) with `slack:` key is allowed — just redundant
 - The existing API is unchanged: `template(:name, "source")`, `template(:name, "source", format: :json)`, and `template(:name, file: "path.cheex")` all continue to work
+
+### Phase 9: Nested attributes (deep attributes)
+
+Attributes like `placeholder` in Slack Block Kit are text objects with sub-fields (`text`, `emoji`, etc.). When a key is followed by a newline, indent, and keyword (not `:colon` or `.dot`), the parser collects the indented key-value pairs into a map attribute value.
+
+```
+Input:
+  :slack.select
+    source: :static
+    action_id: "color_sel"
+    placeholder:
+      text: "Choose a color"
+      emoji: true
+    options:
+      .option{text: "Red", value: "red"}
+
+AST: [
+  %{
+    platform: :slack,
+    element: :select,
+    attributes: %{
+      source: :static,
+      action_id: "color_sel",
+      placeholder: %{text: "Choose a color", emoji: true}
+    },
+    children: %{
+      options: %{
+        platform: :slack,
+        element: :option,
+        attributes: %{text: "Red", value: "red"}
+      }
+    }
+  }
+]
+
+JSON: {
+  "type": "static_select",
+  "action_id": "color_sel",
+  "placeholder": {"type": "plain_text", "text": "Choose a color", "emoji": true},
+  "options": [{"text": {"type": "plain_text", "text": "Red"}, "value": "red"}]
+}
+```
+
+Deep attributes work alongside scalar attributes and child elements on the same element. The parser distinguishes the three cases by the token after `NEWLINE INDENT`:
+
+- `:colon` or `.dot` → child element(s) (existing behavior)
+- `:keyword` → nested attribute map (new behavior)
+- Otherwise → regular scalar attribute (existing behavior)
+
+Header with deep text attribute:
+
+```
+Input:
+  :slack.header
+    text:
+      text: "Hello"
+      emoji: true
+
+AST: [%{platform: :slack, element: :header, attributes: %{text: %{text: "Hello", emoji: true}}}]
+JSON: {"blocks": [{"type": "header", "text": {"type": "plain_text", "text": "Hello", "emoji": true}}]}
+```
 
 ## Compiler Implementation Phases
 
@@ -1432,13 +1498,14 @@ Collects user input in modals and workflow steps.
 
 #### Select Menus
 
-Static select, user select, conversation select, channel select.
+Unified `:select` element with `source` attribute for all Slack select menu types (static, external, users, conversations, channels). Supports both single and multi-select via the `multiple` attribute.
 
 ```elixir
-# Static select
-%{platform: :slack, element: :static_select, attributes: %{
-  placeholder: "Choose an option",
-  action_id: "select_1"
+# Static select with deep placeholder attribute
+%{platform: :slack, element: :select, attributes: %{
+  source: :static,
+  action_id: "select_1",
+  placeholder: %{text: "Choose an option", emoji: true}
 }, children: %{
   options: [
     %{platform: :slack, element: :option, attributes: %{text: "Option 1", value: "opt_1"}},
@@ -1449,13 +1516,25 @@ Static select, user select, conversation select, channel select.
 # Output JSON
 {
   "type": "static_select",
-  "placeholder": {"type": "plain_text", "text": "Choose an option"},
   "action_id": "select_1",
+  "placeholder": {"type": "plain_text", "text": "Choose an option", "emoji": true},
   "options": [
     {"text": {"type": "plain_text", "text": "Option 1"}, "value": "opt_1"},
     {"text": {"type": "plain_text", "text": "Option 2"}, "value": "opt_2"}
   ]
 }
+```
+
+The `placeholder` attribute supports both scalar and deep attribute forms:
+
+```
+# Scalar (simple string)
+placeholder: "Choose an option"
+
+# Deep attribute (text object with sub-fields)
+placeholder:
+  text: "Choose an option"
+  emoji: true
 ```
 
 #### Overflow Menu
