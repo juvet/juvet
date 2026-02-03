@@ -1174,6 +1174,144 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with overflow" do
+    test "overflow with options in actions block" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :overflow,
+                  attributes: %{},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Edit", value: "edit"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Delete", value: "delete"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [overflow] = actions.elements
+
+      assert overflow == %{
+               type: "overflow",
+               options: [
+                 %{text: %{type: "plain_text", text: "Edit"}, value: "edit"},
+                 %{text: %{type: "plain_text", text: "Delete"}, value: "delete"}
+               ]
+             }
+    end
+
+    test "overflow as section accessory" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Settings"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :overflow,
+                attributes: %{action_id: "overflow_1"},
+                children: %{
+                  options: [
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Edit", value: "edit"}
+                    },
+                    %{
+                      platform: :slack,
+                      element: :option,
+                      attributes: %{text: "Archive", value: "archive"}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Settings"},
+                   accessory: %{
+                     type: "overflow",
+                     action_id: "overflow_1",
+                     options: [
+                       %{text: %{type: "plain_text", text: "Edit"}, value: "edit"},
+                       %{text: %{type: "plain_text", text: "Archive"}, value: "archive"}
+                     ]
+                   }
+                 }
+               ])
+    end
+
+    test "overflow with action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :overflow,
+                  attributes: %{action_id: "more_options"},
+                  children: %{
+                    options: [
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option 1", value: "opt_1"}
+                      },
+                      %{
+                        platform: :slack,
+                        element: :option,
+                        attributes: %{text: "Option 2", value: "opt_2"}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [overflow] = actions.elements
+
+      assert overflow.type == "overflow"
+      assert overflow.action_id == "more_options"
+      assert length(overflow.options) == 2
+    end
+  end
+
   describe "compile/1 with deep attributes" do
     test "select with placeholder as deep attribute" do
       ast =

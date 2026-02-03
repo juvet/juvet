@@ -120,6 +120,7 @@ lib/juvet/template/
         section.ex                 # Compiler.Slack.Blocks.Section
       elements/
         button.ex                  # Compiler.Slack.Elements.Button
+        overflow.ex                # Compiler.Slack.Elements.Overflow
         select.ex                  # Compiler.Slack.Elements.Select
       objects/
         conversation_filter.ex     # Compiler.Slack.Objects.ConversationFilter
@@ -163,6 +164,7 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:context` | `"context"` |
 | `:image` | `"image"` |
 | `:button` | `"button"` |
+| `:overflow` | `"overflow"` |
 | `:actions` | `"actions"` |
 | `:view` | `"modal"`, `"home"` (from `type` attribute) |
 
@@ -1539,15 +1541,26 @@ placeholder:
 
 #### Overflow Menu
 
-Compact menu for additional actions.
+Compact menu for additional actions. Supports 2-5 option items.
 
 ```elixir
+# Input AST
 %{platform: :slack, element: :overflow, attributes: %{action_id: "overflow_1"}, children: %{
   options: [
     %{platform: :slack, element: :option, attributes: %{text: "Edit", value: "edit"}},
     %{platform: :slack, element: :option, attributes: %{text: "Delete", value: "delete"}}
   ]
 }}
+
+# Output JSON
+{
+  "type": "overflow",
+  "action_id": "overflow_1",
+  "options": [
+    {"text": {"type": "plain_text", "text": "Edit"}, "value": "edit"},
+    {"text": {"type": "plain_text", "text": "Delete"}, "value": "delete"}
+  ]
+}
 ```
 
 #### Checkboxes
