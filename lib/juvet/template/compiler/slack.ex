@@ -14,7 +14,8 @@ defmodule Juvet.Template.Compiler.Slack do
     Datepicker,
     Datetimepicker,
     Overflow,
-    Select
+    Select,
+    Timepicker
   }
 
   alias Juvet.Template.Compiler.Slack.Objects.{ConversationFilter, Option, OptionGroup}
@@ -30,6 +31,7 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :datepicker} = el), do: Datepicker.compile(el)
   def compile_element(%{element: :datetimepicker} = el), do: Datetimepicker.compile(el)
   def compile_element(%{element: :overflow} = el), do: Overflow.compile(el)
+  def compile_element(%{element: :timepicker} = el), do: Timepicker.compile(el)
   def compile_element(%{element: :select} = el), do: Select.compile(el)
   def compile_element(%{element: :filter} = el), do: ConversationFilter.compile(el)
   def compile_element(%{element: :option} = el), do: Option.compile(el)

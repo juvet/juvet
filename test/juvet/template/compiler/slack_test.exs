@@ -1699,6 +1699,158 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with timepicker" do
+    test "timepicker with action_id and initial_time in actions block" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :timepicker,
+                  attributes: %{action_id: "time_1", initial_time: "09:30"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [timepicker] = actions.elements
+
+      assert timepicker == %{
+               type: "timepicker",
+               action_id: "time_1",
+               initial_time: "09:30"
+             }
+    end
+
+    test "timepicker as section accessory" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick a time"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :timepicker,
+                attributes: %{action_id: "time_1"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Pick a time"},
+                   accessory: %{
+                     type: "timepicker",
+                     action_id: "time_1"
+                   }
+                 }
+               ])
+    end
+
+    test "timepicker with scalar placeholder" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :timepicker,
+                  attributes: %{action_id: "time_1", placeholder: "Select a time"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [timepicker] = actions.elements
+
+      assert timepicker == %{
+               type: "timepicker",
+               action_id: "time_1",
+               placeholder: %{type: "plain_text", text: "Select a time"}
+             }
+    end
+
+    test "timepicker with timezone" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :timepicker,
+                  attributes: %{action_id: "time_1", timezone: "America/Chicago"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [timepicker] = actions.elements
+
+      assert timepicker == %{
+               type: "timepicker",
+               action_id: "time_1",
+               timezone: "America/Chicago"
+             }
+    end
+
+    test "timepicker with focus_on_load" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :timepicker,
+                  attributes: %{action_id: "time_1", focus_on_load: true}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [timepicker] = actions.elements
+
+      assert timepicker == %{
+               type: "timepicker",
+               action_id: "time_1",
+               focus_on_load: true
+             }
+    end
+  end
+
   describe "compile/1 with datepicker" do
     test "datepicker with action_id and initial_date in actions block" do
       ast =
