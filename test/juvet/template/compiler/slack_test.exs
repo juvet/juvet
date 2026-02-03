@@ -1610,7 +1610,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
               accessory: %{
                 platform: :slack,
                 element: :image,
-                attributes: %{slack_file: %{id: "F0123456"}, alt_text: "Avatar"}
+                attributes: %{alt_text: "Avatar"},
+                children: %{
+                  slack_file: %{
+                    element: :slack_file,
+                    attributes: %{id: "F0123456"}
+                  }
+                }
               }
             }
           }
@@ -1642,7 +1648,13 @@ defmodule Juvet.Template.Compiler.SlackTest do
                 %{
                   platform: :slack,
                   element: :image,
-                  attributes: %{slack_file: %{id: "F0123456"}, alt_text: "Icon"}
+                  attributes: %{alt_text: "Icon"},
+                  children: %{
+                    slack_file: %{
+                      element: :slack_file,
+                      attributes: %{id: "F0123456"}
+                    }
+                  }
                 }
               ]
             }
@@ -4988,6 +5000,54 @@ defmodule Juvet.Template.Compiler.SlackTest do
 
       assert result == %{
                trigger: %{url: "https://slack.com/shortcuts/Ft123/xyz"}
+             }
+    end
+  end
+
+  describe "compile/1 with slack file object" do
+    test "slack file with url" do
+      result =
+        Juvet.Template.Compiler.Slack.Objects.SlackFile.compile(%{
+          element: :slack_file,
+          attributes: %{url: "https://files.slack.com/files-pri/T123/img.png"}
+        })
+
+      assert result == %{url: "https://files.slack.com/files-pri/T123/img.png"}
+    end
+
+    test "slack file with id" do
+      result =
+        Juvet.Template.Compiler.Slack.Objects.SlackFile.compile(%{
+          element: :slack_file,
+          attributes: %{id: "F0123456"}
+        })
+
+      assert result == %{id: "F0123456"}
+    end
+
+    test "image with slack_file child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :image,
+            attributes: %{alt_text: "Photo"},
+            children: %{
+              slack_file: %{
+                element: :slack_file,
+                attributes: %{url: "https://files.slack.com/files-pri/T123/img.png"}
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [image] = result.blocks
+
+      assert image == %{
+               type: "image",
+               alt_text: "Photo",
+               slack_file: %{url: "https://files.slack.com/files-pri/T123/img.png"}
              }
     end
   end
