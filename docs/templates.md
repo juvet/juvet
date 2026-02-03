@@ -187,7 +187,9 @@ Some attributes are renamed for Slack compatibility:
 
 ```
 template     -> element* eof
-element      -> colon keyword dot keyword element_body?
+element      -> full_element | short_element
+full_element -> colon keyword dot keyword element_body?
+short_element -> dot keyword element_body?       (only valid inside a parent element)
 element_body -> default_value? inline_attrs? (newline block)?
 default_value -> whitespace text
 inline_attrs -> open_brace attr_list close_brace
@@ -196,6 +198,9 @@ attr         -> whitespace? keyword colon whitespace? value
 value        -> text | boolean | atom | number
 block        -> indent (attr | element)+ dedent
 ```
+
+Short elements (`.element`) inherit their platform from the parent element.
+They can only appear as children — using `.element` at the top level is an error.
 
 ## Error Handling and Line Number Tracking
 
@@ -480,6 +485,53 @@ JSON: {
     ]
   }]
 }
+```
+
+### Phase 8: Platform inheritance (`.element` shorthand)
+
+Child elements can inherit their platform from the parent element using `.element` syntax instead of `:platform.element`. This is purely syntactic sugar — the AST always includes an explicit `platform:` field.
+
+```
+Input:
+  :slack.view
+    type: :modal
+    blocks:
+      .header{text: "Hello"}
+      .divider
+      .section "Welcome"
+
+AST: [
+  %{
+    platform: :slack,
+    element: :view,
+    attributes: %{type: :modal},
+    children: %{
+      blocks: [
+        %{platform: :slack, element: :header, attributes: %{text: "Hello"}},
+        %{platform: :slack, element: :divider, attributes: %{}},
+        %{platform: :slack, element: :section, attributes: %{text: "Welcome"}}
+      ]
+    }
+  }
+]
+```
+
+Full and shorthand syntax can be mixed freely within the same block:
+
+```
+:slack.actions
+  elements:
+    :slack.button
+      text: "Full syntax"
+    .button
+      text: "Shorthand"
+```
+
+Using `.element` at the top level (no parent) raises a parser error:
+
+```
+.header{text: "Hello"}
+# => ** (Parser.Error) Element with '.' shorthand must be inside a parent element that specifies a platform
 ```
 
 ## Compiler Implementation Phases
@@ -1026,10 +1078,12 @@ Views are top-level containers used for Slack surfaces like modals and home tabs
   type: :modal
   private_metadata: "some metadata string"
   blocks:
-    :slack.header{text: "Hello <%= name %>"}
-    :slack.divider
-    :slack.section "Welcome"
+    .header{text: "Hello <%= name %>"}
+    .divider
+    .section "Welcome"
 ```
+
+Child elements use `.element` shorthand to inherit the `:slack` platform from the parent `:slack.view`. The full `:slack.header` syntax also works and is equivalent.
 
 ### Output
 

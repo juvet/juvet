@@ -507,6 +507,76 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "platform inheritance shorthand" do
+    defmodule ShorthandTemplates do
+      use Juvet.Template
+
+      template(:shorthand_view, """
+      :slack.view
+        type: :modal
+        blocks:
+          .header{text: "Hello"}
+          .divider
+          .section "Welcome"
+      """)
+
+      template(:shorthand_with_bindings, """
+      :slack.view
+        type: :modal
+        blocks:
+          .header{text: "Hello <%= name %>"}
+          .divider
+      """)
+
+      template(:mixed_syntax, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Full"}
+          .divider
+          .section "Short"
+      """)
+    end
+
+    test "shorthand elements compile to correct output" do
+      result = ShorthandTemplates.shorthand_view()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}},
+                 %{type: "divider"},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Welcome"}}
+               ]
+             }
+    end
+
+    test "shorthand elements with bindings" do
+      result = ShorthandTemplates.shorthand_with_bindings(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello World"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "mixed full and shorthand syntax produces identical output" do
+      result = ShorthandTemplates.mixed_syntax()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Full"}},
+                 %{type: "divider"},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Short"}}
+               ]
+             }
+    end
+  end
+
   describe "file-based partials" do
     defmodule FilePartialTemplates do
       use Juvet.Template

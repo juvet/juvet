@@ -43,6 +43,15 @@ defmodule Juvet.Template.Parser do
     do_parse(rest, [el | acc])
   end
 
+  # Dot shorthand at top level is an error - no parent platform to inherit from
+  defp do_parse([{:dot, _, {line, col}} | _], _acc) do
+    raise ParserError,
+      message:
+        "Element with '.' shorthand must be inside a parent element that specifies a platform",
+      line: line,
+      column: col
+  end
+
   # Unexpected token at top level
   defp do_parse([{type, value, {line, col}} | _], _acc) do
     raise ParserError,
@@ -51,7 +60,7 @@ defmodule Juvet.Template.Parser do
       column: col
   end
 
-  # Element parsing - :platform.element_type
+  # Element parsing - :platform.element_type (full syntax)
   defp element([
          {:colon, _, {line, col}},
          {:keyword, platform, _},
@@ -59,25 +68,17 @@ defmodule Juvet.Template.Parser do
          {:keyword, el, _}
          | rest
        ]) do
-    {attrs_result, rest} = attributes(rest)
+    platform_atom = String.to_atom(platform)
+    {attrs_result, rest} = attributes(rest, platform_atom)
 
     new_element = %{
-      platform: String.to_atom(platform),
+      platform: platform_atom,
       element: String.to_atom(el),
       line: line,
       column: col
     }
 
-    new_element =
-      case attrs_result do
-        {attrs, children} ->
-          new_element
-          |> Map.put(:attributes, attrs)
-          |> Map.put(:children, children)
-
-        attrs ->
-          Map.put(new_element, :attributes, attrs)
-      end
+    new_element = apply_attrs_result(new_element, attrs_result)
 
     {new_element, rest}
   end
@@ -90,31 +91,57 @@ defmodule Juvet.Template.Parser do
       column: col
   end
 
+  # Element parsing - .element_type (inherited platform shorthand)
+  defp element([{:dot, _, {line, col}}, {:keyword, el, _} | rest], platform) do
+    {attrs_result, rest} = attributes(rest, platform)
+
+    new_element = %{
+      platform: platform,
+      element: String.to_atom(el),
+      line: line,
+      column: col
+    }
+
+    new_element = apply_attrs_result(new_element, attrs_result)
+
+    {new_element, rest}
+  end
+
+  defp apply_attrs_result(element, {attrs, children}) do
+    element
+    |> Map.put(:attributes, attrs)
+    |> Map.put(:children, children)
+  end
+
+  defp apply_attrs_result(element, attrs) do
+    Map.put(element, :attributes, attrs)
+  end
+
   # Attribute dispatching
-  defp attributes([{:open_brace, _, _} | rest]), do: inline_attrs(rest, %{})
+  defp attributes([{:open_brace, _, _} | rest], _platform), do: inline_attrs(rest, %{})
 
   # Multi-line block (newline + indent)
-  defp attributes([{:newline, _, _}, {:indent, _, _} | rest]) do
-    block(rest, %{}, %{})
+  defp attributes([{:newline, _, _}, {:indent, _, _} | rest], platform) do
+    block(rest, %{}, %{}, platform)
   end
 
   # Default value (unquoted text) followed by inline attrs - must come before general text match
-  defp attributes([{:whitespace, _, _}, {:text, text, _}, {:open_brace, _, _} | rest]) do
+  defp attributes([{:whitespace, _, _}, {:text, text, _}, {:open_brace, _, _} | rest], _platform) do
     {more_attrs, rest} = inline_attrs(rest, %{})
     {Map.put(more_attrs, :text, text), rest}
   end
 
   # Default value (text after whitespace)
-  defp attributes([{:whitespace, _, _}, {:text, text, _} | rest]) do
-    {maybe_more_attrs, rest} = attributes(rest)
+  defp attributes([{:whitespace, _, _}, {:text, text, _} | rest], platform) do
+    {maybe_more_attrs, rest} = attributes(rest, platform)
     {Map.put(maybe_more_attrs, :text, unquote_text(text)), rest}
   end
 
-  defp attributes([{:eof, _, _}] = rest), do: {%{}, rest}
-  defp attributes(rest), do: {%{}, rest}
+  defp attributes([{:eof, _, _}] = rest, _platform), do: {%{}, rest}
+  defp attributes(rest, _platform), do: {%{}, rest}
 
   # Block parsing - indented attributes and children until dedent
-  defp block([{:dedent, _, _} | rest], attrs, children) do
+  defp block([{:dedent, _, _} | rest], attrs, children, _platform) do
     if map_size(children) > 0 do
       {{attrs, children}, rest}
     else
@@ -122,42 +149,53 @@ defmodule Juvet.Template.Parser do
     end
   end
 
-  defp block([{:newline, _, _} | rest], attrs, children), do: block(rest, attrs, children)
-  defp block([{:whitespace, _, _} | rest], attrs, children), do: block(rest, attrs, children)
+  defp block([{:newline, _, _} | rest], attrs, children, platform),
+    do: block(rest, attrs, children, platform)
 
-  # Nested element(s) - key followed by newline+indent+colon
+  defp block([{:whitespace, _, _} | rest], attrs, children, platform),
+    do: block(rest, attrs, children, platform)
+
+  # Nested element(s) - key followed by newline+indent+element start (:colon or .dot)
   defp block(
-         [{:keyword, _, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _}, {:colon, _, _} | _] =
+         [{:keyword, _, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _}, {start, _, _} | _] =
            tokens,
          attrs,
-         children
-       ) do
+         children,
+         platform
+       )
+       when start in [:colon, :dot] do
     [{:keyword, key, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _} | rest] = tokens
-    {nested_elements, rest} = nested_elements(rest, [])
+    {nested, rest} = nested_elements(rest, [], platform)
 
-    # Single element stored as-is, multiple elements stored as list
-    child_value =
-      case nested_elements do
-        [single] -> single
-        multiple -> multiple
-      end
-
-    block(rest, attrs, Map.put(children, String.to_atom(key), child_value))
+    block(rest, attrs, Map.put(children, String.to_atom(key), child_value(nested)), platform)
   end
 
   # Regular attribute
-  defp block([{:keyword, key, _}, {:colon, _, _} | rest], attrs, children) do
+  defp block([{:keyword, key, _}, {:colon, _, _} | rest], attrs, children, platform) do
     {val, rest} = value(rest)
-    block(rest, Map.put(attrs, String.to_atom(key), val), children)
+    block(rest, Map.put(attrs, String.to_atom(key), val), children, platform)
   end
 
-  # Collect sibling elements until dedent
-  defp nested_elements([{:dedent, _, _} | rest], acc), do: {Enum.reverse(acc), rest}
-  defp nested_elements([{:newline, _, _} | rest], acc), do: nested_elements(rest, acc)
+  # Single element stored as-is, multiple elements stored as list
+  defp child_value([single]), do: single
+  defp child_value(multiple), do: multiple
 
-  defp nested_elements([{:colon, _, _} | _] = tokens, acc) do
+  # Collect sibling elements until dedent
+  defp nested_elements([{:dedent, _, _} | rest], acc, _platform), do: {Enum.reverse(acc), rest}
+
+  defp nested_elements([{:newline, _, _} | rest], acc, platform),
+    do: nested_elements(rest, acc, platform)
+
+  # Full syntax: :platform.element
+  defp nested_elements([{:colon, _, _} | _] = tokens, acc, platform) do
     {el, rest} = element(tokens)
-    nested_elements(rest, [el | acc])
+    nested_elements(rest, [el | acc], platform)
+  end
+
+  # Inherited syntax: .element
+  defp nested_elements([{:dot, _, _} | _] = tokens, acc, platform) do
+    {el, rest} = element(tokens, platform)
+    nested_elements(rest, [el | acc], platform)
   end
 
   # Inline attributes - parse {key: value, ...}
