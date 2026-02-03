@@ -114,12 +114,16 @@ lib/juvet/template/
       blocks/
         actions.ex                 # Compiler.Slack.Blocks.Actions
         context.ex                 # Compiler.Slack.Blocks.Context
+        context_actions.ex         # Compiler.Slack.Blocks.ContextActions
         divider.ex                 # Compiler.Slack.Blocks.Divider
         header.ex                  # Compiler.Slack.Blocks.Header
         image.ex                   # Compiler.Slack.Blocks.Image
         section.ex                 # Compiler.Slack.Blocks.Section
       elements/
         button.ex                  # Compiler.Slack.Elements.Button
+        datepicker.ex              # Compiler.Slack.Elements.Datepicker
+        datetimepicker.ex          # Compiler.Slack.Elements.Datetimepicker
+        image.ex                   # Compiler.Slack.Elements.Image
         overflow.ex                # Compiler.Slack.Elements.Overflow
         select.ex                  # Compiler.Slack.Elements.Select
       objects/
@@ -162,9 +166,15 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:divider` | `"divider"` |
 | `:section` | `"section"` |
 | `:context` | `"context"` |
+| `:context_actions` | `"context_actions"` |
 | `:image` | `"image"` |
 | `:button` | `"button"` |
+| `:datepicker` | `"datepicker"` |
+| `:datetimepicker` | `"datetimepicker"` |
+| `:feedback_buttons` | `"feedback_buttons"` |
+| `:icon_button` | `"icon_button"` |
 | `:overflow` | `"overflow"` |
+| `:workflow_button` | `"workflow_button"` |
 | `:actions` | `"actions"` |
 | `:view` | `"modal"`, `"home"` (from `type` attribute) |
 
@@ -1592,25 +1602,50 @@ Single-select with radio buttons.
 
 #### Date and Time Pickers
 
+The datepicker element has been implemented. It supports `action_id`, `initial_date` (YYYY-MM-DD format), `placeholder` (scalar or deep attribute), and `focus_on_load`.
+
 ```elixir
-# Date picker
+# Date picker AST
 %{platform: :slack, element: :datepicker, attributes: %{
   action_id: "date_1",
   initial_date: "2024-01-15",
   placeholder: "Select a date"
 }}
 
+# Output JSON
+{
+  "type": "datepicker",
+  "action_id": "date_1",
+  "initial_date": "2024-01-15",
+  "placeholder": {"type": "plain_text", "text": "Select a date"}
+}
+```
+
+The datetimepicker element has been implemented. It supports `action_id`, `initial_date_time` (UNIX timestamp in seconds), and `focus_on_load`.
+
+```elixir
+# Datetime picker AST
+%{platform: :slack, element: :datetimepicker, attributes: %{
+  action_id: "datetime_1",
+  initial_date_time: 1628633820
+}}
+
+# Output JSON
+{
+  "type": "datetimepicker",
+  "action_id": "datetime_1",
+  "initial_date_time": 1628633820
+}
+```
+
+The following time picker is planned for future implementation:
+
+```elixir
 # Time picker
 %{platform: :slack, element: :timepicker, attributes: %{
   action_id: "time_1",
   initial_time: "09:00",
   placeholder: "Select a time"
-}}
-
-# Datetime picker
-%{platform: :slack, element: :datetimepicker, attributes: %{
-  action_id: "datetime_1",
-  initial_date_time: 1672531200
 }}
 ```
 
