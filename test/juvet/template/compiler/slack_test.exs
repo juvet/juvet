@@ -3469,6 +3469,124 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with input" do
+    test "input block with label and plain_text_input element" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: "Your Name"},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :plain_text_input,
+                attributes: %{action_id: "name_input"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "input",
+                   label: %{type: "plain_text", text: "Your Name"},
+                   element: %{type: "plain_text_input", action_id: "name_input"}
+                 }
+               ])
+    end
+
+    test "input block with hint and optional" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: "Email", hint: "Enter your work email", optional: true},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :email_input,
+                attributes: %{action_id: "email_input"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "input",
+                   label: %{type: "plain_text", text: "Email"},
+                   element: %{type: "email_text_input", action_id: "email_input"},
+                   hint: %{type: "plain_text", text: "Enter your work email"},
+                   optional: true
+                 }
+               ])
+    end
+
+    test "input block with dispatch_action and block_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{
+              label: "Search",
+              dispatch_action: true,
+              block_id: "input_block_1"
+            },
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :plain_text_input,
+                attributes: %{action_id: "search_input"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "input",
+                   label: %{type: "plain_text", text: "Search"},
+                   element: %{type: "plain_text_input", action_id: "search_input"},
+                   dispatch_action: true,
+                   block_id: "input_block_1"
+                 }
+               ])
+    end
+
+    test "input block with deep label" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: %{text: "Your Name", emoji: true}},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :plain_text_input,
+                attributes: %{action_id: "name_input"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "input",
+                   label: %{type: "plain_text", text: "Your Name", emoji: true},
+                   element: %{type: "plain_text_input", action_id: "name_input"}
+                 }
+               ])
+    end
+  end
+
   describe "compile/1 with file" do
     test "file block with external_id and source" do
       ast =
