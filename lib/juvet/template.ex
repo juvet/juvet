@@ -148,35 +148,11 @@ defmodule Juvet.Template do
         Module.get_attribute(__CALLER__.module, :juvet_template_format) || :map
       )
 
-    path = Keyword.fetch!(opts, :file)
-    caller_dir = Path.dirname(__CALLER__.file)
-    full_path = Path.expand(path, caller_dir)
-
-    source =
-      case File.read(full_path) do
-        {:ok, content} ->
-          content
-
-        {:error, reason} ->
-          raise CompileError,
-            description: "template #{inspect(name)} could not read #{path}: #{inspect(reason)}"
-      end
-
-    platform = extract_platform_from_filename(path)
-
-    existing_asts = Module.get_attribute(__CALLER__.module, :juvet_template_asts) || %{}
-    {ast, compiled} = compile_template!(name, source, existing_asts, platform: platform)
-
-    Module.put_attribute(
-      __CALLER__.module,
-      :juvet_template_asts,
-      Map.put(existing_asts, name, ast)
-    )
-
-    quote do
-      @juvet_templates unquote(name)
-      @external_resource unquote(full_path)
-      unquote(generate_template_function(name, compiled, format))
+    if file_option_specified?(opts) do
+      do_file_template(name, opts, format, __CALLER__)
+    else
+      {source, compile_opts} = extract_inline_source(opts)
+      do_compile_template(name, source, format, __CALLER__, compile_opts)
     end
   end
 
@@ -226,72 +202,12 @@ defmodule Juvet.Template do
   end
 
   defmacro partial(name, opts) when is_list(opts) do
-    path = Keyword.fetch!(opts, :file)
-    caller_dir = Path.dirname(__CALLER__.file)
-    full_path = Path.expand(path, caller_dir)
-
-    source =
-      case File.read(full_path) do
-        {:ok, content} ->
-          content
-
-        {:error, reason} ->
-          raise CompileError,
-            description: "partial #{inspect(name)} could not read #{path}: #{inspect(reason)}"
-      end
-
-    platform = extract_platform_from_filename(path)
-    store_partial(name, source, __CALLER__, platform: platform)
-
-    quote do
-      @external_resource unquote(full_path)
+    if file_option_specified?(opts) do
+      do_file_partial(name, opts, __CALLER__)
+    else
+      {source, compile_opts} = extract_inline_source(opts)
+      store_partial(name, source, __CALLER__, compile_opts)
     end
-  end
-
-  @doc false
-  def store_partial(name, source, caller, opts \\ []) do
-    existing_asts = Module.get_attribute(caller.module, :juvet_template_asts) || %{}
-    platform = Keyword.get(opts, :platform)
-
-    tokens = Tokenizer.tokenize(source)
-
-    ast =
-      if platform do
-        Parser.parse(tokens, platform: platform)
-      else
-        Parser.parse(tokens)
-      end
-
-    if platform, do: validate_platform!(ast, platform)
-
-    Module.put_attribute(
-      caller.module,
-      :juvet_template_asts,
-      Map.put(existing_asts, name, ast)
-    )
-  rescue
-    e in Tokenizer.Error ->
-      reraise CompileError,
-              [
-                description:
-                  "partial #{inspect(name)} has a syntax error: #{Exception.message(e)}",
-                line: e.line
-              ],
-              __STACKTRACE__
-
-    e in Parser.Error ->
-      reraise CompileError,
-              [
-                description:
-                  "partial #{inspect(name)} has a parse error: #{Exception.message(e)}",
-                line: e.line
-              ],
-              __STACKTRACE__
-
-    e in ArgumentError ->
-      reraise CompileError,
-              [description: "partial #{inspect(name)} failed to compile: #{e.message}"],
-              __STACKTRACE__
   end
 
   @doc """
@@ -424,6 +340,51 @@ defmodule Juvet.Template do
     end
   end
 
+  defp store_partial(name, source, caller, opts \\ []) do
+    existing_asts = Module.get_attribute(caller.module, :juvet_template_asts) || %{}
+    platform = Keyword.get(opts, :platform)
+
+    tokens = Tokenizer.tokenize(source)
+
+    ast =
+      if platform do
+        Parser.parse(tokens, platform: platform)
+      else
+        Parser.parse(tokens)
+      end
+
+    if platform, do: validate_platform!(ast, platform)
+
+    Module.put_attribute(
+      caller.module,
+      :juvet_template_asts,
+      Map.put(existing_asts, name, ast)
+    )
+  rescue
+    e in Tokenizer.Error ->
+      reraise CompileError,
+              [
+                description:
+                  "partial #{inspect(name)} has a syntax error: #{Exception.message(e)}",
+                line: e.line
+              ],
+              __STACKTRACE__
+
+    e in Parser.Error ->
+      reraise CompileError,
+              [
+                description:
+                  "partial #{inspect(name)} has a parse error: #{Exception.message(e)}",
+                line: e.line
+              ],
+              __STACKTRACE__
+
+    e in ArgumentError ->
+      reraise CompileError,
+              [description: "partial #{inspect(name)} failed to compile: #{e.message}"],
+              __STACKTRACE__
+  end
+
   defp format_location(%{line: line, column: col}) when is_integer(line) and is_integer(col) do
     " (line #{line}, column #{col})"
   end
@@ -511,10 +472,89 @@ defmodule Juvet.Template do
 
   def eval_map(data, _bindings), do: data
 
-  # Shared implementation for compiling inline template source.
-  defp do_compile_template(name, source, format, caller) do
+  # Extracts the source string from an opts keyword list for inline templates.
+  # Returns {source, remaining_opts} where remaining_opts may include :platform.
+  @platform_keys [:slack]
+
+  defp extract_inline_source(opts) do
+    cond do
+      inline_option_specified?(opts) ->
+        source = Keyword.fetch!(opts, :inline)
+        {source, Keyword.delete(opts, :inline)}
+
+      platform_key = platform_option(opts) ->
+        source = Keyword.fetch!(opts, platform_key)
+        rest = Keyword.delete(opts, platform_key)
+        {source, Keyword.put(rest, :platform, platform_key)}
+
+      true ->
+        raise ArgumentError,
+              "expected :file, :inline, or a platform key (e.g., :slack)"
+    end
+  end
+
+  # Handles file-based template compilation.
+  defp do_file_template(name, opts, format, caller) do
+    path = Keyword.fetch!(opts, :file)
+    caller_dir = Path.dirname(caller.file)
+    full_path = Path.expand(path, caller_dir)
+
+    source =
+      case File.read(full_path) do
+        {:ok, content} ->
+          content
+
+        {:error, reason} ->
+          raise CompileError,
+            description: "template #{inspect(name)} could not read #{path}: #{inspect(reason)}"
+      end
+
+    platform = extract_platform_from_filename(path)
+
     existing_asts = Module.get_attribute(caller.module, :juvet_template_asts) || %{}
-    {ast, compiled} = compile_template!(name, source, existing_asts)
+    {ast, compiled} = compile_template!(name, source, existing_asts, platform: platform)
+
+    Module.put_attribute(
+      caller.module,
+      :juvet_template_asts,
+      Map.put(existing_asts, name, ast)
+    )
+
+    quote do
+      @juvet_templates unquote(name)
+      @external_resource unquote(full_path)
+      unquote(generate_template_function(name, compiled, format))
+    end
+  end
+
+  # Handles file-based partial compilation.
+  defp do_file_partial(name, opts, caller) do
+    path = Keyword.fetch!(opts, :file)
+    caller_dir = Path.dirname(caller.file)
+    full_path = Path.expand(path, caller_dir)
+
+    source =
+      case File.read(full_path) do
+        {:ok, content} ->
+          content
+
+        {:error, reason} ->
+          raise CompileError,
+            description: "partial #{inspect(name)} could not read #{path}: #{inspect(reason)}"
+      end
+
+    platform = extract_platform_from_filename(path)
+    store_partial(name, source, caller, platform: platform)
+
+    quote do
+      @external_resource unquote(full_path)
+    end
+  end
+
+  # Shared implementation for compiling inline template source.
+  defp do_compile_template(name, source, format, caller, opts \\ []) do
+    existing_asts = Module.get_attribute(caller.module, :juvet_template_asts) || %{}
+    {ast, compiled} = compile_template!(name, source, existing_asts, opts)
 
     Module.put_attribute(
       caller.module,
@@ -569,21 +609,23 @@ defmodule Juvet.Template do
     end
   end
 
+  defp file_option_specified?(opts), do: Keyword.has_key?(opts, :file)
+
   # Extracts a platform atom from a filename.
   #
   # "home.slack.cheex" → :slack
   # "greeting.cheex" → nil
   # "my.template.slack.cheex" → :slack
   # "home.discord.cheex" → nil (only :slack recognized)
-  @recognized_platforms ~w(slack)
   defp extract_platform_from_filename(path) do
+    recognized = Enum.map(@platform_keys, &Atom.to_string/1)
     parts = path |> Path.basename() |> String.split(".")
 
     case parts do
       [_ | rest] when length(rest) >= 2 ->
         platform_segment = Enum.at(rest, length(rest) - 2)
 
-        if platform_segment in @recognized_platforms do
+        if platform_segment in recognized do
           String.to_atom(platform_segment)
         else
           nil
@@ -594,6 +636,11 @@ defmodule Juvet.Template do
     end
   end
 
+  defp inline_option_specified?(opts), do: Keyword.has_key?(opts, :inline)
+
+  defp platform_option(opts),
+    do: Enum.find(@platform_keys, &Keyword.has_key?(opts, &1))
+
   # Validates that all elements in the AST match the expected platform.
   # Raises ArgumentError if a conflicting platform is found.
   defp validate_platform!(ast, expected) when is_list(ast) do
@@ -603,7 +650,7 @@ defmodule Juvet.Template do
   defp validate_platform_element!(%{platform: platform, line: line, column: col}, expected)
        when platform != expected do
     raise ArgumentError,
-          "platform :#{platform} in template does not match file platform :#{expected} (line #{line}, column #{col})"
+          "platform :#{platform} in template does not match expected platform :#{expected} (line #{line}, column #{col})"
   end
 
   defp validate_platform_element!(%{children: children} = _element, expected)

@@ -850,7 +850,7 @@ defmodule Juvet.TemplateTest do
 
     test "template with mismatching platform in .slack.cheex raises CompileError" do
       assert_raise CompileError,
-                   ~r/platform :discord in template does not match file platform :slack/,
+                   ~r/platform :discord in template does not match expected platform :slack/,
                    fn ->
                      Template.compile_template!(
                        :bad,
@@ -895,6 +895,153 @@ defmodule Juvet.TemplateTest do
                  %{"type" => "divider"}
                ]
              })
+    end
+  end
+
+  describe "inline platform keyword syntax" do
+    defmodule InlinePlatformTemplates do
+      use Juvet.Template
+
+      template(:slack_shorthand,
+        slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}\n    .divider"
+      )
+
+      template(:slack_with_bindings,
+        slack:
+          ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello <%= name %>\"}\n    .divider"
+      )
+
+      template(:slack_with_json,
+        slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}",
+        format: :json
+      )
+
+      template(:inline_keyword,
+        inline:
+          ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Hello\"}\n    :slack.divider"
+      )
+
+      template(:slack_redundant_full_syntax,
+        slack:
+          ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Redundant\"}\n    .divider"
+      )
+
+      partial(:slack_partial_header, slack: ".header{text: \"Hello <%= name %>\"}")
+
+      partial(:inline_partial_header, inline: ":slack.header{text: \"Hello <%= name %>\"}")
+
+      template(:using_slack_partial, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :slack_partial_header, name: "<%= name %>"}
+          :slack.divider
+      """)
+
+      template(:using_inline_partial, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :inline_partial_header, name: "<%= name %>"}
+          :slack.divider
+      """)
+    end
+
+    test "slack: keyword compiles view with all-shorthand elements" do
+      result = InlinePlatformTemplates.slack_shorthand()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "slack: keyword with EEx bindings" do
+      result = InlinePlatformTemplates.slack_with_bindings(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello World"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "slack: keyword with format: :json override" do
+      result = InlinePlatformTemplates.slack_with_json()
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{"type" => "header", "text" => %{"type" => "plain_text", "text" => "Hello"}}
+               ]
+             })
+    end
+
+    test "inline: keyword works like bare string source" do
+      result = InlinePlatformTemplates.inline_keyword()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "slack: keyword with matching :slack.element is allowed (redundant)" do
+      result = InlinePlatformTemplates.slack_redundant_full_syntax()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Redundant"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "slack: keyword with mismatching :discord.element raises CompileError" do
+      assert_raise CompileError,
+                   ~r/platform :discord in template does not match expected platform :slack/,
+                   fn ->
+                     Code.compile_string("""
+                     defmodule MismatchInlinePlatform do
+                       use Juvet.Template
+                       template :bad, slack: ":discord.header{text: \\"Hello\\"}"
+                     end
+                     """)
+                   end
+    end
+
+    test "partial with slack: keyword works and can be referenced by templates" do
+      result = InlinePlatformTemplates.using_slack_partial(name: "Alice")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello Alice"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "partial with inline: keyword works" do
+      result = InlinePlatformTemplates.using_inline_partial(name: "Bob")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello Bob"}},
+                 %{type: "divider"}
+               ]
+             }
     end
   end
 end

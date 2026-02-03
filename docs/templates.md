@@ -581,10 +581,54 @@ Currently only `:slack` is recognized as a platform in filenames.
 - Using the matching full syntax (`:slack.header`) in a `.slack.cheex` file is allowed — it's just redundant
 - Using a different platform (`:discord.header`) in a `.slack.cheex` file raises a compile-time error:
   ```
-  ** (CompileError) platform :discord in template does not match file platform :slack (line 1, column 1)
+  ** (CompileError) platform :discord in template does not match expected platform :slack (line 1, column 1)
   ```
 - Inline templates (`template(:name, "source")`) are unaffected — no filename to extract from
 - Partials from `.slack.cheex` files also support top-level shorthand
+
+### Inline Platform Keywords
+
+Inline templates can use platform keywords to enable the same `.element` shorthand as `.slack.cheex` files, without needing external files. The platform key sets a file-level platform context for the source string.
+
+**Platform keyword (`slack:`)** — enables `.element` shorthand:
+
+```elixir
+defmodule MyApp.Templates do
+  use Juvet.Template
+
+  template :bar_chart, slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}"
+end
+```
+
+This is equivalent to writing the same source in a `.slack.cheex` file. All `.element` shorthand forms are resolved to `:slack.element`.
+
+**Explicit inline keyword (`inline:`)** — no platform, must use full `:slack.element` syntax:
+
+```elixir
+template :bar_chart, inline: ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Hello\"}"
+```
+
+The `inline:` keyword behaves identically to passing a bare string as the second argument.
+
+**Platform keyword with format override:**
+
+```elixir
+template :bar_chart, slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello\"}", format: :json
+```
+
+**Partials with platform keywords:**
+
+```elixir
+partial :user_header, slack: ".header{text: \"Hello <%= name %>\"}"
+partial :user_header, inline: ":slack.header{text: \"Hello <%= name %>\"}"
+```
+
+**Validation rules** (same as `.slack.cheex`):
+
+- Only `:slack` is recognized as a platform key
+- Conflicting platform in source is an error (`:discord.header` with `slack:` key raises `CompileError`)
+- Matching full syntax (`:slack.header`) with `slack:` key is allowed — just redundant
+- The existing API is unchanged: `template(:name, "source")`, `template(:name, "source", format: :json)`, and `template(:name, file: "path.cheex")` all continue to work
 
 ## Compiler Implementation Phases
 
