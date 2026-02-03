@@ -1,10 +1,10 @@
 defmodule Juvet.Template.Compiler.Slack.Elements.NumberInput do
   @moduledoc false
 
-  alias Juvet.Template.Compiler.Slack.Objects.Text
+  alias Juvet.Template.Compiler.Slack.Objects.{DispatchActionConfig, Text}
   import Juvet.Template.Compiler.Encoder.Helpers, only: [maybe_put: 3]
 
-  def compile(%{element: :number_input, attributes: attrs}) do
+  def compile(%{element: :number_input, attributes: attrs} = el) do
     %{type: "number_input"}
     |> maybe_put(:is_decimal_allowed, attrs[:is_decimal_allowed])
     |> maybe_put(:action_id, attrs[:action_id])
@@ -13,6 +13,7 @@ defmodule Juvet.Template.Compiler.Slack.Elements.NumberInput do
     |> maybe_put(:max_value, attrs[:max_value])
     |> maybe_put(:placeholder, compile_placeholder(attrs))
     |> maybe_put(:focus_on_load, attrs[:focus_on_load])
+    |> maybe_put(:dispatch_action_config, compile_dispatch_action_config(el))
   end
 
   defp compile_placeholder(%{placeholder: %{text: _} = attrs}),
@@ -22,4 +23,9 @@ defmodule Juvet.Template.Compiler.Slack.Elements.NumberInput do
     do: Text.compile(text, %{type: :plain_text})
 
   defp compile_placeholder(_), do: nil
+
+  defp compile_dispatch_action_config(%{children: %{dispatch_action_config: config}}),
+    do: DispatchActionConfig.compile(config)
+
+  defp compile_dispatch_action_config(_), do: nil
 end

@@ -51,6 +51,7 @@ defmodule Juvet.Template.Compiler.Slack do
   alias Juvet.Template.Compiler.Slack.Objects.{
     ConfirmationDialog,
     ConversationFilter,
+    DispatchActionConfig,
     Option,
     OptionGroup
   }
@@ -88,6 +89,10 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: :url_input} = el), do: UrlInput.compile(el)
   def compile_element(%{element: :workflow_button} = el), do: WorkflowButton.compile(el)
   def compile_element(%{element: :confirm} = el), do: ConfirmationDialog.compile(el)
+
+  def compile_element(%{element: :dispatch_action_config} = el),
+    do: DispatchActionConfig.compile(el)
+
   def compile_element(%{element: :filter} = el), do: ConversationFilter.compile(el)
   def compile_element(%{element: :option} = el), do: Option.compile(el)
   def compile_element(%{element: :option_group} = el), do: OptionGroup.compile(el)

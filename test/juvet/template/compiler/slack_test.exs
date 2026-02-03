@@ -4829,4 +4829,98 @@ defmodule Juvet.Template.Compiler.SlackTest do
              }
     end
   end
+
+  describe "compile/1 with dispatch action configuration" do
+    test "dispatch action config with array value" do
+      result =
+        Juvet.Template.Compiler.Slack.Objects.DispatchActionConfig.compile(%{
+          element: :dispatch_action_config,
+          attributes: %{
+            trigger_actions_on: ["on_enter_pressed", "on_character_entered"]
+          }
+        })
+
+      assert result == %{
+               trigger_actions_on: ["on_enter_pressed", "on_character_entered"]
+             }
+    end
+
+    test "dispatch action config with single string wraps in list" do
+      result =
+        Juvet.Template.Compiler.Slack.Objects.DispatchActionConfig.compile(%{
+          element: :dispatch_action_config,
+          attributes: %{
+            trigger_actions_on: "on_enter_pressed"
+          }
+        })
+
+      assert result == %{trigger_actions_on: ["on_enter_pressed"]}
+    end
+
+    test "plain_text_input with dispatch_action_config child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: "Name"},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :plain_text_input,
+                attributes: %{action_id: "input_1"},
+                children: %{
+                  dispatch_action_config: %{
+                    element: :dispatch_action_config,
+                    attributes: %{
+                      trigger_actions_on: ["on_enter_pressed"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [input] = result.blocks
+
+      assert input.element.dispatch_action_config == %{
+               trigger_actions_on: ["on_enter_pressed"]
+             }
+    end
+
+    test "email_input with dispatch_action_config child" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :input,
+            attributes: %{label: "Email"},
+            children: %{
+              element: %{
+                platform: :slack,
+                element: :email_input,
+                attributes: %{action_id: "email_1"},
+                children: %{
+                  dispatch_action_config: %{
+                    element: :dispatch_action_config,
+                    attributes: %{
+                      trigger_actions_on: ["on_character_entered"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [input] = result.blocks
+
+      assert input.element.dispatch_action_config == %{
+               trigger_actions_on: ["on_character_entered"]
+             }
+    end
+  end
 end
