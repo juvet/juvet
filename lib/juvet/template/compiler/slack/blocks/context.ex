@@ -2,9 +2,8 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Context do
   @moduledoc false
 
   alias Juvet.Template.Compiler.Slack
+  alias Juvet.Template.Compiler.Slack.Elements.Image, as: ImageElement
   alias Juvet.Template.Compiler.Slack.Objects.Text
-
-  import Juvet.Template.Compiler.Encoder.Helpers, only: [maybe_put: 3]
 
   def compile(%{element: :context} = el) do
     %{type: "context", elements: compile_elements(el)}
@@ -16,11 +15,9 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Context do
 
   defp compile_elements(_el), do: []
 
-  # Images in context are rendered as image objects (not blocks)
-  defp compile_context_element(%{element: :image, attributes: attrs}) do
-    %{type: "image"}
-    |> maybe_put(:image_url, attrs[:url])
-    |> maybe_put(:alt_text, attrs[:alt_text])
+  # Images in context are rendered as image elements
+  defp compile_context_element(%{element: :image} = el) do
+    ImageElement.compile(el)
   end
 
   # Text elements are rendered as text objects

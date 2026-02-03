@@ -1480,6 +1480,225 @@ defmodule Juvet.Template.Compiler.SlackTest do
     end
   end
 
+  describe "compile/1 with datetimepicker" do
+    test "datetimepicker with action_id and initial_date_time in actions block" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datetimepicker,
+                  attributes: %{action_id: "datetime_1", initial_date_time: 1_628_633_820}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datetimepicker] = actions.elements
+
+      assert datetimepicker == %{
+               type: "datetimepicker",
+               action_id: "datetime_1",
+               initial_date_time: 1_628_633_820
+             }
+    end
+
+    test "datetimepicker as section accessory" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Pick a date and time"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :datetimepicker,
+                attributes: %{action_id: "datetime_1"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Pick a date and time"},
+                   accessory: %{
+                     type: "datetimepicker",
+                     action_id: "datetime_1"
+                   }
+                 }
+               ])
+    end
+
+    test "datetimepicker with focus_on_load" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datetimepicker,
+                  attributes: %{action_id: "datetime_1", focus_on_load: true}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datetimepicker] = actions.elements
+
+      assert datetimepicker == %{
+               type: "datetimepicker",
+               action_id: "datetime_1",
+               focus_on_load: true
+             }
+    end
+
+    test "datetimepicker with only action_id" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :datetimepicker,
+                  attributes: %{action_id: "datetime_1"}
+                }
+              ]
+            }
+          }
+        ])
+
+      result = Slack.compile(ast)
+      [actions] = result.blocks
+      [datetimepicker] = actions.elements
+
+      assert datetimepicker == %{type: "datetimepicker", action_id: "datetime_1"}
+    end
+  end
+
+  describe "compile/1 with image element" do
+    test "image element with slack_file as section accessory" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :section,
+            attributes: %{text: "Profile photo"},
+            children: %{
+              accessory: %{
+                platform: :slack,
+                element: :image,
+                attributes: %{slack_file: %{id: "F0123456"}, alt_text: "Avatar"}
+              }
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Profile photo"},
+                   accessory: %{
+                     type: "image",
+                     slack_file: %{id: "F0123456"},
+                     alt_text: "Avatar"
+                   }
+                 }
+               ])
+    end
+
+    test "image element with slack_file in context" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :image,
+                  attributes: %{slack_file: %{id: "F0123456"}, alt_text: "Icon"}
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "context",
+                   elements: [
+                     %{
+                       type: "image",
+                       slack_file: %{id: "F0123456"},
+                       alt_text: "Icon"
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "image element with url and alt_text in context" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :context,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :image,
+                  attributes: %{url: "http://example.com/icon.png", alt_text: "Icon"}
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "context",
+                   elements: [
+                     %{
+                       type: "image",
+                       image_url: "http://example.com/icon.png",
+                       alt_text: "Icon"
+                     }
+                   ]
+                 }
+               ])
+    end
+  end
+
   describe "compile/1 with datepicker" do
     test "datepicker with action_id and initial_date in actions block" do
       ast =

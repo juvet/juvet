@@ -121,6 +121,8 @@ lib/juvet/template/
       elements/
         button.ex                  # Compiler.Slack.Elements.Button
         datepicker.ex              # Compiler.Slack.Elements.Datepicker
+        datetimepicker.ex          # Compiler.Slack.Elements.Datetimepicker
+        image.ex                   # Compiler.Slack.Elements.Image
         overflow.ex                # Compiler.Slack.Elements.Overflow
         select.ex                  # Compiler.Slack.Elements.Select
       objects/
@@ -166,6 +168,7 @@ The compiler applies platform-specific transformations when converting AST to JS
 | `:image` | `"image"` |
 | `:button` | `"button"` |
 | `:datepicker` | `"datepicker"` |
+| `:datetimepicker` | `"datetimepicker"` |
 | `:overflow` | `"overflow"` |
 | `:actions` | `"actions"` |
 | `:view` | `"modal"`, `"home"` (from `type` attribute) |
@@ -1613,7 +1616,24 @@ The datepicker element has been implemented. It supports `action_id`, `initial_d
 }
 ```
 
-The following date/time pickers are planned for future implementation:
+The datetimepicker element has been implemented. It supports `action_id`, `initial_date_time` (UNIX timestamp in seconds), and `focus_on_load`.
+
+```elixir
+# Datetime picker AST
+%{platform: :slack, element: :datetimepicker, attributes: %{
+  action_id: "datetime_1",
+  initial_date_time: 1628633820
+}}
+
+# Output JSON
+{
+  "type": "datetimepicker",
+  "action_id": "datetime_1",
+  "initial_date_time": 1628633820
+}
+```
+
+The following time picker is planned for future implementation:
 
 ```elixir
 # Time picker
@@ -1621,12 +1641,6 @@ The following date/time pickers are planned for future implementation:
   action_id: "time_1",
   initial_time: "09:00",
   placeholder: "Select a time"
-}}
-
-# Datetime picker
-%{platform: :slack, element: :datetimepicker, attributes: %{
-  action_id: "datetime_1",
-  initial_date_time: 1672531200
 }}
 ```
 
