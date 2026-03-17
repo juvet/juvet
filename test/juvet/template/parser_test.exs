@@ -514,8 +514,7 @@ defmodule Juvet.Template.ParserTest do
 
   describe "parse/1 - Phase 10: For-loop support" do
     test "simple for-loop produces for_loop AST node" do
-      template =
-        "<%= for item <- items do %>\n:slack.section{text: \"<%= item %>\"}\n<% end %>"
+      template = "<%= for item <- items do %>\n:slack.section{text: \"<%= item %>\"}\n<% end %>"
 
       assert parse(template) == [
                %{
@@ -567,8 +566,7 @@ defmodule Juvet.Template.ParserTest do
     end
 
     test "for-loop with EEx expression in value position" do
-      template =
-        ":slack.section{text: <%= decision %>, type: :mrkdwn}"
+      template = ":slack.section{text: <%= decision %>, type: :mrkdwn}"
 
       [section] = parse(template)
 
