@@ -43,6 +43,34 @@ defmodule Juvet.Template.Parser do
   defp do_parse([{:dedent, _, _} | rest], acc, platform), do: do_parse(rest, acc, platform)
   defp do_parse([{:newline, _, _} | rest], acc, platform), do: do_parse(rest, acc, platform)
 
+  # EEx expression at top level - detect for-loop or skip
+  defp do_parse([{:eex_expr, expr, pos} | rest], acc, platform) do
+    case parse_for_expression(expr) do
+      {:ok, variable, collection} ->
+        {body, rest} = parse_for_body(rest, [], platform)
+
+        for_node = %{
+          node_type: :for_loop,
+          variable: variable,
+          collection: collection,
+          body: body,
+          line: elem(pos, 0),
+          column: elem(pos, 1)
+        }
+
+        do_parse(rest, [for_node | acc], platform)
+
+      :error ->
+        raise ParserError,
+          message: "Unsupported EEx expression '#{expr}', only for loops are supported",
+          line: elem(pos, 0),
+          column: elem(pos, 1)
+    end
+  end
+
+  # Skip EEx code tokens (like 'end') at top level
+  defp do_parse([{:eex_code, _, _} | rest], acc, platform), do: do_parse(rest, acc, platform)
+
   defp do_parse([{:colon, _, _} | _] = tokens, acc, platform) do
     {el, rest} = element(tokens)
     do_parse(rest, [el | acc], platform)
@@ -166,7 +194,7 @@ defmodule Juvet.Template.Parser do
   defp block([{:whitespace, _, _} | rest], attrs, children, platform),
     do: block(rest, attrs, children, platform)
 
-  # Nested element(s) - key followed by newline+indent+element start (:colon or .dot)
+  # Nested element(s) - key followed by newline+indent+element start (:colon, .dot, or eex_expr)
   defp block(
          [{:keyword, _, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _}, {start, _, _} | _] =
            tokens,
@@ -174,7 +202,7 @@ defmodule Juvet.Template.Parser do
          children,
          platform
        )
-       when start in [:colon, :dot] do
+       when start in [:colon, :dot, :eex_expr] do
     [{:keyword, key, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _} | rest] = tokens
     {nested, rest} = nested_elements(rest, [], platform)
 
@@ -234,6 +262,35 @@ defmodule Juvet.Template.Parser do
     nested_elements(rest, [el | acc], platform)
   end
 
+  # EEx expression inside nested elements - detect for-loop
+  defp nested_elements([{:eex_expr, expr, pos} | rest], acc, platform) do
+    case parse_for_expression(expr) do
+      {:ok, variable, collection} ->
+        {body, rest} = parse_for_body(rest, [], platform)
+
+        for_node = %{
+          node_type: :for_loop,
+          variable: variable,
+          collection: collection,
+          body: body,
+          line: elem(pos, 0),
+          column: elem(pos, 1)
+        }
+
+        nested_elements(rest, [for_node | acc], platform)
+
+      :error ->
+        raise ParserError,
+          message: "Unsupported EEx expression '#{expr}', only for loops are supported",
+          line: elem(pos, 0),
+          column: elem(pos, 1)
+    end
+  end
+
+  # Skip EEx code tokens (like 'end') in nested elements
+  defp nested_elements([{:eex_code, _, _} | rest], acc, platform),
+    do: nested_elements(rest, acc, platform)
+
   # Collect nested key-value pairs into a map until dedent.
   #
   # Example token stream for:
@@ -275,6 +332,7 @@ defmodule Juvet.Template.Parser do
   defp value([{:boolean, "false", _} | rest]), do: {false, rest}
   defp value([{:atom, atom_str, _} | rest]), do: {parse_atom(atom_str), rest}
   defp value([{:number, num_str, _} | rest]), do: {parse_number(num_str), rest}
+  defp value([{:eex_expr, expr, _} | rest]), do: {"<%= #{expr} %>", rest}
 
   # Unexpected value type
   defp value([{type, val, {line, col}} | _]) do
@@ -307,5 +365,88 @@ defmodule Juvet.Template.Parser do
     else
       String.to_integer(str)
     end
+  end
+
+  # Parses a for-loop expression like "for item <- items do"
+  # Returns {:ok, variable, collection} or :error
+  defp parse_for_expression(expr) do
+    case Regex.run(~r/\Afor\s+(\w+)\s*<-\s*(\w+)\s+do\z/, expr) do
+      [_, variable, collection] -> {:ok, variable, collection}
+      _ -> :error
+    end
+  end
+
+  # Collects elements inside a for-loop body until {:eex_code, "end", _}.
+  # Supports :colon, :dot, nested :eex_expr, skipping whitespace/newlines/indent/dedent.
+  defp parse_for_body([{:eex_code, "end", _} | rest], acc, _platform) do
+    {Enum.reverse(acc), rest}
+  end
+
+  defp parse_for_body([], _acc, _platform) do
+    raise ParserError,
+      message: "Unexpected end of template, expected <% end %> to close for loop",
+      line: nil,
+      column: nil
+  end
+
+  defp parse_for_body([{:newline, _, _} | rest], acc, platform),
+    do: parse_for_body(rest, acc, platform)
+
+  defp parse_for_body([{:whitespace, _, _} | rest], acc, platform),
+    do: parse_for_body(rest, acc, platform)
+
+  defp parse_for_body([{:indent, _, _} | rest], acc, platform),
+    do: parse_for_body(rest, acc, platform)
+
+  defp parse_for_body([{:dedent, _, _} | rest], acc, platform),
+    do: parse_for_body(rest, acc, platform)
+
+  defp parse_for_body([{:colon, _, _} | _] = tokens, acc, platform) do
+    {el, rest} = element(tokens)
+    parse_for_body(rest, [el | acc], platform)
+  end
+
+  defp parse_for_body([{:dot, _, _} | _] = tokens, acc, platform) when platform != nil do
+    {el, rest} = element(tokens, platform)
+    parse_for_body(rest, [el | acc], platform)
+  end
+
+  defp parse_for_body([{:dot, _, {line, col}} | _], _acc, _platform) do
+    raise ParserError,
+      message:
+        "Element with '.' shorthand must be inside a parent element that specifies a platform",
+      line: line,
+      column: col
+  end
+
+  defp parse_for_body([{:eex_expr, expr, pos} | rest], acc, platform) do
+    case parse_for_expression(expr) do
+      {:ok, variable, collection} ->
+        {body, rest} = parse_for_body(rest, [], platform)
+
+        for_node = %{
+          node_type: :for_loop,
+          variable: variable,
+          collection: collection,
+          body: body,
+          line: elem(pos, 0),
+          column: elem(pos, 1)
+        }
+
+        parse_for_body(rest, [for_node | acc], platform)
+
+      :error ->
+        raise ParserError,
+          message: "Unsupported EEx expression '#{expr}', only for loops are supported",
+          line: elem(pos, 0),
+          column: elem(pos, 1)
+    end
+  end
+
+  defp parse_for_body([{:eof, _, _}], _acc, _platform) do
+    raise ParserError,
+      message: "Unexpected end of template, expected <% end %> to close for loop",
+      line: nil,
+      column: nil
   end
 end

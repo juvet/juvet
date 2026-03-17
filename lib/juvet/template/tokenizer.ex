@@ -533,6 +533,34 @@ defmodule Juvet.Template.Tokenizer do
     )
   end
 
+  # EEx expression tag: <%= ... %> (output expression, e.g. for loops)
+  defp do_tokenize([?<, ?%, ?= | rest], {line, col}, tokens, indent_stack) do
+    {content, remaining} = take_eex_tag(rest, [], {line, col})
+    content_str = String.trim(to_string(content))
+    new_col = col + 3 + length(content) + 2
+
+    do_tokenize(
+      remaining,
+      {line, new_col},
+      [{:eex_expr, content_str, {line, col}} | tokens],
+      indent_stack
+    )
+  end
+
+  # EEx code tag: <% ... %> (code blocks, e.g. end)
+  defp do_tokenize([?<, ?% | rest], {line, col}, tokens, indent_stack) do
+    {content, remaining} = take_eex_tag(rest, [], {line, col})
+    content_str = String.trim(to_string(content))
+    new_col = col + 2 + length(content) + 2
+
+    do_tokenize(
+      remaining,
+      {line, new_col},
+      [{:eex_code, content_str, {line, col}} | tokens],
+      indent_stack
+    )
+  end
+
   # Unexpected character - raise error
   defp do_tokenize([c | _rest], {line, col}, _tokens, _indent_stack) do
     raise Juvet.Template.Tokenizer.Error,
@@ -595,6 +623,22 @@ defmodule Juvet.Template.Tokenizer do
 
   defp take_number(rest, acc) do
     {Enum.reverse(acc), rest}
+  end
+
+  # Collect EEx tag content until %>
+  defp take_eex_tag([?%, ?> | rest], acc, _pos) do
+    {Enum.reverse(acc), rest}
+  end
+
+  defp take_eex_tag([], _acc, {line, col}) do
+    raise Juvet.Template.Tokenizer.Error,
+      message: "Unclosed EEx tag",
+      line: line,
+      column: col
+  end
+
+  defp take_eex_tag([c | rest], acc, pos) do
+    take_eex_tag(rest, [c | acc], pos)
   end
 
   # Collect unquoted text until {, ", :, or newline

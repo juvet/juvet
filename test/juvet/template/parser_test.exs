@@ -20,6 +20,12 @@ defmodule Juvet.Template.ParserTest do
 
   defp strip_positions(ast) when is_list(ast), do: Enum.map(ast, &strip_positions/1)
 
+  defp strip_positions(%{node_type: :for_loop} = node) do
+    node
+    |> Map.drop([:line, :column])
+    |> Map.update!(:body, &strip_positions/1)
+  end
+
   defp strip_positions(%{} = element) do
     element
     |> Map.drop([:line, :column])
@@ -503,6 +509,79 @@ defmodule Juvet.Template.ParserTest do
                    fn ->
                      parse(".header{text: \"Hello\"}")
                    end
+    end
+  end
+
+  describe "parse/1 - Phase 10: For-loop support" do
+    test "simple for-loop produces for_loop AST node" do
+      template =
+        "<%= for item <- items do %>\n:slack.section{text: \"<%= item %>\"}\n<% end %>"
+
+      assert parse(template) == [
+               %{
+                 node_type: :for_loop,
+                 variable: "item",
+                 collection: "items",
+                 body: [
+                   %{
+                     platform: :slack,
+                     element: :section,
+                     attributes: %{text: "<%= item %>"}
+                   }
+                 ]
+               }
+             ]
+    end
+
+    test "for-loop with multiple body elements" do
+      template =
+        "<%= for item <- items do %>\n:slack.section{text: \"<%= item %>\"}\n:slack.divider\n<% end %>"
+
+      [for_node] = parse(template)
+
+      assert for_node.node_type == :for_loop
+      assert length(for_node.body) == 2
+      assert Enum.at(for_node.body, 0).element == :section
+      assert Enum.at(for_node.body, 1).element == :divider
+    end
+
+    test "for-loop inside blocks with platform inheritance" do
+      template =
+        ":slack.view\n  type: :modal\n  blocks:\n    :slack.header{text: \"Title\"}\n    <%= for item <- items do %>\n    .section{text: \"<%= item %>\"}\n    <% end %>\n    :slack.divider"
+
+      [view] = parse(template)
+
+      assert view.element == :view
+      blocks = view.children.blocks
+      assert length(blocks) == 3
+
+      [header, for_node, divider] = blocks
+      assert header.element == :header
+      assert for_node.node_type == :for_loop
+      assert for_node.variable == "item"
+      assert for_node.collection == "items"
+      assert length(for_node.body) == 1
+      assert hd(for_node.body).element == :section
+      assert hd(for_node.body).platform == :slack
+      assert divider.element == :divider
+    end
+
+    test "for-loop with EEx expression in value position" do
+      template =
+        ":slack.section{text: <%= decision %>, type: :mrkdwn}"
+
+      [section] = parse(template)
+
+      assert section.attributes.text == "<%= decision %>"
+      assert section.attributes.type == :mrkdwn
+    end
+
+    test "missing end tag raises error" do
+      template = "<%= for item <- items do %>\n:slack.section{text: \"Hello\"}"
+
+      assert_raise Juvet.Template.Parser.Error,
+                   ~r/expected <% end %> to close for loop/,
+                   fn -> parse(template) end
     end
   end
 

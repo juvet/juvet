@@ -65,7 +65,16 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile([%{element: :view} = view]), do: View.compile(view)
 
   @doc false
-  @spec compile_element(Compiler.ast_element()) :: map()
+  @spec compile_element(Compiler.ast_element() | map()) :: map()
+  def compile_element(%{node_type: :for_loop} = node) do
+    %{
+      __for__: true,
+      variable: node.variable,
+      collection: node.collection,
+      body: Enum.map(node.body, &compile_element/1)
+    }
+  end
+
   def compile_element(%{element: :actions} = el), do: Actions.compile(el)
   def compile_element(%{element: :button} = el), do: Button.compile(el)
   def compile_element(%{element: :checkboxes} = el), do: Checkboxes.compile(el)
