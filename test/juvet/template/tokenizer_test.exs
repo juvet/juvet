@@ -303,5 +303,37 @@ defmodule Juvet.Template.TokenizerTest do
                {:eof, "", {4, 15}}
              ] = Tokenizer.tokenize(template)
     end
+
+    # EEx tag tokens
+
+    test "EEx expression tag produces :eex_expr token" do
+      tokens = Tokenizer.tokenize("<%= for x <- items do %>")
+
+      assert [{:eex_expr, "for x <- items do", {1, 1}} | _] = tokens
+    end
+
+    test "EEx code tag produces :eex_code token" do
+      tokens = Tokenizer.tokenize("<% end %>")
+
+      assert [{:eex_code, "end", {1, 1}} | _] = tokens
+    end
+
+    test "unclosed EEx tag raises error" do
+      assert_raise Juvet.Template.Tokenizer.Error,
+                   ~r/Unclosed EEx tag/,
+                   fn -> Tokenizer.tokenize("<%= for x <- items do") end
+    end
+
+    test "EEx expression inside quoted text remains part of :text token" do
+      tokens = Tokenizer.tokenize("\"Hello <%= name %>\"")
+
+      assert [{:text, "\"Hello <%= name %>\"", {1, 1}}, {:eof, "", _}] = tokens
+    end
+
+    test "EEx expression tag with whitespace trimming" do
+      tokens = Tokenizer.tokenize("<%=   for x <- items do   %>")
+
+      assert [{:eex_expr, "for x <- items do", {1, 1}} | _] = tokens
+    end
   end
 end

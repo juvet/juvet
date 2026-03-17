@@ -281,6 +281,9 @@ defmodule Juvet.Template do
         %{element: :partial} ->
           resolve_partial(element, existing_asts, stack)
 
+        %{node_type: :for_loop} = node ->
+          [%{node | body: resolve_partials(node.body, existing_asts, stack)}]
+
         %{children: children} = el when is_map(children) ->
           [%{el | children: resolve_partials_in_children(children, existing_asts, stack)}]
 
@@ -406,6 +409,10 @@ defmodule Juvet.Template do
   #   result: %{text: "Hello <%= user_name %>"}
   defp substitute_bindings(ast, bindings) when is_list(ast) do
     Enum.map(ast, &substitute_bindings(&1, bindings))
+  end
+
+  defp substitute_bindings(%{node_type: :for_loop} = node, bindings) do
+    %{node | body: substitute_bindings(node.body, bindings)}
   end
 
   defp substitute_bindings(%{} = element, bindings) do
@@ -569,44 +576,159 @@ defmodule Juvet.Template do
   end
 
   # Generates the quoted function definition for a template.
-  #
-  # For `:json` format: encodes the map to JSON, then uses EEx.eval_string
-  # for dynamic templates or returns the static JSON string directly.
-  #
-  # For `:map` format: uses Macro.escape to embed the map, then uses
-  # eval_map/2 for dynamic templates or returns the map directly.
-  defp generate_template_function(name, compiled, format) do
-    case format do
-      :json ->
+  defp generate_template_function(name, compiled, :json),
+    do: generate_json_function(name, compiled)
+
+  defp generate_template_function(name, compiled, :map),
+    do: generate_map_function(name, compiled)
+
+  defp generate_json_function(name, compiled) when is_map(compiled) do
+    cond do
+      map_contains_for?(compiled) ->
+        bindings_var = Macro.var(:bindings, __MODULE__)
+        body = compiled_to_quoted(compiled, bindings_var)
+
+        quote do
+          def unquote(name)(bindings \\ []) do
+            unquote(bindings_var) = bindings
+            Juvet.Template.Compiler.Encoder.encode!(unquote(body))
+          end
+        end
+
+      map_contains_eex?(compiled) ->
         json = Compiler.Encoder.encode!(compiled)
 
-        if String.contains?(json, "<%") do
-          quote do
-            def unquote(name)(bindings \\ []) do
-              EEx.eval_string(unquote(json), bindings)
-            end
-          end
-        else
-          quote do
-            def unquote(name)(_bindings \\ []), do: unquote(json)
+        quote do
+          def unquote(name)(bindings \\ []) do
+            EEx.eval_string(unquote(json), bindings)
           end
         end
 
-      :map ->
-        escaped = Macro.escape(compiled)
+      true ->
+        json = Compiler.Encoder.encode!(compiled)
 
-        if map_contains_eex?(compiled) do
-          quote do
-            def unquote(name)(bindings \\ []) do
-              Juvet.Template.eval_map(unquote(escaped), bindings)
-            end
-          end
-        else
-          quote do
-            def unquote(name)(_bindings \\ []), do: unquote(escaped)
-          end
+        quote do
+          def unquote(name)(_bindings \\ []), do: unquote(json)
         end
     end
+  end
+
+  defp generate_map_function(name, compiled) when is_map(compiled) do
+    cond do
+      map_contains_for?(compiled) ->
+        bindings_var = Macro.var(:bindings, __MODULE__)
+        body = compiled_to_quoted(compiled, bindings_var)
+
+        quote do
+          def unquote(name)(bindings \\ []) do
+            unquote(bindings_var) = bindings
+            unquote(body)
+          end
+        end
+
+      map_contains_eex?(compiled) ->
+        escaped = Macro.escape(compiled)
+
+        quote do
+          def unquote(name)(bindings \\ []) do
+            Juvet.Template.eval_map(unquote(escaped), bindings)
+          end
+        end
+
+      true ->
+        escaped = Macro.escape(compiled)
+
+        quote do
+          def unquote(name)(_bindings \\ []), do: unquote(escaped)
+        end
+    end
+  end
+
+  # Transforms a compiled map/list structure into quoted Elixir AST.
+  # Handles __for__ markers by generating real `for` comprehensions.
+  defp compiled_to_quoted(%{__for__: true} = node, bindings_var) do
+    variable = String.to_atom(node.variable)
+    collection = String.to_atom(node.collection)
+    item_var = Macro.var(variable, __MODULE__)
+
+    body_elements =
+      Enum.map(node.body, fn body_el ->
+        escaped_body = Macro.escape(body_el)
+
+        quote do
+          Juvet.Template.eval_map(
+            unquote(escaped_body),
+            Keyword.put(unquote(bindings_var), unquote(variable), unquote(item_var))
+          )
+        end
+      end)
+
+    # If single body element, return it directly from for; if multiple, wrap in list and flatten
+    case body_elements do
+      [single] ->
+        quote do
+          for unquote(item_var) <- Keyword.fetch!(unquote(bindings_var), unquote(collection)) do
+            unquote(single)
+          end
+        end
+
+      multiple ->
+        quote do
+          Enum.flat_map(
+            Keyword.fetch!(unquote(bindings_var), unquote(collection)),
+            fn unquote(item_var) ->
+              unquote(multiple)
+            end
+          )
+        end
+    end
+  end
+
+  defp compiled_to_quoted(map, bindings_var) when is_map(map) do
+    pairs =
+      Enum.map(map, fn {k, v} ->
+        {Macro.escape(k), compiled_to_quoted(v, bindings_var)}
+      end)
+
+    {:%{}, [], pairs}
+  end
+
+  defp compiled_to_quoted(list, bindings_var) when is_list(list) do
+    if Enum.any?(list, &match?(%{__for__: true}, &1)) do
+      segments =
+        list
+        |> Enum.chunk_by(&match?(%{__for__: true}, &1))
+        |> Enum.flat_map(&chunk_to_quoted_segment(&1, bindings_var))
+
+      quote do
+        Enum.concat(unquote(segments))
+      end
+    else
+      Enum.map(list, &compiled_to_quoted(&1, bindings_var))
+    end
+  end
+
+  defp compiled_to_quoted(string, bindings_var) when is_binary(string) do
+    if String.contains?(string, "<%") do
+      quote do
+        Juvet.Template.eval_map(unquote(string), unquote(bindings_var))
+      end
+    else
+      Macro.escape(string)
+    end
+  end
+
+  defp compiled_to_quoted(value, _bindings_var), do: Macro.escape(value)
+
+  # Converts a chunk of elements (from Enum.chunk_by) into Enum.concat segments.
+  # For-loop chunks become individual for comprehensions; static chunks become a literal list.
+  defp chunk_to_quoted_segment([%{__for__: true} | _] = chunk, bindings_var) do
+    Enum.map(chunk, &compiled_to_quoted(&1, bindings_var))
+  end
+
+  defp chunk_to_quoted_segment(static_elements, bindings_var) do
+    quoted_elements = Enum.map(static_elements, &compiled_to_quoted(&1, bindings_var))
+    [quoted_elements]
   end
 
   defp file_option_specified?(opts), do: Keyword.has_key?(opts, :file)
@@ -647,6 +769,10 @@ defmodule Juvet.Template do
     Enum.each(ast, &validate_platform_element!(&1, expected))
   end
 
+  defp validate_platform_element!(%{node_type: :for_loop} = node, expected) do
+    validate_platform!(node.body, expected)
+  end
+
   defp validate_platform_element!(%{platform: platform, line: line, column: col}, expected)
        when platform != expected do
     raise ArgumentError,
@@ -680,4 +806,15 @@ defmodule Juvet.Template do
     do: String.contains?(s, "<%")
 
   defp map_contains_eex?(_), do: false
+
+  # Checks if a compiled structure contains any __for__ markers.
+  defp map_contains_for?(%{__for__: true}), do: true
+
+  defp map_contains_for?(map) when is_map(map),
+    do: Enum.any?(map, fn {_k, v} -> map_contains_for?(v) end)
+
+  defp map_contains_for?(list) when is_list(list),
+    do: Enum.any?(list, &map_contains_for?/1)
+
+  defp map_contains_for?(_), do: false
 end

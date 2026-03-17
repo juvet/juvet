@@ -898,6 +898,144 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "for-loop support" do
+    defmodule ForLoopTemplates do
+      use Juvet.Template
+
+      template(:simple_loop, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Decisions"}
+          <%= for decision <- decisions do %>
+          .section{text: "<%= decision %>", type: :mrkdwn}
+          <% end %>
+          :slack.divider
+      """)
+
+      template(:empty_collection, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Title"}
+          <%= for item <- items do %>
+          .section{text: "<%= item %>"}
+          <% end %>
+      """)
+
+      template(:loop_with_multiple_body, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+          .header{text: "<%= item %>"}
+          .divider
+          <% end %>
+      """)
+
+      template(:loop_only, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+          .section{text: "<%= item %>"}
+          <% end %>
+      """)
+    end
+
+    test "for-loop with bindings produces correct expanded output" do
+      result = ForLoopTemplates.simple_loop(decisions: ["Option A", "Option B"])
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Decisions"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Option A"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Option B"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "empty collection produces zero loop elements" do
+      result = ForLoopTemplates.empty_collection(items: [])
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Title"}}
+               ]
+             }
+    end
+
+    test "for-loop alongside static elements" do
+      result = ForLoopTemplates.simple_loop(decisions: ["Only One"])
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Decisions"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Only One"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "for-loop with multiple body elements" do
+      result = ForLoopTemplates.loop_with_multiple_body(items: ["A", "B"])
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "A"}},
+                 %{type: "divider"},
+                 %{type: "header", text: %{type: "plain_text", text: "B"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "for-loop as only blocks content" do
+      result = ForLoopTemplates.loop_only(items: ["X", "Y"])
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "X"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Y"}}
+               ]
+             }
+    end
+  end
+
+  describe "for-loop with JSON format" do
+    defmodule ForLoopJsonTemplates do
+      use Juvet.Template, format: :json
+
+      template(:json_loop, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+          .section{text: "<%= item %>"}
+          <% end %>
+      """)
+    end
+
+    test "for-loop produces correct JSON output" do
+      result = ForLoopJsonTemplates.json_loop(items: ["Hello", "World"])
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "Hello"}},
+                 %{"type" => "section", "text" => %{"type" => "mrkdwn", "text" => "World"}}
+               ]
+             })
+    end
+  end
+
   describe "inline platform keyword syntax" do
     defmodule InlinePlatformTemplates do
       use Juvet.Template
