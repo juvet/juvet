@@ -1074,6 +1074,150 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "code block support" do
+    defmodule CodeBlockTemplates do
+      use Juvet.Template
+
+      template(:code_block_simple, """
+      :slack.view
+        type: :modal
+        blocks:
+          <% x = 1 %>
+          .section{text: "<%= x %>", type: :mrkdwn}
+      """)
+
+      template(:sequential_code_blocks, """
+      :slack.view
+        type: :modal
+        blocks:
+          <% x = 1 %>
+          <% y = x + 1 %>
+          .section{text: "<%= y %>", type: :mrkdwn}
+      """)
+
+      template(:code_block_with_bindings, """
+      :slack.view
+        type: :modal
+        blocks:
+          <% result = String.upcase(name) %>
+          .section{text: "<%= result %>", type: :mrkdwn}
+      """)
+
+      template(:code_block_in_loop, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+          <% upper = String.upcase(item) %>
+          .section{text: "<%= upper %>", type: :mrkdwn}
+          <% end %>
+      """)
+
+      template(:code_block_with_static_before, """
+      :slack.view
+        type: :modal
+        blocks:
+          .header{text: "Title"}
+          <% x = 1 %>
+          .section{text: "<%= x %>", type: :mrkdwn}
+          .divider
+      """)
+    end
+
+    test "simple code block defines variable for subsequent elements" do
+      result = CodeBlockTemplates.code_block_simple()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "1"}}
+               ]
+             }
+    end
+
+    test "sequential code blocks can reference previous variables" do
+      result = CodeBlockTemplates.sequential_code_blocks()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "2"}}
+               ]
+             }
+    end
+
+    test "code block can use bindings passed to template" do
+      result = CodeBlockTemplates.code_block_with_bindings(name: "hello")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "HELLO"}}
+               ]
+             }
+    end
+
+    test "code block inside for-loop body with per-iteration scope" do
+      result = CodeBlockTemplates.code_block_in_loop(items: ["hello", "world"])
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "HELLO"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "WORLD"}}
+               ]
+             }
+    end
+
+    test "code block mixed with static elements" do
+      result = CodeBlockTemplates.code_block_with_static_before()
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Title"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "1"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+
+    test "error in code block raises with line/column context" do
+      assert_raise RuntimeError, ~r/Error in code block at line .*, column .*/, fn ->
+        Code.eval_string("""
+        defmodule CodeBlockErrorTemplate do
+          use Juvet.Template
+
+          template(:bad_code_block, \"\"\"
+          :slack.view
+            type: :modal
+            blocks:
+              <% result = nonexistent_function() %>
+              .section{text: "<%= result %>", type: :mrkdwn}
+          \"\"\")
+        end
+
+        CodeBlockErrorTemplate.bad_code_block()
+        """)
+      end
+    end
+
+    test "existing for-loop templates still work" do
+      alias Juvet.TemplateTest.ForLoopTemplates
+      result = ForLoopTemplates.simple_loop(decisions: ["A", "B"])
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Decisions"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "A"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "B"}},
+                 %{type: "divider"}
+               ]
+             }
+    end
+  end
+
   describe "inline platform keyword syntax" do
     defmodule InlinePlatformTemplates do
       use Juvet.Template

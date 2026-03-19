@@ -66,6 +66,10 @@ defmodule Juvet.Template.Compiler.Slack do
 
   @doc false
   @spec compile_element(Compiler.ast_element() | map()) :: map()
+  def compile_element(%{node_type: :code_block} = node) do
+    %{__code_block__: true, code: node.code, line: node.line, column: node.column}
+  end
+
   def compile_element(%{node_type: :for_loop} = node) do
     %{
       __for__: true,

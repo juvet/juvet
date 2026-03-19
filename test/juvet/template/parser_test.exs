@@ -26,6 +26,10 @@ defmodule Juvet.Template.ParserTest do
     |> Map.update!(:body, &strip_positions/1)
   end
 
+  defp strip_positions(%{node_type: :code_block} = node) do
+    Map.drop(node, [:line, :column])
+  end
+
   defp strip_positions(%{} = element) do
     element
     |> Map.drop([:line, :column])
@@ -588,6 +592,83 @@ defmodule Juvet.Template.ParserTest do
       assert_raise Juvet.Template.Parser.Error,
                    ~r/expected <% end %> to close for loop/,
                    fn -> parse(template) end
+    end
+  end
+
+  describe "parse/1 - Phase 11: Code block support" do
+    test "top-level code block produces code_block AST node" do
+      template = "<% x = 1 %>\n:slack.section{text: \"<%= x %>\"}"
+
+      assert parse(template) == [
+               %{node_type: :code_block, code: "x = 1"},
+               %{
+                 platform: :slack,
+                 element: :section,
+                 attributes: %{text: "<%= x %>"}
+               }
+             ]
+    end
+
+    test "end tag is still handled as for-loop terminator" do
+      template = "<%= for item <- items do %>\n:slack.section{text: \"<%= item %>\"}\n<% end %>"
+
+      result = parse(template)
+
+      assert [%{node_type: :for_loop}] = result
+    end
+
+    test "code block inside blocks children produces code_block node" do
+      template =
+        ":slack.view\n  type: :modal\n  blocks:\n    <% x = 1 %>\n    .section{text: \"<%= x %>\"}"
+
+      [view] = parse(template)
+      blocks = view.children.blocks
+
+      assert [
+               %{node_type: :code_block, code: "x = 1"},
+               %{element: :section}
+             ] = blocks
+    end
+
+    test "code block inside for-loop body produces code_block node" do
+      template =
+        "<%= for item <- items do %>\n<% upper = String.upcase(item) %>\n:slack.section{text: \"<%= upper %>\"}\n<% end %>"
+
+      [for_node] = parse(template)
+
+      assert for_node.node_type == :for_loop
+
+      assert [
+               %{node_type: :code_block, code: "upper = String.upcase(item)"},
+               %{element: :section}
+             ] = for_node.body
+    end
+
+    test "multiple code blocks interleaved with elements preserve order" do
+      template =
+        "<% x = 1 %>\n:slack.header{text: \"Title\"}\n<% y = 2 %>\n:slack.section{text: \"<%= y %>\"}"
+
+      assert parse(template) == [
+               %{node_type: :code_block, code: "x = 1"},
+               %{platform: :slack, element: :header, attributes: %{text: "Title"}},
+               %{node_type: :code_block, code: "y = 2"},
+               %{
+                 platform: :slack,
+                 element: :section,
+                 attributes: %{text: "<%= y %>"}
+               }
+             ]
+    end
+
+    test "code block includes line and column" do
+      template = "<% x = 1 %>"
+
+      [node] = parse_with_positions(template)
+
+      assert node.line == 1
+      assert node.column == 1
+      assert node.node_type == :code_block
+      assert node.code == "x = 1"
     end
   end
 

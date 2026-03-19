@@ -5059,4 +5059,29 @@ defmodule Juvet.Template.Compiler.SlackTest do
              }
     end
   end
+
+  describe "compile_element/1 with code_block" do
+    test "code_block AST node compiles to marker map" do
+      node = %{node_type: :code_block, code: "x = 1", line: 3, column: 5}
+
+      result = Slack.compile_element(node)
+
+      assert result == %{__code_block__: true, code: "x = 1", line: 3, column: 5}
+    end
+
+    test "code_block in a blocks list compiles alongside regular elements" do
+      ast =
+        view_ast([
+          %{node_type: :code_block, code: "x = 1", line: 3, column: 5},
+          %{platform: :slack, element: :section, attributes: %{text: "<%= x %>"}}
+        ])
+
+      result = Slack.compile(ast)
+
+      assert [
+               %{__code_block__: true, code: "x = 1"},
+               %{type: "section", text: %{type: "mrkdwn", text: "<%= x %>"}}
+             ] = result.blocks
+    end
+  end
 end
