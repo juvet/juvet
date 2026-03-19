@@ -71,7 +71,14 @@ defmodule Juvet.Template do
   """
   defmacro __using__(opts) do
     format = Keyword.get(opts, :format, :map)
+
+    helpers =
+      opts
+      |> Keyword.get(:helpers, [])
+      |> Enum.map(&Macro.expand(&1, __CALLER__))
+
     Module.put_attribute(__CALLER__.module, :juvet_template_format, format)
+    Module.put_attribute(__CALLER__.module, :juvet_template_helpers, helpers)
 
     quote do
       import Juvet.Template, only: [template: 2, template: 3, partial: 2]
@@ -538,6 +545,7 @@ defmodule Juvet.Template do
     platform = extract_platform_from_filename(path)
 
     existing_asts = Module.get_attribute(caller.module, :juvet_template_asts) || %{}
+    helpers = Module.get_attribute(caller.module, :juvet_template_helpers) || []
     {ast, compiled} = compile_template!(name, source, existing_asts, platform: platform)
 
     Module.put_attribute(
@@ -546,10 +554,12 @@ defmodule Juvet.Template do
       Map.put(existing_asts, name, ast)
     )
 
+    helper_bindings = build_helper_bindings(helpers)
+
     quote do
       @juvet_templates unquote(name)
       @external_resource unquote(full_path)
-      unquote(generate_template_function(name, compiled, format))
+      unquote(generate_template_function(name, compiled, format, helper_bindings))
     end
   end
 
@@ -580,6 +590,7 @@ defmodule Juvet.Template do
   # Shared implementation for compiling inline template source.
   defp do_compile_template(name, source, format, caller, opts \\ []) do
     existing_asts = Module.get_attribute(caller.module, :juvet_template_asts) || %{}
+    helpers = Module.get_attribute(caller.module, :juvet_template_helpers) || []
     {ast, compiled} = compile_template!(name, source, existing_asts, opts)
 
     Module.put_attribute(
@@ -588,20 +599,22 @@ defmodule Juvet.Template do
       Map.put(existing_asts, name, ast)
     )
 
+    helper_bindings = build_helper_bindings(helpers)
+
     quote do
       @juvet_templates unquote(name)
-      unquote(generate_template_function(name, compiled, format))
+      unquote(generate_template_function(name, compiled, format, helper_bindings))
     end
   end
 
   # Generates the quoted function definition for a template.
-  defp generate_template_function(name, compiled, :json),
-    do: generate_json_function(name, compiled)
+  defp generate_template_function(name, compiled, :json, helper_bindings),
+    do: generate_json_function(name, compiled, helper_bindings)
 
-  defp generate_template_function(name, compiled, :map),
-    do: generate_map_function(name, compiled)
+  defp generate_template_function(name, compiled, :map, helper_bindings),
+    do: generate_map_function(name, compiled, helper_bindings)
 
-  defp generate_json_function(name, compiled) when is_map(compiled) do
+  defp generate_json_function(name, compiled, helper_bindings) when is_map(compiled) do
     cond do
       map_contains_for?(compiled) or map_contains_code_block?(compiled) ->
         bindings_var = Macro.var(:bindings, __MODULE__)
@@ -609,7 +622,7 @@ defmodule Juvet.Template do
 
         quote do
           def unquote(name)(bindings \\ []) do
-            unquote(bindings_var) = bindings
+            unquote(bindings_var) = Keyword.merge(unquote(helper_bindings), bindings)
             Juvet.Template.Compiler.Encoder.encode!(unquote(body))
           end
         end
@@ -619,7 +632,8 @@ defmodule Juvet.Template do
 
         quote do
           def unquote(name)(bindings \\ []) do
-            EEx.eval_string(unquote(json), bindings)
+            merged = Keyword.merge(unquote(helper_bindings), bindings)
+            EEx.eval_string(unquote(json), merged)
           end
         end
 
@@ -632,7 +646,7 @@ defmodule Juvet.Template do
     end
   end
 
-  defp generate_map_function(name, compiled) when is_map(compiled) do
+  defp generate_map_function(name, compiled, helper_bindings) when is_map(compiled) do
     cond do
       map_contains_for?(compiled) or map_contains_code_block?(compiled) ->
         bindings_var = Macro.var(:bindings, __MODULE__)
@@ -640,7 +654,7 @@ defmodule Juvet.Template do
 
         quote do
           def unquote(name)(bindings \\ []) do
-            unquote(bindings_var) = bindings
+            unquote(bindings_var) = Keyword.merge(unquote(helper_bindings), bindings)
             unquote(body)
           end
         end
@@ -650,7 +664,8 @@ defmodule Juvet.Template do
 
         quote do
           def unquote(name)(bindings \\ []) do
-            Juvet.Template.eval_map(unquote(escaped), bindings)
+            merged = Keyword.merge(unquote(helper_bindings), bindings)
+            Juvet.Template.eval_map(unquote(escaped), merged)
           end
         end
 
@@ -936,6 +951,37 @@ defmodule Juvet.Template do
   defp chunk_to_quoted_segment(static_elements, bindings_var) do
     quoted_elements = Enum.map(static_elements, &compiled_to_quoted(&1, bindings_var))
     [quoted_elements]
+  end
+
+  # Builds a quoted keyword list of function captures from helper modules.
+  # For each helper module, iterates its exported functions, keeps the highest
+  # arity per function name, and raises CompileError on cross-module conflicts.
+  defp build_helper_bindings(helpers) do
+    all_functions =
+      for module <- helpers,
+          {name, arity} <- module.__info__(:functions),
+          reduce: %{} do
+        acc ->
+          case Map.get(acc, name) do
+            nil ->
+              Map.put(acc, name, {module, arity})
+
+            {^module, existing_arity} ->
+              Map.put(acc, name, {module, max(arity, existing_arity)})
+
+            {other_module, _} ->
+              raise CompileError,
+                description:
+                  "Helper conflict: #{name} is defined in both #{inspect(module)} and #{inspect(other_module)}"
+          end
+      end
+
+    captures =
+      for {name, {module, arity}} <- all_functions do
+        {name, quote(do: &(unquote(module).unquote(name) / unquote(arity)))}
+      end
+
+    captures
   end
 
   defp file_option_specified?(opts), do: Keyword.has_key?(opts, :file)

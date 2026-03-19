@@ -2,6 +2,20 @@ defmodule Juvet.ViewStateManagerTest do
   use ExUnit.Case, async: false
 
   alias Juvet.ViewStateManager
+  alias Juvet.ViewStateRegistry
+
+  setup do
+    # Stop any existing ViewStateRegistry to avoid "already started" errors
+    # from other test suites that start it via BotFactory supervision tree
+    case GenServer.whereis(ViewStateRegistry.name()) do
+      nil -> :ok
+      pid -> GenServer.stop(pid, :normal, 5000)
+    end
+
+    # Small delay to ensure the name is deregistered
+    Process.sleep(10)
+    :ok
+  end
 
   describe "start_link/0" do
     test "returns the pid" do
