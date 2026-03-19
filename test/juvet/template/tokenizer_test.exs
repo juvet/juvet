@@ -336,4 +336,58 @@ defmodule Juvet.Template.TokenizerTest do
       assert [{:eex_expr, "for x <- items do", {1, 1}} | _] = tokens
     end
   end
+
+  describe "string interpolation" do
+    test "simple interpolation converts to EEx expression" do
+      tokens = Tokenizer.tokenize(~S("Hello #{name}"))
+
+      assert [
+               {:text, "\"Hello <%= name %>\"", {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "multiple interpolations in same string" do
+      tokens = Tokenizer.tokenize(~S("#{greeting} #{name}"))
+
+      assert [
+               {:text, "\"<%= greeting %> <%= name %>\"", {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "escaped interpolation produces literal text" do
+      # Input: "Hello \#{name}" — the \# should prevent interpolation
+      tokens = Tokenizer.tokenize(~S("Hello \#{name}"))
+
+      assert [
+               {:text, ~S("Hello \#{name}"), {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "interpolation only with no surrounding text" do
+      tokens = Tokenizer.tokenize(~S("#{name}"))
+
+      assert [
+               {:text, "\"<%= name %>\"", {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "unclosed interpolation raises error" do
+      assert_raise Juvet.Template.Tokenizer.Error,
+                   ~r/Unclosed string interpolation/,
+                   fn -> Tokenizer.tokenize(~S|"Hello #{name|) end
+    end
+
+    test "interpolation with nested braces" do
+      tokens = Tokenizer.tokenize(~S|"Hello #{Map.get(assigns, :name)}"|)
+
+      assert [
+               {:text, "\"Hello <%= Map.get(assigns, :name) %>\"", {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+  end
 end
