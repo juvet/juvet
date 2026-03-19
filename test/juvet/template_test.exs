@@ -1364,4 +1364,161 @@ defmodule Juvet.TemplateTest do
              }
     end
   end
+
+  describe "template helpers" do
+    alias Juvet.TemplateTest.TestTemplates
+
+    defmodule TestHelpers.Greeter do
+      def greet(name), do: "Hello, #{name}!"
+    end
+
+    defmodule TestHelpers.Formatter do
+      def format_text(text), do: String.upcase(text)
+      def format_text(text, style) when style == :bold, do: "*#{text}*"
+    end
+
+    defmodule TestHelpers.ConflictA do
+      def conflicting_fn(x), do: "A: #{x}"
+    end
+
+    defmodule TestHelpers.ConflictB do
+      def conflicting_fn(x), do: "B: #{x}"
+    end
+
+    defmodule HelperTemplates do
+      use Juvet.Template, helpers: [Juvet.TemplateTest.TestHelpers.Greeter]
+
+      template(:with_helper, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.section{text: "<%= greet.(name) %>", type: :mrkdwn}
+      """)
+    end
+
+    test "helper module function available as binding via dot-call" do
+      result = HelperTemplates.with_helper(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "Hello, World!"}}
+               ]
+             }
+    end
+
+    test "conflicting function names across helpers raises compile-time error" do
+      assert_raise CompileError, ~r/Helper conflict/, fn ->
+        Code.compile_string("""
+        defmodule ConflictingHelperTemplate do
+          use Juvet.Template, helpers: [
+            Juvet.TemplateTest.TestHelpers.ConflictA,
+            Juvet.TemplateTest.TestHelpers.ConflictB
+          ]
+
+          template :test, \":slack.view\\n  type: :modal\\n  blocks:\\n    :slack.section{text: \\\"<%= conflicting_fn.(\\\\\\\"x\\\\\\\") %>\\\"}\"
+        end
+        """)
+      end
+    end
+
+    test "user bindings override helper bindings" do
+      custom_greet = fn _name -> "Custom greeting!" end
+      result = HelperTemplates.with_helper(name: "World", greet: custom_greet)
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "Custom greeting!"}}
+               ]
+             }
+    end
+
+    defmodule MultiHelperTemplates do
+      use Juvet.Template,
+        helpers: [
+          Juvet.TemplateTest.TestHelpers.Greeter,
+          Juvet.TemplateTest.TestHelpers.Formatter
+        ]
+
+      template(:with_multiple_helpers, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.section{text: "<%= greet.(name) %>", type: :mrkdwn}
+          :slack.section{text: "<%= format_text.(label, :bold) %>", type: :mrkdwn}
+      """)
+    end
+
+    test "multiple helper modules make all functions available" do
+      result = MultiHelperTemplates.with_multiple_helpers(name: "World", label: "hello")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "Hello, World!"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "*hello*"}}
+               ]
+             }
+    end
+
+    defmodule MultiArityHelperTemplates do
+      use Juvet.Template, helpers: [Juvet.TemplateTest.TestHelpers.Formatter]
+
+      template(:with_multi_arity, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.section{text: "<%= format_text.(label, :bold) %>", type: :mrkdwn}
+      """)
+    end
+
+    test "highest arity capture is used for multi-arity functions" do
+      result = MultiArityHelperTemplates.with_multi_arity(label: "hello")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "*hello*"}}
+               ]
+             }
+    end
+
+    defmodule HelperJsonTemplates do
+      use Juvet.Template, format: :json, helpers: [Juvet.TemplateTest.TestHelpers.Greeter]
+
+      template(:json_with_helper, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.section{text: "<%= greet.(name) %>", type: :mrkdwn}
+      """)
+    end
+
+    test "helpers work with JSON format" do
+      result = HelperJsonTemplates.json_with_helper(name: "World")
+      assert is_binary(result)
+
+      assert json_equal?(result, %{
+               "type" => "modal",
+               "blocks" => [
+                 %{
+                   "type" => "section",
+                   "text" => %{"type" => "mrkdwn", "text" => "Hello, World!"}
+                 }
+               ]
+             })
+    end
+
+    test "templates without helpers still work (regression)" do
+      result = TestTemplates.header_with_binding(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello World"}}
+               ]
+             }
+    end
+  end
 end
