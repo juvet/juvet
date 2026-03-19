@@ -284,6 +284,9 @@ defmodule Juvet.Template do
         %{node_type: :for_loop} = node ->
           [%{node | body: resolve_partials(node.body, existing_asts, stack)}]
 
+        %{node_type: :code_block} = node ->
+          [node]
+
         %{children: children} = el when is_map(children) ->
           [%{el | children: resolve_partials_in_children(children, existing_asts, stack)}]
 
@@ -455,6 +458,22 @@ defmodule Juvet.Template do
   end
 
   @doc """
+  Executes a list of callbacks with binding threading via map_reduce.
+
+  Each callback receives the current bindings and returns `{result, new_bindings}`.
+  Code block callbacks return `{nil, updated_bindings}` and regular element
+  callbacks return `{element, same_bindings}`. Nils are filtered from the result.
+  """
+  def execute_with_binding_threading(callbacks, bindings) do
+    {elements, final_bindings} =
+      Enum.map_reduce(callbacks, bindings, fn callback, acc_bindings ->
+        callback.(acc_bindings)
+      end)
+
+    {elements |> List.flatten() |> Enum.reject(&is_nil/1), final_bindings}
+  end
+
+  @doc """
   Evaluates EEx interpolations within a nested map/list structure at runtime.
 
   Walks the data structure and evaluates any string values containing EEx
@@ -584,7 +603,7 @@ defmodule Juvet.Template do
 
   defp generate_json_function(name, compiled) when is_map(compiled) do
     cond do
-      map_contains_for?(compiled) ->
+      map_contains_for?(compiled) or map_contains_code_block?(compiled) ->
         bindings_var = Macro.var(:bindings, __MODULE__)
         body = compiled_to_quoted(compiled, bindings_var)
 
@@ -615,7 +634,7 @@ defmodule Juvet.Template do
 
   defp generate_map_function(name, compiled) when is_map(compiled) do
     cond do
-      map_contains_for?(compiled) ->
+      map_contains_for?(compiled) or map_contains_code_block?(compiled) ->
         bindings_var = Macro.var(:bindings, __MODULE__)
         body = compiled_to_quoted(compiled, bindings_var)
 
@@ -646,41 +665,38 @@ defmodule Juvet.Template do
 
   # Transforms a compiled map/list structure into quoted Elixir AST.
   # Handles __for__ markers by generating real `for` comprehensions.
+  # When the for-loop body contains code blocks, uses binding threading.
   defp compiled_to_quoted(%{__for__: true} = node, bindings_var) do
     variable = String.to_atom(node.variable)
     collection = String.to_atom(node.collection)
     item_var = Macro.var(variable, __MODULE__)
 
-    body_elements =
-      Enum.map(node.body, fn body_el ->
-        escaped_body = Macro.escape(body_el)
+    if Enum.any?(node.body, &match?(%{__code_block__: true}, &1)) do
+      for_quoted_with_code_blocks(node.body, variable, collection, item_var, bindings_var)
+    else
+      for_quoted_without_code_blocks(node.body, variable, collection, item_var, bindings_var)
+    end
+  end
 
-        quote do
-          Juvet.Template.eval_map(
-            unquote(escaped_body),
-            Keyword.put(unquote(bindings_var), unquote(variable), unquote(item_var))
-          )
-        end
-      end)
+  # Code block marker - generates Code.eval_string with error wrapping
+  defp compiled_to_quoted(%{__code_block__: true} = node, bindings_var) do
+    code = node.code
+    line = Map.get(node, :line)
+    column = Map.get(node, :column)
 
-    # If single body element, return it directly from for; if multiple, wrap in list and flatten
-    case body_elements do
-      [single] ->
-        quote do
-          for unquote(item_var) <- Keyword.fetch!(unquote(bindings_var), unquote(collection)) do
-            unquote(single)
-          end
-        end
-
-      multiple ->
-        quote do
-          Enum.flat_map(
-            Keyword.fetch!(unquote(bindings_var), unquote(collection)),
-            fn unquote(item_var) ->
-              unquote(multiple)
-            end
-          )
-        end
+    quote do
+      try do
+        {_result, new_bindings} = Code.eval_string(unquote(code), unquote(bindings_var))
+        {nil, new_bindings}
+      rescue
+        e ->
+          reraise RuntimeError,
+                  [
+                    message:
+                      "Error in code block at line #{unquote(line)}, column #{unquote(column)}: #{Exception.message(e)}"
+                  ],
+                  __STACKTRACE__
+      end
     end
   end
 
@@ -694,17 +710,36 @@ defmodule Juvet.Template do
   end
 
   defp compiled_to_quoted(list, bindings_var) when is_list(list) do
-    if Enum.any?(list, &match?(%{__for__: true}, &1)) do
-      segments =
-        list
-        |> Enum.chunk_by(&match?(%{__for__: true}, &1))
-        |> Enum.flat_map(&chunk_to_quoted_segment(&1, bindings_var))
+    has_code_blocks = Enum.any?(list, &match?(%{__code_block__: true}, &1))
+    has_for_loops = Enum.any?(list, &match?(%{__for__: true}, &1))
 
-      quote do
-        Enum.concat(unquote(segments))
-      end
-    else
-      Enum.map(list, &compiled_to_quoted(&1, bindings_var))
+    cond do
+      has_code_blocks ->
+        # Use binding threading to thread bindings through the list
+        quoted_elements = Enum.map(list, &compiled_to_quoted_with_bindings(&1))
+
+        quote do
+          {elements, _final_bindings} =
+            Juvet.Template.execute_with_binding_threading(
+              unquote(quoted_elements),
+              unquote(bindings_var)
+            )
+
+          elements
+        end
+
+      has_for_loops ->
+        segments =
+          list
+          |> Enum.chunk_by(&match?(%{__for__: true}, &1))
+          |> Enum.flat_map(&chunk_to_quoted_segment(&1, bindings_var))
+
+        quote do
+          Enum.concat(unquote(segments))
+        end
+
+      true ->
+        Enum.map(list, &compiled_to_quoted(&1, bindings_var))
     end
   end
 
@@ -719,6 +754,178 @@ defmodule Juvet.Template do
   end
 
   defp compiled_to_quoted(value, _bindings_var), do: Macro.escape(value)
+
+  # For-loop quoted AST when body contains code blocks - uses binding threading.
+  defp for_quoted_with_code_blocks(body, variable, collection, item_var, bindings_var) do
+    body_callbacks = Enum.map(body, &compiled_to_quoted_with_bindings/1)
+
+    quote do
+      Enum.flat_map(
+        Keyword.fetch!(unquote(bindings_var), unquote(collection)),
+        fn unquote(item_var) ->
+          iter_bindings = Keyword.put(unquote(bindings_var), unquote(variable), unquote(item_var))
+
+          {elements, _} =
+            Juvet.Template.execute_with_binding_threading(unquote(body_callbacks), iter_bindings)
+
+          elements
+        end
+      )
+    end
+  end
+
+  # For-loop quoted AST when body has no code blocks - simple eval_map approach.
+  defp for_quoted_without_code_blocks(body, variable, collection, item_var, bindings_var) do
+    body_elements =
+      Enum.map(body, fn body_el ->
+        escaped_body = Macro.escape(body_el)
+
+        quote do
+          Juvet.Template.eval_map(
+            unquote(escaped_body),
+            Keyword.put(unquote(bindings_var), unquote(variable), unquote(item_var))
+          )
+        end
+      end)
+
+    case body_elements do
+      [single] ->
+        quote do
+          for unquote(item_var) <-
+                Keyword.fetch!(unquote(bindings_var), unquote(collection)) do
+            unquote(single)
+          end
+        end
+
+      multiple ->
+        quote do
+          Enum.flat_map(Keyword.fetch!(unquote(bindings_var), unquote(collection)), fn unquote(
+                                                                                         item_var
+                                                                                       ) ->
+            unquote(multiple)
+          end)
+        end
+    end
+  end
+
+  # Generates a quoted callback for Enum.map_reduce binding threading.
+  # Code blocks return {nil, updated_bindings}, for-loops return {list, same_bindings},
+  # regular elements return {result, same_bindings}.
+  defp compiled_to_quoted_with_bindings(%{__code_block__: true} = node) do
+    code = node.code
+    line = Map.get(node, :line)
+    column = Map.get(node, :column)
+
+    quote do
+      fn bindings ->
+        try do
+          {_result, new_bindings} = Code.eval_string(unquote(code), bindings)
+          {nil, new_bindings}
+        rescue
+          e ->
+            reraise RuntimeError,
+                    [
+                      message:
+                        "Error in code block at line #{unquote(line)}, column #{unquote(column)}: #{Exception.message(e)}"
+                    ],
+                    __STACKTRACE__
+        end
+      end
+    end
+  end
+
+  defp compiled_to_quoted_with_bindings(%{__for__: true} = node) do
+    variable = String.to_atom(node.variable)
+    collection = String.to_atom(node.collection)
+    item_var = Macro.var(variable, __MODULE__)
+
+    if Enum.any?(node.body, &match?(%{__code_block__: true}, &1)) do
+      for_callback_with_code_blocks(node.body, variable, collection, item_var)
+    else
+      for_callback_without_code_blocks(node.body, variable, collection, item_var)
+    end
+  end
+
+  defp compiled_to_quoted_with_bindings(element) do
+    escaped = Macro.escape(element)
+
+    quote do
+      fn bindings ->
+        {Juvet.Template.eval_map(unquote(escaped), bindings), bindings}
+      end
+    end
+  end
+
+  defp for_callback_with_code_blocks(body, variable, collection, item_var) do
+    body_callbacks = Enum.map(body, &compiled_to_quoted_with_bindings/1)
+
+    quote do
+      fn bindings ->
+        results =
+          Enum.flat_map(
+            Keyword.fetch!(bindings, unquote(collection)),
+            fn unquote(item_var) ->
+              iter_bindings = Keyword.put(bindings, unquote(variable), unquote(item_var))
+
+              {elements, _} =
+                Juvet.Template.execute_with_binding_threading(
+                  unquote(body_callbacks),
+                  iter_bindings
+                )
+
+              elements
+            end
+          )
+
+        {results, bindings}
+      end
+    end
+  end
+
+  defp for_callback_without_code_blocks(body, variable, collection, item_var) do
+    body_elements =
+      Enum.map(body, fn body_el ->
+        escaped_body = Macro.escape(body_el)
+
+        quote do
+          Juvet.Template.eval_map(
+            unquote(escaped_body),
+            Keyword.put(bindings, unquote(variable), unquote(item_var))
+          )
+        end
+      end)
+
+    case body_elements do
+      [single] ->
+        quote do
+          fn bindings ->
+            results =
+              for unquote(item_var) <- Keyword.fetch!(bindings, unquote(collection)) do
+                unquote(single)
+              end
+
+            {results, bindings}
+          end
+        end
+
+      multiple ->
+        flat_map_body = for_flat_map_body(collection, item_var, multiple)
+
+        quote do
+          fn bindings ->
+            {unquote(flat_map_body), bindings}
+          end
+        end
+    end
+  end
+
+  defp for_flat_map_body(collection, item_var, body_elements) do
+    quote do
+      Enum.flat_map(Keyword.fetch!(bindings, unquote(collection)), fn unquote(item_var) ->
+        unquote(body_elements)
+      end)
+    end
+  end
 
   # Converts a chunk of elements (from Enum.chunk_by) into Enum.concat segments.
   # For-loop chunks become individual for comprehensions; static chunks become a literal list.
@@ -773,6 +980,8 @@ defmodule Juvet.Template do
     validate_platform!(node.body, expected)
   end
 
+  defp validate_platform_element!(%{node_type: :code_block}, _expected), do: :ok
+
   defp validate_platform_element!(%{platform: platform, line: line, column: col}, expected)
        when platform != expected do
     raise ArgumentError,
@@ -806,6 +1015,17 @@ defmodule Juvet.Template do
     do: String.contains?(s, "<%")
 
   defp map_contains_eex?(_), do: false
+
+  # Checks if a compiled structure contains any __code_block__ markers.
+  defp map_contains_code_block?(%{__code_block__: true}), do: true
+
+  defp map_contains_code_block?(map) when is_map(map),
+    do: Enum.any?(map, fn {_k, v} -> map_contains_code_block?(v) end)
+
+  defp map_contains_code_block?(list) when is_list(list),
+    do: Enum.any?(list, &map_contains_code_block?/1)
+
+  defp map_contains_code_block?(_), do: false
 
   # Checks if a compiled structure contains any __for__ markers.
   defp map_contains_for?(%{__for__: true}), do: true

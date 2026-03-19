@@ -68,8 +68,21 @@ defmodule Juvet.Template.Parser do
     end
   end
 
-  # Skip EEx code tokens (like 'end') at top level
-  defp do_parse([{:eex_code, _, _} | rest], acc, platform), do: do_parse(rest, acc, platform)
+  # Skip EEx code 'end' tokens at top level
+  defp do_parse([{:eex_code, "end", _} | rest], acc, platform),
+    do: do_parse(rest, acc, platform)
+
+  # EEx code block at top level - create code_block AST node
+  defp do_parse([{:eex_code, code, pos} | rest], acc, platform) do
+    code_block = %{
+      node_type: :code_block,
+      code: String.trim(code),
+      line: elem(pos, 0),
+      column: elem(pos, 1)
+    }
+
+    do_parse(rest, [code_block | acc], platform)
+  end
 
   defp do_parse([{:colon, _, _} | _] = tokens, acc, platform) do
     {el, rest} = element(tokens)
@@ -202,7 +215,7 @@ defmodule Juvet.Template.Parser do
          children,
          platform
        )
-       when start in [:colon, :dot, :eex_expr] do
+       when start in [:colon, :dot, :eex_expr, :eex_code] do
     [{:keyword, key, _}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _} | rest] = tokens
     {nested, rest} = nested_elements(rest, [], platform)
 
@@ -287,9 +300,21 @@ defmodule Juvet.Template.Parser do
     end
   end
 
-  # Skip EEx code tokens (like 'end') in nested elements
-  defp nested_elements([{:eex_code, _, _} | rest], acc, platform),
+  # Skip EEx code 'end' tokens in nested elements
+  defp nested_elements([{:eex_code, "end", _} | rest], acc, platform),
     do: nested_elements(rest, acc, platform)
+
+  # EEx code block in nested elements - create code_block AST node
+  defp nested_elements([{:eex_code, code, pos} | rest], acc, platform) do
+    code_block = %{
+      node_type: :code_block,
+      code: String.trim(code),
+      line: elem(pos, 0),
+      column: elem(pos, 1)
+    }
+
+    nested_elements(rest, [code_block | acc], platform)
+  end
 
   # Collect nested key-value pairs into a map until dedent.
   #
@@ -441,6 +466,18 @@ defmodule Juvet.Template.Parser do
           line: elem(pos, 0),
           column: elem(pos, 1)
     end
+  end
+
+  # EEx code block inside for-loop body - create code_block AST node
+  defp parse_for_body([{:eex_code, code, pos} | rest], acc, platform) do
+    code_block = %{
+      node_type: :code_block,
+      code: String.trim(code),
+      line: elem(pos, 0),
+      column: elem(pos, 1)
+    }
+
+    parse_for_body(rest, [code_block | acc], platform)
   end
 
   defp parse_for_body([{:eof, _, _}], _acc, _platform) do
