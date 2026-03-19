@@ -392,14 +392,72 @@ defmodule Juvet.Template.TokenizerTest do
 
     test "interpolation with string literal inside expression" do
       # Source: "Hello #{name || "World"}"
-      input = to_string([?", ?H, ?e, ?l, ?l, ?o, ?\s, ?#, ?{, ?n, ?a, ?m, ?e,
-                          ?\s, ?|, ?|, ?\s, ?", ?W, ?o, ?r, ?l, ?d, ?", ?}, ?"])
+      input =
+        to_string([
+          ?",
+          ?H,
+          ?e,
+          ?l,
+          ?l,
+          ?o,
+          ?\s,
+          ?#,
+          ?{,
+          ?n,
+          ?a,
+          ?m,
+          ?e,
+          ?\s,
+          ?|,
+          ?|,
+          ?\s,
+          ?",
+          ?W,
+          ?o,
+          ?r,
+          ?l,
+          ?d,
+          ?",
+          ?},
+          ?"
+        ])
+
       tokens = Tokenizer.tokenize(input)
 
       # Expected: "Hello <%= name || "World" %>"
-      expected_text = to_string([?", ?H, ?e, ?l, ?l, ?o, ?\s, ?<, ?%, ?=, ?\s,
-                                  ?n, ?a, ?m, ?e, ?\s, ?|, ?|, ?\s, ?", ?W, ?o,
-                                  ?r, ?l, ?d, ?", ?\s, ?%, ?>, ?"])
+      expected_text =
+        to_string([
+          ?",
+          ?H,
+          ?e,
+          ?l,
+          ?l,
+          ?o,
+          ?\s,
+          ?<,
+          ?%,
+          ?=,
+          ?\s,
+          ?n,
+          ?a,
+          ?m,
+          ?e,
+          ?\s,
+          ?|,
+          ?|,
+          ?\s,
+          ?",
+          ?W,
+          ?o,
+          ?r,
+          ?l,
+          ?d,
+          ?",
+          ?\s,
+          ?%,
+          ?>,
+          ?"
+        ])
 
       assert [
                {:text, ^expected_text, {1, 1}},
@@ -409,16 +467,84 @@ defmodule Juvet.Template.TokenizerTest do
 
     test "interpolation with string containing closing brace" do
       # Source: "#{String.replace(s, "}", "X")}"
-      input = to_string([?", ?#, ?{, ?S, ?t, ?r, ?i, ?n, ?g, ?., ?r, ?e, ?p,
-                          ?l, ?a, ?c, ?e, ?(, ?s, ?,, ?\s, ?", ?}, ?", ?,, ?\s,
-                          ?", ?X, ?", ?), ?}, ?"])
+      input =
+        to_string([
+          ?",
+          ?#,
+          ?{,
+          ?S,
+          ?t,
+          ?r,
+          ?i,
+          ?n,
+          ?g,
+          ?.,
+          ?r,
+          ?e,
+          ?p,
+          ?l,
+          ?a,
+          ?c,
+          ?e,
+          ?(,
+          ?s,
+          ?,,
+          ?\s,
+          ?",
+          ?},
+          ?",
+          ?,,
+          ?\s,
+          ?",
+          ?X,
+          ?",
+          ?),
+          ?},
+          ?"
+        ])
+
       tokens = Tokenizer.tokenize(input)
 
       # Expected: "<%= String.replace(s, "}", "X") %>"
-      expected_text = to_string([?", ?<, ?%, ?=, ?\s, ?S, ?t, ?r, ?i, ?n, ?g,
-                                  ?., ?r, ?e, ?p, ?l, ?a, ?c, ?e, ?(, ?s, ?,,
-                                  ?\s, ?", ?}, ?", ?,, ?\s, ?", ?X, ?", ?), ?\s,
-                                  ?%, ?>, ?"])
+      expected_text =
+        to_string([
+          ?",
+          ?<,
+          ?%,
+          ?=,
+          ?\s,
+          ?S,
+          ?t,
+          ?r,
+          ?i,
+          ?n,
+          ?g,
+          ?.,
+          ?r,
+          ?e,
+          ?p,
+          ?l,
+          ?a,
+          ?c,
+          ?e,
+          ?(,
+          ?s,
+          ?,,
+          ?\s,
+          ?",
+          ?},
+          ?",
+          ?,,
+          ?\s,
+          ?",
+          ?X,
+          ?",
+          ?),
+          ?\s,
+          ?%,
+          ?>,
+          ?"
+        ])
 
       assert [
                {:text, ^expected_text, {1, 1}},

@@ -1041,8 +1041,7 @@ defmodule Juvet.TemplateTest do
       use Juvet.Template
 
       template(:greeting,
-        slack:
-          ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello \#{name}\"}"
+        slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello \#{name}\"}"
       )
 
       template(:loop_with_interpolation,
