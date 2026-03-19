@@ -846,6 +846,16 @@ defmodule Juvet.Template do
     end
   end
 
+  defp compiled_to_quoted_with_bindings(element) do
+    escaped = Macro.escape(element)
+
+    quote do
+      fn bindings ->
+        {Juvet.Template.eval_map(unquote(escaped), bindings), bindings}
+      end
+    end
+  end
+
   defp for_callback_with_code_blocks(body, variable, collection, item_var) do
     body_callbacks = Enum.map(body, &compiled_to_quoted_with_bindings/1)
 
@@ -914,16 +924,6 @@ defmodule Juvet.Template do
       Enum.flat_map(Keyword.fetch!(bindings, unquote(collection)), fn unquote(item_var) ->
         unquote(body_elements)
       end)
-    end
-  end
-
-  defp compiled_to_quoted_with_bindings(element) do
-    escaped = Macro.escape(element)
-
-    quote do
-      fn bindings ->
-        {Juvet.Template.eval_map(unquote(escaped), bindings), bindings}
-      end
     end
   end
 
