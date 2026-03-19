@@ -607,9 +607,70 @@ defmodule Juvet.Template.Tokenizer do
     take_quoted_text(rest, [c, ?\\ | acc], pos)
   end
 
+  # String interpolation: #{expr} -> <%= expr %>
+  defp take_quoted_text([?#, ?{ | rest], acc, pos) do
+    case take_interpolation_expr(rest, [], 1, pos) do
+      {:ok, expr_chars, remaining} ->
+        # Build <%= expr %> as charlist and prepend to accumulator (reversed)
+        eex = ~c"<%= " ++ expr_chars ++ ~c" %>"
+        new_acc = Enum.reverse(eex) ++ acc
+        take_quoted_text(remaining, new_acc, pos)
+
+      {:error, message, line, col} ->
+        {:error, message, line, col}
+    end
+  end
+
   # Regular character
   defp take_quoted_text([c | rest], acc, pos) do
     take_quoted_text(rest, [c | acc], pos)
+  end
+
+  # Collect interpolation expression characters until matching }, tracking brace depth
+  defp take_interpolation_expr([], _acc, _depth, {line, col}) do
+    {:error, "Unclosed string interpolation", line, col}
+  end
+
+  defp take_interpolation_expr([?} | rest], acc, 1, _pos) do
+    {:ok, Enum.reverse(acc), rest}
+  end
+
+  defp take_interpolation_expr([?} | rest], acc, depth, pos) do
+    take_interpolation_expr(rest, [?} | acc], depth - 1, pos)
+  end
+
+  defp take_interpolation_expr([?{ | rest], acc, depth, pos) do
+    take_interpolation_expr(rest, [?{ | acc], depth + 1, pos)
+  end
+
+  # Skip over quoted strings inside interpolation expressions
+  defp take_interpolation_expr([?" | rest], acc, depth, pos) do
+    case take_interpolation_string(rest, [?"]) do
+      {:ok, str_chars, remaining} ->
+        take_interpolation_expr(remaining, str_chars ++ acc, depth, pos)
+
+      :error ->
+        {:error, "Unclosed string inside interpolation", elem(pos, 0), elem(pos, 1)}
+    end
+  end
+
+  defp take_interpolation_expr([c | rest], acc, depth, pos) do
+    take_interpolation_expr(rest, [c | acc], depth, pos)
+  end
+
+  # Collect a quoted string inside an interpolation expression
+  defp take_interpolation_string([], _acc), do: :error
+
+  defp take_interpolation_string([?" | rest], acc) do
+    {:ok, [?" | acc], rest}
+  end
+
+  defp take_interpolation_string([?\\ | [c | rest]], acc) do
+    take_interpolation_string(rest, [c, ?\\ | acc])
+  end
+
+  defp take_interpolation_string([c | rest], acc) do
+    take_interpolation_string(rest, [c | acc])
   end
 
   # Collect number (digits and optional decimal point)

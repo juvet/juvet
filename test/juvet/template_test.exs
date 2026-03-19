@@ -1036,6 +1036,44 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "string interpolation" do
+    defmodule InterpolationTemplates do
+      use Juvet.Template
+
+      template(:greeting,
+        slack: ".view\n  type: :modal\n  blocks:\n    .header{text: \"Hello \#{name}\"}"
+      )
+
+      template(:loop_with_interpolation,
+        slack:
+          ".view\n  type: :modal\n  blocks:\n    <%= for item <- items do %>\n    .section{text: \"\#{item}\"}\n    <% end %>"
+      )
+    end
+
+    test "string interpolation with bindings renders correctly" do
+      result = InterpolationTemplates.greeting(name: "World")
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "header", text: %{type: "plain_text", text: "Hello World"}}
+               ]
+             }
+    end
+
+    test "string interpolation inside for-loop body works" do
+      result = InterpolationTemplates.loop_with_interpolation(items: ["Alpha", "Beta"])
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "Alpha"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "Beta"}}
+               ]
+             }
+    end
+  end
+
   describe "inline platform keyword syntax" do
     defmodule InlinePlatformTemplates do
       use Juvet.Template

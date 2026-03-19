@@ -336,4 +336,220 @@ defmodule Juvet.Template.TokenizerTest do
       assert [{:eex_expr, "for x <- items do", {1, 1}} | _] = tokens
     end
   end
+
+  describe "string interpolation" do
+    test "simple interpolation converts to EEx expression" do
+      tokens = Tokenizer.tokenize(~S("Hello #{name}"))
+
+      assert [
+               {:text, "\"Hello <%= name %>\"", {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "multiple interpolations in same string" do
+      tokens = Tokenizer.tokenize(~S("#{greeting} #{name}"))
+
+      assert [
+               {:text, "\"<%= greeting %> <%= name %>\"", {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "escaped interpolation produces literal text" do
+      # Input: "Hello \#{name}" — the \# should prevent interpolation
+      tokens = Tokenizer.tokenize(~S("Hello \#{name}"))
+
+      assert [
+               {:text, ~S("Hello \#{name}"), {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "interpolation only with no surrounding text" do
+      tokens = Tokenizer.tokenize(~S("#{name}"))
+
+      assert [
+               {:text, "\"<%= name %>\"", {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "unclosed interpolation raises error" do
+      assert_raise Juvet.Template.Tokenizer.Error,
+                   ~r/Unclosed string interpolation/,
+                   fn -> Tokenizer.tokenize(~S|"Hello #{name|) end
+    end
+
+    test "interpolation with nested braces" do
+      tokens = Tokenizer.tokenize(~S|"Hello #{Map.get(assigns, :name)}"|)
+
+      assert [
+               {:text, "\"Hello <%= Map.get(assigns, :name) %>\"", {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "interpolation with string literal inside expression" do
+      # Source: "Hello #{name || "World"}"
+      input =
+        to_string([
+          ?",
+          ?H,
+          ?e,
+          ?l,
+          ?l,
+          ?o,
+          ?\s,
+          ?#,
+          ?{,
+          ?n,
+          ?a,
+          ?m,
+          ?e,
+          ?\s,
+          ?|,
+          ?|,
+          ?\s,
+          ?",
+          ?W,
+          ?o,
+          ?r,
+          ?l,
+          ?d,
+          ?",
+          ?},
+          ?"
+        ])
+
+      tokens = Tokenizer.tokenize(input)
+
+      # Expected: "Hello <%= name || "World" %>"
+      expected_text =
+        to_string([
+          ?",
+          ?H,
+          ?e,
+          ?l,
+          ?l,
+          ?o,
+          ?\s,
+          ?<,
+          ?%,
+          ?=,
+          ?\s,
+          ?n,
+          ?a,
+          ?m,
+          ?e,
+          ?\s,
+          ?|,
+          ?|,
+          ?\s,
+          ?",
+          ?W,
+          ?o,
+          ?r,
+          ?l,
+          ?d,
+          ?",
+          ?\s,
+          ?%,
+          ?>,
+          ?"
+        ])
+
+      assert [
+               {:text, ^expected_text, {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+
+    test "interpolation with string containing closing brace" do
+      # Source: "#{String.replace(s, "}", "X")}"
+      input =
+        to_string([
+          ?",
+          ?#,
+          ?{,
+          ?S,
+          ?t,
+          ?r,
+          ?i,
+          ?n,
+          ?g,
+          ?.,
+          ?r,
+          ?e,
+          ?p,
+          ?l,
+          ?a,
+          ?c,
+          ?e,
+          ?(,
+          ?s,
+          ?,,
+          ?\s,
+          ?",
+          ?},
+          ?",
+          ?,,
+          ?\s,
+          ?",
+          ?X,
+          ?",
+          ?),
+          ?},
+          ?"
+        ])
+
+      tokens = Tokenizer.tokenize(input)
+
+      # Expected: "<%= String.replace(s, "}", "X") %>"
+      expected_text =
+        to_string([
+          ?",
+          ?<,
+          ?%,
+          ?=,
+          ?\s,
+          ?S,
+          ?t,
+          ?r,
+          ?i,
+          ?n,
+          ?g,
+          ?.,
+          ?r,
+          ?e,
+          ?p,
+          ?l,
+          ?a,
+          ?c,
+          ?e,
+          ?(,
+          ?s,
+          ?,,
+          ?\s,
+          ?",
+          ?},
+          ?",
+          ?,,
+          ?\s,
+          ?",
+          ?X,
+          ?",
+          ?),
+          ?\s,
+          ?%,
+          ?>,
+          ?"
+        ])
+
+      assert [
+               {:text, ^expected_text, {1, 1}},
+               {:eof, "", _}
+             ] = tokens
+    end
+  end
 end

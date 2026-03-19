@@ -512,6 +512,14 @@ defmodule Juvet.Template.ParserTest do
     end
   end
 
+  describe "parse/1 - String interpolation" do
+    test "interpolation in attribute value is desugared to EEx" do
+      assert parse(~S(:slack.header{text: "Hello #{name}"})) == [
+               %{platform: :slack, element: :header, attributes: %{text: "Hello <%= name %>"}}
+             ]
+    end
+  end
+
   describe "parse/1 - Phase 10: For-loop support" do
     test "simple for-loop produces for_loop AST node" do
       template = "<%= for item <- items do %>\n:slack.section{text: \"<%= item %>\"}\n<% end %>"
