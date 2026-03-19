@@ -643,8 +643,34 @@ defmodule Juvet.Template.Tokenizer do
     take_interpolation_expr(rest, [?{ | acc], depth + 1, pos)
   end
 
+  # Skip over quoted strings inside interpolation expressions
+  defp take_interpolation_expr([?" | rest], acc, depth, pos) do
+    case take_interpolation_string(rest, [?"]) do
+      {:ok, str_chars, remaining} ->
+        take_interpolation_expr(remaining, str_chars ++ acc, depth, pos)
+
+      :error ->
+        {:error, "Unclosed string inside interpolation", elem(pos, 0), elem(pos, 1)}
+    end
+  end
+
   defp take_interpolation_expr([c | rest], acc, depth, pos) do
     take_interpolation_expr(rest, [c | acc], depth, pos)
+  end
+
+  # Collect a quoted string inside an interpolation expression
+  defp take_interpolation_string([], _acc), do: :error
+
+  defp take_interpolation_string([?" | rest], acc) do
+    {:ok, [?" | acc], rest}
+  end
+
+  defp take_interpolation_string([?\\ | [c | rest]], acc) do
+    take_interpolation_string(rest, [c, ?\\ | acc])
+  end
+
+  defp take_interpolation_string([c | rest], acc) do
+    take_interpolation_string(rest, [c | acc])
   end
 
   # Collect number (digits and optional decimal point)
