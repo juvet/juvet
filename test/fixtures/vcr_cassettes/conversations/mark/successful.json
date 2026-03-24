@@ -1,0 +1,25 @@
+[
+  {
+    "request": {
+      "body": "channel=CHANNEL1&ts=1234567890.123456",
+      "headers": {
+        "Accept": "application/json; charset=utf-8",
+        "Authorization": "***",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/conversations.mark"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":true}",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

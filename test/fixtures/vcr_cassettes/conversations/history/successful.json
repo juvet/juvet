@@ -1,0 +1,25 @@
+[
+  {
+    "request": {
+      "body": "channel=CHANNEL1",
+      "headers": {
+        "Accept": "application/json; charset=utf-8",
+        "Authorization": "***",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/conversations.history"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":true,\"messages\":[{\"type\":\"message\",\"user\":\"USER1\",\"text\":\"Hello\",\"ts\":\"1234567890.123456\"}],\"has_more\":false,\"response_metadata\":{\"next_cursor\":\"\"}}",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
