@@ -35,7 +35,10 @@ defmodule Juvet.SlackAPI.ConversationsTest do
   end
 
   describe "info/1" do
-    test "returns the channel details for the channel specified", %{channel: channel, token: token} do
+    test "returns the channel details for the channel specified", %{
+      channel: channel,
+      token: token
+    } do
       use_cassette "conversations/info/successful" do
         assert {:ok, response} = SlackAPI.Conversations.info(%{channel: channel, token: token})
 
@@ -48,8 +51,7 @@ defmodule Juvet.SlackAPI.ConversationsTest do
       token: token
     } do
       use_cassette "conversations/info/invalid_auth" do
-        assert {:error, response} =
-                 SlackAPI.Conversations.info(%{channel: channel, token: token})
+        assert {:error, response} = SlackAPI.Conversations.info(%{channel: channel, token: token})
 
         assert response[:error] == "invalid_auth"
       end
@@ -78,7 +80,11 @@ defmodule Juvet.SlackAPI.ConversationsTest do
     test "returns a successful response", %{channel: channel, token: token} do
       use_cassette "conversations/mark/successful" do
         assert {:ok, _response} =
-                 SlackAPI.Conversations.mark(%{channel: channel, ts: "1234567890.123456", token: token})
+                 SlackAPI.Conversations.mark(%{
+                   channel: channel,
+                   ts: "1234567890.123456",
+                   token: token
+                 })
       end
     end
 
@@ -88,7 +94,11 @@ defmodule Juvet.SlackAPI.ConversationsTest do
     } do
       use_cassette "conversations/mark/invalid_auth" do
         assert {:error, response} =
-                 SlackAPI.Conversations.mark(%{channel: channel, ts: "1234567890.123456", token: token})
+                 SlackAPI.Conversations.mark(%{
+                   channel: channel,
+                   ts: "1234567890.123456",
+                   token: token
+                 })
 
         assert response[:error] == "invalid_auth"
       end
@@ -121,7 +131,11 @@ defmodule Juvet.SlackAPI.ConversationsTest do
     test "returns the messages for the thread specified", %{channel: channel, token: token} do
       use_cassette "conversations/replies/successful" do
         assert {:ok, response} =
-                 SlackAPI.Conversations.replies(%{channel: channel, ts: "1234567890.123456", token: token})
+                 SlackAPI.Conversations.replies(%{
+                   channel: channel,
+                   ts: "1234567890.123456",
+                   token: token
+                 })
 
         assert Enum.count(response[:messages]) > 0
       end
@@ -133,7 +147,11 @@ defmodule Juvet.SlackAPI.ConversationsTest do
     } do
       use_cassette "conversations/replies/invalid_auth" do
         assert {:error, response} =
-                 SlackAPI.Conversations.replies(%{channel: channel, ts: "1234567890.123456", token: token})
+                 SlackAPI.Conversations.replies(%{
+                   channel: channel,
+                   ts: "1234567890.123456",
+                   token: token
+                 })
 
         assert response[:error] == "invalid_auth"
       end
