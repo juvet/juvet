@@ -65,6 +65,29 @@ defmodule Juvet.SlackAPI.Conversations do
   end
 
   @doc """
+  Request to retrieve information about a conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: %{
+      id: "C12345",
+      name: "CHANNEL1",
+      num_members: 42
+    }
+  } = Juvet.SlackAPI.Conversations.info(%{token: token, channel: "C12345", include_num_members: true})
+  """
+
+  @spec info(map()) :: {:ok, map()} | {:error, map()}
+  def info(options \\ %{}) do
+    SlackAPI.make_request("conversations.info", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Request to retrieve to invites users to a channel.
 
   Returns a map of the Slack response.
