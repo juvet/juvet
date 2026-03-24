@@ -1,0 +1,25 @@
+[
+  {
+    "request": {
+      "body": "channel=CHANNEL1",
+      "headers": {
+        "Accept": "application/json; charset=utf-8",
+        "Authorization": "***",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/conversations.info"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":true,\"channel\":{\"id\":\"CHANNEL1\",\"name\":\"general\",\"is_channel\":true,\"num_members\":42}}",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

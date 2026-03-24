@@ -1,0 +1,25 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "Accept": "application/json; charset=utf-8",
+        "Authorization": "***",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "http://localhost:51345/api/conversations.list"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"ok\":true,\"channels\":[{\"id\":\"CHANNEL1\",\"name\":\"general\",\"is_channel\":true}],\"response_metadata\":{\"next_cursor\":\"\"}}",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

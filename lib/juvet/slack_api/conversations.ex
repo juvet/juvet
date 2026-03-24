@@ -65,6 +65,50 @@ defmodule Juvet.SlackAPI.Conversations do
   end
 
   @doc """
+  Request to retrieve conversation history of messages and events.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    messages: [
+      %{type: "message", user: "U12345", text: "Hello", ts: "1234567890.123456"}
+    ]
+  } = Juvet.SlackAPI.Conversations.history(%{token: token, channel: "C12345"})
+  """
+
+  @spec history(map()) :: {:ok, map()} | {:error, map()}
+  def history(options \\ %{}) do
+    SlackAPI.make_request("conversations.history", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Request to retrieve information about a conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channel: %{
+      id: "C12345",
+      name: "CHANNEL1",
+      num_members: 42
+    }
+  } = Juvet.SlackAPI.Conversations.info(%{token: token, channel: "C12345", include_num_members: true})
+  """
+
+  @spec info(map()) :: {:ok, map()} | {:error, map()}
+  def info(options \\ %{}) do
+    SlackAPI.make_request("conversations.info", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Request to retrieve to invites users to a channel.
 
   Returns a map of the Slack response.
@@ -129,6 +173,27 @@ defmodule Juvet.SlackAPI.Conversations do
   end
 
   @doc """
+  Request to list all channels in a Slack team.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    channels: [
+      %{id: "C12345", name: "general", is_channel: true}
+    ]
+  } = Juvet.SlackAPI.Conversations.list(%{token: token})
+  """
+
+  @spec list(map()) :: {:ok, map()} | {:error, map()}
+  def list(options \\ %{}) do
+    SlackAPI.make_request("conversations.list", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
   Request to leave a conversation.
 
   Returns a map of the Slack response.
@@ -143,6 +208,24 @@ defmodule Juvet.SlackAPI.Conversations do
   @spec leave(map()) :: {:ok, map()} | {:error, map()}
   def leave(options \\ %{}) do
     SlackAPI.make_request("conversations.leave", options)
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Request to set the read cursor in a channel.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true
+  } = Juvet.SlackAPI.Conversations.mark(%{token: token, channel: "C12345", ts: "1234567890.123456"})
+  """
+
+  @spec mark(map()) :: {:ok, map()} | {:error, map()}
+  def mark(options \\ %{}) do
+    SlackAPI.make_request("conversations.mark", options)
     |> SlackAPI.render_response()
   end
 
@@ -186,6 +269,27 @@ defmodule Juvet.SlackAPI.Conversations do
   @spec open(map()) :: {:ok, map()} | {:error, map()}
   def open(options \\ %{}) do
     SlackAPI.make_request("conversations.open", options |> transform_options())
+    |> SlackAPI.render_response()
+  end
+
+  @doc """
+  Request to retrieve a thread of messages posted to a conversation.
+
+  Returns a map of the Slack response.
+
+  ## Example
+
+  %{
+    ok: true,
+    messages: [
+      %{type: "message", user: "U12345", text: "Hello", ts: "1234567890.123456"}
+    ]
+  } = Juvet.SlackAPI.Conversations.replies(%{token: token, channel: "C12345", ts: "1234567890.123456"})
+  """
+
+  @spec replies(map()) :: {:ok, map()} | {:error, map()}
+  def replies(options \\ %{}) do
+    SlackAPI.make_request("conversations.replies", options)
     |> SlackAPI.render_response()
   end
 
