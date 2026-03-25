@@ -513,10 +513,17 @@ defmodule Juvet.Template do
   end
 
   def eval_map(data, bindings) when is_binary(data) do
-    if String.contains?(data, "<%") do
-      EEx.eval_string(data, bindings)
-    else
-      data
+    case Regex.run(~r/\A<%=\s*(.+?)\s*%>\z/, data) do
+      [_, expression] ->
+        {result, _} = Code.eval_string(expression, bindings)
+        if is_boolean(result), do: result, else: to_string(result)
+
+      _ ->
+        if String.contains?(data, "<%") do
+          EEx.eval_string(data, bindings)
+        else
+          data
+        end
     end
   end
 
