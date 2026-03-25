@@ -1,11 +1,11 @@
 defmodule Juvet.Template.Compiler.Slack.Elements.Select do
   @moduledoc false
 
+  alias Juvet.Template.Compiler.Slack
+
   alias Juvet.Template.Compiler.Slack.Objects.{
     ConfirmationDialog,
     ConversationFilter,
-    Option,
-    OptionGroup,
     Text
   }
 
@@ -100,10 +100,10 @@ defmodule Juvet.Template.Compiler.Slack.Elements.Select do
   end
 
   defp put_options_or_groups(map, %{children: %{option_groups: groups}}) when is_list(groups),
-    do: Map.put(map, :option_groups, Enum.map(groups, &OptionGroup.compile/1))
+    do: Map.put(map, :option_groups, Enum.map(groups, &Slack.compile_element/1))
 
   defp put_options_or_groups(map, %{children: %{options: options}}) when is_list(options),
-    do: Map.put(map, :options, Enum.map(options, &Option.compile/1))
+    do: Map.put(map, :options, Enum.map(options, &Slack.compile_element/1))
 
   defp put_options_or_groups(map, _), do: map
 
@@ -116,12 +116,12 @@ defmodule Juvet.Template.Compiler.Slack.Elements.Select do
   end
 
   defp compile_initial_option(%{children: %{initial_option: opt}}),
-    do: Option.compile(opt)
+    do: Slack.compile_element(opt)
 
   defp compile_initial_option(_), do: nil
 
   defp compile_initial_options(%{children: %{initial_options: opts}}) when is_list(opts),
-    do: Enum.map(opts, &Option.compile/1)
+    do: Enum.map(opts, &Slack.compile_element/1)
 
   defp compile_initial_options(_), do: nil
 
