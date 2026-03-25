@@ -1,7 +1,8 @@
 defmodule Juvet.Template.Compiler.Slack.Elements.RadioButtons do
   @moduledoc false
 
-  alias Juvet.Template.Compiler.Slack.Objects.{ConfirmationDialog, Option}
+  alias Juvet.Template.Compiler.Slack
+  alias Juvet.Template.Compiler.Slack.Objects.ConfirmationDialog
   import Juvet.Template.Compiler.Encoder.Helpers, only: [maybe_put: 3]
 
   def compile(%{element: :radio_buttons, attributes: attrs} = el) do
@@ -14,15 +15,15 @@ defmodule Juvet.Template.Compiler.Slack.Elements.RadioButtons do
   end
 
   defp put_options(map, %{children: %{options: options}}) when is_list(options),
-    do: Map.put(map, :options, Enum.map(options, &Option.compile/1))
+    do: Map.put(map, :options, Enum.map(options, &Slack.compile_element/1))
 
   defp put_options(map, %{children: %{options: %{} = option}}),
-    do: Map.put(map, :options, [Option.compile(option)])
+    do: Map.put(map, :options, [Slack.compile_element(option)])
 
   defp put_options(map, _), do: map
 
   defp put_initial_option(map, %{children: %{initial_option: opt}}),
-    do: Map.put(map, :initial_option, Option.compile(opt))
+    do: Map.put(map, :initial_option, Slack.compile_element(opt))
 
   defp put_initial_option(map, _), do: map
 

@@ -1008,6 +1008,59 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "for-loop inside element children" do
+    defmodule ForLoopInElementChildrenTemplates do
+      use Juvet.Template
+
+      template(:overflow_with_loop, """
+      :slack.view
+        type: :home
+        blocks:
+          .section
+            text: "Pick an action"
+            type: :mrkdwn
+            accessory:
+              .overflow
+                options:
+                  <%= for action <- actions do %>
+                  .option{text: "<%= action.text %>", value: "<%= action.value %>", emoji: true}
+                  <% end %>
+      """)
+    end
+
+    test "for-loop inside overflow options renders dynamic options" do
+      actions = [
+        %{text: ":pencil2:  Edit", value: "1"},
+        %{text: ":wastebasket:  Delete", value: "1"}
+      ]
+
+      result = ForLoopInElementChildrenTemplates.overflow_with_loop(actions: actions)
+
+      assert result == %{
+               type: "home",
+               blocks: [
+                 %{
+                   type: "section",
+                   text: %{type: "mrkdwn", text: "Pick an action"},
+                   accessory: %{
+                     type: "overflow",
+                     options: [
+                       %{
+                         text: %{type: "plain_text", text: ":pencil2:  Edit", emoji: true},
+                         value: "1"
+                       },
+                       %{
+                         text: %{type: "plain_text", text: ":wastebasket:  Delete", emoji: true},
+                         value: "1"
+                       }
+                     ]
+                   }
+                 }
+               ]
+             }
+    end
+  end
+
   describe "for-loop with JSON format" do
     defmodule ForLoopJsonTemplates do
       use Juvet.Template, format: :json
