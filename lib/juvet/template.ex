@@ -487,12 +487,29 @@ defmodule Juvet.Template do
   markers (`<%`) using the provided bindings. Non-string values are returned
   as-is.
   """
+  def eval_map(%{__for__: true} = node, bindings) do
+    collection = Keyword.fetch!(bindings, String.to_atom(node.collection))
+    variable = String.to_atom(node.variable)
+
+    Enum.flat_map(collection, fn item ->
+      iter_bindings = Keyword.put(bindings, variable, item)
+      Enum.map(node.body, &eval_map(&1, iter_bindings))
+    end)
+  end
+
   def eval_map(data, bindings) when is_map(data) do
     Map.new(data, fn {k, v} -> {k, eval_map(v, bindings)} end)
   end
 
   def eval_map(data, bindings) when is_list(data) do
-    Enum.map(data, &eval_map(&1, bindings))
+    if Enum.any?(data, &match?(%{__for__: true}, &1)) do
+      Enum.flat_map(data, fn
+        %{__for__: true} = node -> eval_map(node, bindings)
+        item -> [eval_map(item, bindings)]
+      end)
+    else
+      Enum.map(data, &eval_map(&1, bindings))
+    end
   end
 
   def eval_map(data, bindings) when is_binary(data) do
