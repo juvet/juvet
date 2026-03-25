@@ -13,11 +13,18 @@ defmodule Juvet.BotState.Platform do
 
   alias Juvet.BotState.Team
 
+  @doc """
+  Retrieves a list of messages from the `Juvet.BotState.Platform`.
+  """
   @spec get_messages(Juvet.BotState.Platform.t()) :: list(map())
   def get_messages(platform) do
     platform.messages
   end
 
+  @doc """
+  Puts a new message into the `Juvet.BotState.Platform` and returns a new `Juvet.BotState.Platform` with
+  the new message.
+  """
   @spec put_message(Juvet.BotState.Platform.t(), map()) :: {Juvet.BotState.Platform.t(), map}
   def put_message(platform, message) do
     messages = platform.messages
@@ -25,6 +32,10 @@ defmodule Juvet.BotState.Platform do
     {%{platform | messages: messages ++ [message]}, message}
   end
 
+  @doc """
+  Puts a new platform into the `Juvet.BotState.Platform` and returns a new `Juvet.BotState.Platform`
+  with the new team.
+  """
   @spec put_team(Juvet.BotState.Platform.t(), map()) :: {Juvet.BotState.Platform.t(), map()}
   def put_team(platform, %{id: team_id} = team) do
     case team(platform, team_id) do
@@ -43,11 +54,17 @@ defmodule Juvet.BotState.Platform do
     end
   end
 
+  @doc """
+  Returns a boolean to indiciated if the provided `Juvet.BotState.Platform` contains the specified team.
+  """
   @spec has_team?(Juvet.BotState.Platform.t(), String.t()) :: boolean()
   def has_team?(platform, team_id) do
     Enum.any?(platform.teams, &find(&1, team_id))
   end
 
+  @doc """
+  Returns a `Juvet.BotState.Team` with the specified team_id from the `Juvet.BotState.Platform.`
+  """
   @spec team(Juvet.BotState.Platform.t(), String.t()) :: Juvet.BotState.Team.t() | nil
   def team(platform, team_id) do
     case Enum.find(platform.teams, &find(&1, team_id)) do
