@@ -170,7 +170,18 @@ defmodule Juvet.Template.Parser do
   end
 
   # Attribute dispatching
-  defp attributes([{:open_brace, _, _} | rest], _platform), do: inline_attrs(rest, %{})
+  # Inline attrs optionally followed by a block (e.g., .option_group{label: "..."}\n  options:\n    ...)
+  defp attributes([{:open_brace, _, _} | rest], platform) do
+    {inline, rest} = inline_attrs(rest, %{})
+
+    case rest do
+      [{:newline, _, _}, {:indent, _, _} | block_rest] ->
+        merge_inline_with_block(inline, block_rest, platform)
+
+      _ ->
+        {inline, rest}
+    end
+  end
 
   # Multi-line block (newline + indent)
   defp attributes([{:newline, _, _}, {:indent, _, _} | rest], platform) do
@@ -191,6 +202,16 @@ defmodule Juvet.Template.Parser do
 
   defp attributes([{:eof, _, _}] = rest, _platform), do: {%{}, rest}
   defp attributes(rest, _platform), do: {%{}, rest}
+
+  defp merge_inline_with_block(inline, block_rest, platform) do
+    case block(block_rest, %{}, %{}, platform) do
+      {{block_attrs, children}, rest} ->
+        {{Map.merge(inline, block_attrs), children}, rest}
+
+      {block_attrs, rest} ->
+        {Map.merge(inline, block_attrs), rest}
+    end
+  end
 
   # Block parsing - indented attributes and children until dedent
   defp block([{:dedent, _, _} | rest], attrs, children, _platform) do
@@ -253,7 +274,11 @@ defmodule Juvet.Template.Parser do
     block(rest, Map.put(attrs, String.to_atom(key), val), children, platform)
   end
 
-  # Single element stored as-is, multiple elements stored as list
+  # Single element stored as-is, multiple elements stored as list.
+  # For-loops and code blocks expand to multiple elements at runtime,
+  # so they must stay wrapped in a list.
+  defp child_value([%{node_type: :for_loop}] = list), do: list
+  defp child_value([%{node_type: :code_block}] = list), do: list
   defp child_value([single]), do: single
   defp child_value(multiple), do: multiple
 
@@ -393,9 +418,10 @@ defmodule Juvet.Template.Parser do
   end
 
   # Parses a for-loop expression like "for item <- items do"
+  # or "for item <- parent.items do" (dotted access on collection)
   # Returns {:ok, variable, collection} or :error
   defp parse_for_expression(expr) do
-    case Regex.run(~r/\Afor\s+(\w+)\s*<-\s*(\w+)\s+do\z/, expr) do
+    case Regex.run(~r/\Afor\s+(\w+)\s*<-\s*([\w.]+)\s+do\z/, expr) do
       [_, variable, collection] -> {:ok, variable, collection}
       _ -> :error
     end

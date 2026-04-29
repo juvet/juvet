@@ -488,7 +488,7 @@ defmodule Juvet.Template do
   as-is.
   """
   def eval_map(%{__for__: true} = node, bindings) do
-    collection = Keyword.fetch!(bindings, String.to_atom(node.collection))
+    collection = resolve_binding(node.collection, bindings)
     variable = String.to_atom(node.variable)
 
     Enum.flat_map(collection, fn item ->
@@ -528,6 +528,19 @@ defmodule Juvet.Template do
   end
 
   def eval_map(data, _bindings), do: data
+
+  @doc false
+  def resolve_binding(path, bindings) when is_binary(path) do
+    case String.split(path, ".") do
+      [key] ->
+        Keyword.fetch!(bindings, String.to_atom(key))
+
+      [root | fields] ->
+        Enum.reduce(fields, Keyword.fetch!(bindings, String.to_atom(root)), fn field, acc ->
+          Map.fetch!(acc, String.to_atom(field))
+        end)
+    end
+  end
 
   # Extracts the source string from an opts keyword list for inline templates.
   # Returns {source, remaining_opts} where remaining_opts may include :platform.
@@ -707,13 +720,13 @@ defmodule Juvet.Template do
   # When the for-loop body contains code blocks, uses binding threading.
   defp compiled_to_quoted(%{__for__: true} = node, bindings_var) do
     variable = String.to_atom(node.variable)
-    collection = String.to_atom(node.collection)
+    collection_path = node.collection
     item_var = Macro.var(variable, __MODULE__)
 
     if Enum.any?(node.body, &match?(%{__code_block__: true}, &1)) do
-      for_quoted_with_code_blocks(node.body, variable, collection, item_var, bindings_var)
+      for_quoted_with_code_blocks(node.body, variable, collection_path, item_var, bindings_var)
     else
-      for_quoted_without_code_blocks(node.body, variable, collection, item_var, bindings_var)
+      for_quoted_without_code_blocks(node.body, variable, collection_path, item_var, bindings_var)
     end
   end
 
@@ -795,12 +808,12 @@ defmodule Juvet.Template do
   defp compiled_to_quoted(value, _bindings_var), do: Macro.escape(value)
 
   # For-loop quoted AST when body contains code blocks - uses binding threading.
-  defp for_quoted_with_code_blocks(body, variable, collection, item_var, bindings_var) do
+  defp for_quoted_with_code_blocks(body, variable, collection_path, item_var, bindings_var) do
     body_callbacks = Enum.map(body, &compiled_to_quoted_with_bindings/1)
 
     quote do
       Enum.flat_map(
-        Keyword.fetch!(unquote(bindings_var), unquote(collection)),
+        Juvet.Template.resolve_binding(unquote(collection_path), unquote(bindings_var)),
         fn unquote(item_var) ->
           iter_bindings = Keyword.put(unquote(bindings_var), unquote(variable), unquote(item_var))
 
@@ -814,7 +827,7 @@ defmodule Juvet.Template do
   end
 
   # For-loop quoted AST when body has no code blocks - simple eval_map approach.
-  defp for_quoted_without_code_blocks(body, variable, collection, item_var, bindings_var) do
+  defp for_quoted_without_code_blocks(body, variable, collection_path, item_var, bindings_var) do
     body_elements =
       Enum.map(body, fn body_el ->
         escaped_body = Macro.escape(body_el)
@@ -831,18 +844,19 @@ defmodule Juvet.Template do
       [single] ->
         quote do
           for unquote(item_var) <-
-                Keyword.fetch!(unquote(bindings_var), unquote(collection)) do
+                Juvet.Template.resolve_binding(unquote(collection_path), unquote(bindings_var)) do
             unquote(single)
           end
         end
 
       multiple ->
         quote do
-          Enum.flat_map(Keyword.fetch!(unquote(bindings_var), unquote(collection)), fn unquote(
-                                                                                         item_var
-                                                                                       ) ->
-            unquote(multiple)
-          end)
+          Enum.flat_map(
+            Juvet.Template.resolve_binding(unquote(collection_path), unquote(bindings_var)),
+            fn unquote(item_var) ->
+              unquote(multiple)
+            end
+          )
         end
     end
   end
