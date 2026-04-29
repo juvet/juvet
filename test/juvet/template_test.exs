@@ -1574,4 +1574,32 @@ defmodule Juvet.TemplateTest do
              }
     end
   end
+
+  describe "multiple EEx expressions in attribute values" do
+    defmodule MultipleEExTemplates do
+      use Juvet.Template
+
+      template(:multiple_eex_in_value,
+        slack:
+          ".view\n  type: :modal\n  blocks:\n    .actions\n      elements:\n        .button{text: \"Click\", action_id: \"btn\"}\n        .select\n          source: :static\n          action_id: \"test\"\n          placeholder: \"Pick...\"\n          options:\n            <%= for item <- items do %>\n              .option{text: \"<%= item.name %>\", value: \"<%= item.prefix %>_<%= item.id %>\"}\n            <% end %>"
+      )
+    end
+
+    test "multiple EEx expressions in a single attribute value render correctly" do
+      result =
+        MultipleEExTemplates.multiple_eex_in_value(
+          items: [
+            %{name: "Task One", prefix: "tasks", id: 42},
+            %{name: "Poll Two", prefix: "polls", id: 7}
+          ]
+        )
+
+      select = result.blocks |> hd() |> Map.get(:elements) |> List.last()
+
+      assert select.options == [
+               %{text: %{type: "plain_text", text: "Task One"}, value: "tasks_42"},
+               %{text: %{type: "plain_text", text: "Poll Two"}, value: "polls_7"}
+             ]
+    end
+  end
 end

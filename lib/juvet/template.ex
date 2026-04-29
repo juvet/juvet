@@ -513,18 +513,22 @@ defmodule Juvet.Template do
   end
 
   def eval_map(data, bindings) when is_binary(data) do
-    case Regex.run(~r/\A<%=\s*(.+?)\s*%>\z/, data) do
-      [_, expression] ->
-        {result, _} = Code.eval_string(expression, bindings)
-        if is_boolean(result), do: result, else: to_string(result)
-
-      _ ->
-        if String.contains?(data, "<%") do
-          EEx.eval_string(data, bindings)
-        else
-          data
-        end
+    if single_eex_expression?(data) do
+      [_, expression] = Regex.run(~r/\A<%=\s*(.+?)\s*%>\z/s, data)
+      {result, _} = Code.eval_string(expression, bindings)
+      if is_boolean(result), do: result, else: to_string(result)
+    else
+      if String.contains?(data, "<%") do
+        EEx.eval_string(data, bindings)
+      else
+        data
+      end
     end
+  end
+
+  defp single_eex_expression?(data) do
+    Regex.match?(~r/\A<%=\s*.+?\s*%>\z/s, data) and
+      length(Regex.scan(~r/<%=/, data)) == 1
   end
 
   def eval_map(data, _bindings), do: data
