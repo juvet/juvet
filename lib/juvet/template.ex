@@ -526,12 +526,12 @@ defmodule Juvet.Template do
     end
   end
 
+  def eval_map(data, _bindings), do: data
+
   defp single_eex_expression?(data) do
     Regex.match?(~r/\A<%=\s*.+?\s*%>\z/s, data) and
       length(Regex.scan(~r/<%=/, data)) == 1
   end
-
-  def eval_map(data, _bindings), do: data
 
   @doc false
   def resolve_binding(path, bindings) when is_binary(path) do
