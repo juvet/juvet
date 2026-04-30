@@ -1642,8 +1642,7 @@ defmodule Juvet.TemplateTest do
     end
 
     test "for-loop collection can be an inline Elixir expression" do
-      result =
-        ForLoopFunctionCallTemplates.with_inline_call(items: [1, 2, 3, 4, 5])
+      result = ForLoopFunctionCallTemplates.with_inline_call(items: [1, 2, 3, 4, 5])
 
       assert result.blocks == [
                %{type: "section", text: %{type: "mrkdwn", text: "2"}},
