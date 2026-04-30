@@ -1586,6 +1586,7 @@ defmodule Juvet.TemplateTest do
     end
 
     test "multiple EEx expressions in a single attribute value render correctly" do
+      # This also makes sure `_` is handled within the EEx expression
       result =
         MultipleEExTemplates.multiple_eex_in_value(
           items: [
@@ -1599,6 +1600,55 @@ defmodule Juvet.TemplateTest do
       assert select.options == [
                %{text: %{type: "plain_text", text: "Task One"}, value: "tasks_42"},
                %{text: %{type: "plain_text", text: "Poll Two"}, value: "polls_7"}
+             ]
+    end
+  end
+
+  describe "function calls in for-loop collections" do
+    defmodule ForLoopHelpers do
+      def group_items(items) do
+        items
+        |> Enum.group_by(& &1.type)
+        |> Enum.map(fn {type, group} -> %{label: type, items: group} end)
+      end
+    end
+
+    defmodule ForLoopFunctionCallTemplates do
+      use Juvet.Template, helpers: [Juvet.TemplateTest.ForLoopHelpers]
+
+      template(:with_helper_call,
+        slack:
+          ".view\n  type: :modal\n  blocks:\n    <%= for group <- group_items.(items) do %>\n      .section{text: \"<%= group.label %>\", type: :mrkdwn}\n    <% end %>"
+      )
+
+      template(:with_inline_call,
+        slack:
+          ".view\n  type: :modal\n  blocks:\n    <%= for group <- Enum.chunk_every(items, 2) do %>\n      .section{text: \"<%= length(group) %>\", type: :mrkdwn}\n    <% end %>"
+      )
+    end
+
+    test "for-loop collection can be a helper function call" do
+      result =
+        ForLoopFunctionCallTemplates.with_helper_call(
+          items: [
+            %{type: "Tasks", name: "T1"},
+            %{type: "Tasks", name: "T2"},
+            %{type: "Polls", name: "P1"}
+          ]
+        )
+
+      labels = Enum.map(result.blocks, & &1.text.text) |> Enum.sort()
+      assert labels == ["Polls", "Tasks"]
+    end
+
+    test "for-loop collection can be an inline Elixir expression" do
+      result =
+        ForLoopFunctionCallTemplates.with_inline_call(items: [1, 2, 3, 4, 5])
+
+      assert result.blocks == [
+               %{type: "section", text: %{type: "mrkdwn", text: "2"}},
+               %{type: "section", text: %{type: "mrkdwn", text: "2"}},
+               %{type: "section", text: %{type: "mrkdwn", text: "1"}}
              ]
     end
   end

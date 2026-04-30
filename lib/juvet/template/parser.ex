@@ -417,12 +417,12 @@ defmodule Juvet.Template.Parser do
     end
   end
 
-  # Parses a for-loop expression like "for item <- items do"
-  # or "for item <- parent.items do" (dotted access on collection)
-  # Returns {:ok, variable, collection} or :error
+  # Parses a for-loop expression like "for item <- items do",
+  # "for item <- parent.items do", or "for item <- helper.(items) do"
+  # Returns {:ok, variable, collection_expression} or :error
   defp parse_for_expression(expr) do
-    case Regex.run(~r/\Afor\s+(\w+)\s*<-\s*([\w.]+)\s+do\z/, expr) do
-      [_, variable, collection] -> {:ok, variable, collection}
+    case Regex.run(~r/\Afor\s+(\w+)\s*<-\s*(.+)\s+do\z/, expr) do
+      [_, variable, collection] -> {:ok, variable, String.trim(collection)}
       _ -> :error
     end
   end

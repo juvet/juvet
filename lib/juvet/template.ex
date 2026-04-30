@@ -534,17 +534,16 @@ defmodule Juvet.Template do
   end
 
   @doc false
-  def resolve_binding(path, bindings) when is_binary(path) do
-    case String.split(path, ".") do
-      [key] ->
-        Keyword.fetch!(bindings, String.to_atom(key))
-
-      [root | fields] ->
-        Enum.reduce(fields, Keyword.fetch!(bindings, String.to_atom(root)), fn field, acc ->
-          Map.fetch!(acc, String.to_atom(field))
-        end)
+  def resolve_binding(expression, bindings) when is_binary(expression) do
+    if simple_binding?(expression) do
+      Keyword.fetch!(bindings, String.to_atom(expression))
+    else
+      {result, _} = Code.eval_string(expression, bindings)
+      result
     end
   end
+
+  defp simple_binding?(expression), do: Regex.match?(~r/\A\w+\z/, expression)
 
   # Extracts the source string from an opts keyword list for inline templates.
   # Returns {source, remaining_opts} where remaining_opts may include :platform.
