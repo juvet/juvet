@@ -13,6 +13,10 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Context do
     Enum.map(elements, &compile_context_element/1)
   end
 
+  defp compile_elements(%{children: %{elements: %{} = element}}) do
+    [compile_context_element(element)]
+  end
+
   defp compile_elements(_el), do: []
 
   # Images in context are rendered as image elements
