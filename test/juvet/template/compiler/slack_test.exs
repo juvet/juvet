@@ -251,6 +251,41 @@ defmodule Juvet.Template.Compiler.SlackTest do
                ])
     end
 
+    test "button with value attribute" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :button,
+                  attributes: %{text: "Next", action_id: "paginate", value: "page:2"}
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "actions",
+                   elements: [
+                     %{
+                       type: "button",
+                       text: %{type: "plain_text", text: "Next"},
+                       action_id: "paginate",
+                       value: "page:2"
+                     }
+                   ]
+                 }
+               ])
+    end
+
     test "actions with no elements returns empty array" do
       ast = view_ast([%{platform: :slack, element: :actions, attributes: %{}}])
 

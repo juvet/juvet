@@ -11,12 +11,14 @@ defmodule Juvet.Template.Compiler.Slack.Elements.Button do
       text: Text.compile(text_attrs.text, Map.put_new(text_attrs, :type, :plain_text))
     }
     |> maybe_put(:action_id, attrs[:action_id])
+    |> maybe_put(:value, attrs[:value])
     |> maybe_put(:confirm, compile_confirm(el))
   end
 
   def compile(%{element: :button, attributes: %{text: text} = attrs} = el) do
     %{type: "button", text: Text.compile(text, Map.put_new(attrs, :type, :plain_text))}
     |> maybe_put(:action_id, attrs[:action_id])
+    |> maybe_put(:value, attrs[:value])
     |> maybe_put(:confirm, compile_confirm(el))
   end
 
