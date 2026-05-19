@@ -286,6 +286,115 @@ defmodule Juvet.Template.Compiler.SlackTest do
                ])
     end
 
+    test "button with style attribute" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :button,
+                  attributes: %{text: "Delete", action_id: "delete", style: "danger"}
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "actions",
+                   elements: [
+                     %{
+                       type: "button",
+                       text: %{type: "plain_text", text: "Delete"},
+                       action_id: "delete",
+                       style: "danger"
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "button with url attribute" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :button,
+                  attributes: %{text: "Open", action_id: "open", url: "https://example.com"}
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "actions",
+                   elements: [
+                     %{
+                       type: "button",
+                       text: %{type: "plain_text", text: "Open"},
+                       action_id: "open",
+                       url: "https://example.com"
+                     }
+                   ]
+                 }
+               ])
+    end
+
+    test "button with accessibility_label attribute" do
+      ast =
+        view_ast([
+          %{
+            platform: :slack,
+            element: :actions,
+            attributes: %{},
+            children: %{
+              elements: [
+                %{
+                  platform: :slack,
+                  element: :button,
+                  attributes: %{
+                    text: "Save",
+                    action_id: "save",
+                    accessibility_label: "Save current changes"
+                  }
+                }
+              ]
+            }
+          }
+        ])
+
+      assert Slack.compile(ast) ==
+               view_expected([
+                 %{
+                   type: "actions",
+                   elements: [
+                     %{
+                       type: "button",
+                       text: %{type: "plain_text", text: "Save"},
+                       action_id: "save",
+                       accessibility_label: "Save current changes"
+                     }
+                   ]
+                 }
+               ])
+    end
+
     test "actions with no elements returns empty array" do
       ast = view_ast([%{platform: :slack, element: :actions, attributes: %{}}])
 
