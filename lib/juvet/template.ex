@@ -493,7 +493,13 @@ defmodule Juvet.Template do
 
     Enum.flat_map(collection, fn item ->
       iter_bindings = Keyword.put(bindings, variable, item)
-      Enum.map(node.body, &eval_map(&1, iter_bindings))
+
+      Enum.flat_map(node.body, fn body_item ->
+        case eval_map(body_item, iter_bindings) do
+          result when is_list(result) -> result
+          result -> [result]
+        end
+      end)
     end)
   end
 
@@ -857,7 +863,10 @@ defmodule Juvet.Template do
           Enum.flat_map(
             Juvet.Template.resolve_binding(unquote(collection_path), unquote(bindings_var)),
             fn unquote(item_var) ->
-              unquote(multiple)
+              Enum.flat_map(unquote(multiple), fn
+                result when is_list(result) -> result
+                result -> [result]
+              end)
             end
           )
         end
