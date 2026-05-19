@@ -11,5 +11,9 @@ defmodule Juvet.Template.Compiler.Slack.Blocks.Actions do
     Enum.map(elements, &Slack.compile_element/1)
   end
 
+  defp compile_elements(%{children: %{elements: %{} = element}}) do
+    [Slack.compile_element(element)]
+  end
+
   defp compile_elements(_el), do: []
 end

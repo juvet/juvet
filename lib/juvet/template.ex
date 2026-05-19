@@ -493,7 +493,7 @@ defmodule Juvet.Template do
 
     Enum.flat_map(collection, fn item ->
       iter_bindings = Keyword.put(bindings, variable, item)
-      Enum.map(node.body, &eval_map(&1, iter_bindings))
+      flat_eval_body(node.body, iter_bindings)
     end)
   end
 
@@ -527,6 +527,24 @@ defmodule Juvet.Template do
   end
 
   def eval_map(data, _bindings), do: data
+
+  @doc false
+  def flatten_results(results) do
+    Enum.flat_map(results, fn
+      result when is_list(result) -> result
+      result -> [result]
+    end)
+  end
+
+  @doc false
+  def flat_eval_body(body, bindings) do
+    Enum.flat_map(body, fn body_item ->
+      case eval_map(body_item, bindings) do
+        result when is_list(result) -> result
+        result -> [result]
+      end
+    end)
+  end
 
   defp single_eex_expression?(data) do
     Regex.match?(~r/\A<%=\s*.+?\s*%>\z/s, data) and
@@ -857,7 +875,7 @@ defmodule Juvet.Template do
           Enum.flat_map(
             Juvet.Template.resolve_binding(unquote(collection_path), unquote(bindings_var)),
             fn unquote(item_var) ->
-              unquote(multiple)
+              Juvet.Template.flatten_results(unquote(multiple))
             end
           )
         end
