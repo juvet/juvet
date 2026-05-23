@@ -17,7 +17,7 @@ defmodule Juvet.SlackAPI.ConversationsTest do
       use_cassette "conversations/history/successful" do
         assert {:ok, response} = SlackAPI.Conversations.history(%{channel: channel, token: token})
 
-        assert Enum.count(response[:messages]) > 0
+        refute Enum.empty?(response[:messages])
       end
     end
 
@@ -63,7 +63,7 @@ defmodule Juvet.SlackAPI.ConversationsTest do
       use_cassette "conversations/list/successful" do
         assert {:ok, response} = SlackAPI.Conversations.list(%{token: token})
 
-        assert Enum.count(response[:channels]) > 0
+        refute Enum.empty?(response[:channels])
       end
     end
 
@@ -110,7 +110,7 @@ defmodule Juvet.SlackAPI.ConversationsTest do
       use_cassette "conversations/members/successful" do
         assert {:ok, response} = SlackAPI.Conversations.members(%{channel: channel, token: token})
 
-        assert Enum.count(response[:members]) > 0
+        refute Enum.empty?(response[:members])
       end
     end
 
@@ -137,7 +137,7 @@ defmodule Juvet.SlackAPI.ConversationsTest do
                    token: token
                  })
 
-        assert Enum.count(response[:messages]) > 0
+        refute Enum.empty?(response[:messages])
       end
     end
 

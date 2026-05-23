@@ -1048,26 +1048,31 @@ defmodule Juvet.Template do
       end)
 
     case body_elements do
-      [single] ->
-        quote do
-          fn bindings ->
-            results =
-              for unquote(item_var) <- Keyword.fetch!(bindings, unquote(collection)) do
-                unquote(single)
-              end
+      [single] -> for_single_body_callback(collection, item_var, single)
+      multiple -> for_multi_body_callback(collection, item_var, multiple)
+    end
+  end
 
-            {results, bindings}
+  defp for_single_body_callback(collection, item_var, body_element) do
+    quote do
+      fn bindings ->
+        results =
+          for unquote(item_var) <- Keyword.fetch!(bindings, unquote(collection)) do
+            unquote(body_element)
           end
-        end
 
-      multiple ->
-        flat_map_body = for_flat_map_body(collection, item_var, multiple)
+        {results, bindings}
+      end
+    end
+  end
 
-        quote do
-          fn bindings ->
-            {unquote(flat_map_body), bindings}
-          end
-        end
+  defp for_multi_body_callback(collection, item_var, body_elements) do
+    flat_map_body = for_flat_map_body(collection, item_var, body_elements)
+
+    quote do
+      fn bindings ->
+        {unquote(flat_map_body), bindings}
+      end
     end
   end
 
