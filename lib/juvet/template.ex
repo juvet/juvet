@@ -705,8 +705,7 @@ defmodule Juvet.Template do
 
   defp generate_json_function(name, compiled, helper_bindings) when is_map(compiled) do
     cond do
-      map_contains_for?(compiled) or map_contains_code_block?(compiled) or
-          map_contains_if?(compiled) ->
+      map_contains_dynamic_marker?(compiled) ->
         bindings_var = Macro.var(:bindings, __MODULE__)
         body = compiled_to_quoted(compiled, bindings_var)
 
@@ -738,8 +737,7 @@ defmodule Juvet.Template do
 
   defp generate_map_function(name, compiled, helper_bindings) when is_map(compiled) do
     cond do
-      map_contains_for?(compiled) or map_contains_code_block?(compiled) or
-          map_contains_if?(compiled) ->
+      map_contains_dynamic_marker?(compiled) ->
         bindings_var = Macro.var(:bindings, __MODULE__)
         body = compiled_to_quoted(compiled, bindings_var)
 
@@ -1247,4 +1245,11 @@ defmodule Juvet.Template do
     do: Enum.any?(list, &map_contains_if?/1)
 
   defp map_contains_if?(_), do: false
+
+  # Any dynamic marker (__for__, __code_block__, __if__) means the structure
+  # cannot be statically encoded and must route through compiled_to_quoted/2.
+  defp map_contains_dynamic_marker?(compiled) do
+    map_contains_for?(compiled) or map_contains_code_block?(compiled) or
+      map_contains_if?(compiled)
+  end
 end
