@@ -498,7 +498,12 @@ defmodule Juvet.Template do
   end
 
   def eval_map(data, bindings) when is_map(data) do
-    Map.new(data, fn {k, v} -> {k, eval_map(v, bindings)} end)
+    Enum.reduce(data, %{}, fn {k, v}, acc ->
+      case eval_map(v, bindings) do
+        nil -> acc
+        evaluated -> Map.put(acc, k, evaluated)
+      end
+    end)
   end
 
   def eval_map(data, bindings) when is_list(data) do
@@ -516,7 +521,12 @@ defmodule Juvet.Template do
     if single_eex_expression?(data) do
       [_, expression] = Regex.run(~r/\A<%=\s*(.+?)\s*%>\z/s, data)
       {result, _} = Code.eval_string(expression, bindings)
-      if is_boolean(result), do: result, else: to_string(result)
+
+      cond do
+        is_nil(result) -> nil
+        is_boolean(result) -> result
+        true -> to_string(result)
+      end
     else
       if String.contains?(data, "<%") do
         EEx.eval_string(data, bindings)

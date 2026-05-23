@@ -1651,4 +1651,77 @@ defmodule Juvet.TemplateTest do
              ]
     end
   end
+
+  describe "nil-valued attributes in single-EEx expressions" do
+    defmodule NilAttrTemplates do
+      use Juvet.Template
+
+      template(:datepicker_with_initial, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.actions
+            elements:
+              :slack.datepicker{action_id: "pick", initial_date: <%= maybe_date %>}
+      """)
+
+      template(:datepicker_with_focus, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.actions
+            elements:
+              :slack.datepicker{action_id: "pick", focus_on_load: <%= maybe_focus %>}
+      """)
+
+      template(:header_with_interpolation, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: "Hello <%= name %>"}
+      """)
+    end
+
+    test "single-EEx attribute resolving to nil drops the key from the compiled map" do
+      result = NilAttrTemplates.datepicker_with_initial(maybe_date: nil)
+
+      [datepicker] = hd(result.blocks).elements
+      refute Map.has_key?(datepicker, :initial_date)
+    end
+
+    test "single-EEx attribute resolving to a real value keeps the key" do
+      result = NilAttrTemplates.datepicker_with_initial(maybe_date: "2026-06-01")
+
+      [datepicker] = hd(result.blocks).elements
+      assert datepicker.initial_date == "2026-06-01"
+    end
+
+    test "single-EEx boolean attribute resolving to nil drops the key" do
+      result = NilAttrTemplates.datepicker_with_focus(maybe_focus: nil)
+
+      [datepicker] = hd(result.blocks).elements
+      refute Map.has_key?(datepicker, :focus_on_load)
+    end
+
+    test "single-EEx boolean attribute resolving to true is preserved unchanged" do
+      result = NilAttrTemplates.datepicker_with_focus(maybe_focus: true)
+
+      [datepicker] = hd(result.blocks).elements
+      assert datepicker.focus_on_load == true
+    end
+
+    test "multi-token EEx interpolation with nil binding renders as empty string (unchanged)" do
+      result = NilAttrTemplates.header_with_interpolation(name: nil)
+
+      header = hd(result.blocks)
+      assert header.text.text == "Hello "
+    end
+
+    test "multi-token EEx interpolation with a real binding renders the interpolated text" do
+      result = NilAttrTemplates.header_with_interpolation(name: "World")
+
+      header = hd(result.blocks)
+      assert header.text.text == "Hello World"
+    end
+  end
 end
