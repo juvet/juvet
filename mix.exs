@@ -14,8 +14,19 @@ defmodule Juvet.Mixfile do
       aliases: aliases(),
       description: description(),
       source_url: "https://github.com/juvet/juvet",
-      preferred_cli_env: preferred_cli_env(),
       dialyzer: dialyzer()
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
+        vcr: :test,
+        "vcr.delete": :test,
+        "vcr.check": :test,
+        "vcr.show": :test,
+        record: :test
+      ]
     ]
   end
 
@@ -76,15 +87,5 @@ defmodule Juvet.Mixfile do
       },
       files: ~w(lib LICENSE.md mix.exs README.md)
     }
-  end
-
-  defp preferred_cli_env do
-    [
-      vcr: :test,
-      "vcr.delete": :test,
-      "vcr.check": :test,
-      "vcr.show": :test,
-      record: :test
-    ]
   end
 end
