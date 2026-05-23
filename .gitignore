@@ -25,6 +25,10 @@ erl_crash.dump
 # Ignore our robots for open source projects
 /.claude
 
+# Local-only planning artifacts (SPECTRE task_context/plan/tasks). Per-PR "why"
+# belongs in the PR description, not the tree.
+/docs/tasks
+
 # dialyzer PLTs
 /priv/plts/*.plt
 /priv/plts/*.plt.hash
