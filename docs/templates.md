@@ -78,6 +78,50 @@ For Slack Block Kit, the compiled output looks like:
 }
 ```
 
+### Modal Views
+
+`:slack.view` with `type: :modal` supports the full Slack modal envelope. Every
+field except `type` and `blocks` is conditionally emitted &mdash; absent attributes
+do not appear in the output.
+
+```elixir
+# cheex source:
+#
+# :slack.view
+#   type: :modal
+#   callback_id: "submit_decision_modal"
+#   title: "New Decision"
+#   submit: "Save"
+#   close: "Cancel"
+#   private_metadata: "<%= decision_id %>"
+#   notify_on_close: true
+#   blocks:
+#     :slack.section{text: "Are you sure?"}
+
+%{
+  type: "modal",
+  callback_id: "submit_decision_modal",
+  title: %{type: "plain_text", text: "New Decision"},
+  submit: %{type: "plain_text", text: "Save"},
+  close: %{type: "plain_text", text: "Cancel"},
+  private_metadata: "abc-123",
+  notify_on_close: true,
+  blocks: [
+    %{type: "section", text: %{type: "mrkdwn", text: "Are you sure?"}}
+  ]
+}
+```
+
+Supported modal envelope fields: `callback_id`, `title`, `submit`, `close`,
+`private_metadata`, `clear_on_close`, `notify_on_close`, `external_id`,
+`submit_disabled`.
+
+`title:`, `submit:`, and `close:` accept either a plain string (autowrapped as
+a `plain_text` object) or a nested map of the form `%{text: "...", emoji: true}`.
+
+Juvet does not validate Slack's contract (e.g., `title.text` &le; 24 characters,
+`title` required for modals). Slack remains the authority for these rules.
+
 The template layer then either returns the map directly (`:map` format, the default)
 or encodes it to JSON (`:json` format) via `Encoder.encode!/1`.
 
