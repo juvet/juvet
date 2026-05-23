@@ -43,28 +43,19 @@ defmodule Juvet.Template.Parser do
   defp do_parse([{:dedent, _, _} | rest], acc, platform), do: do_parse(rest, acc, platform)
   defp do_parse([{:newline, _, _} | rest], acc, platform), do: do_parse(rest, acc, platform)
 
-  # EEx expression at top level - detect for-loop or skip
+  # EEx expression at top level - detect for-loop, if-block, or raise
   defp do_parse([{:eex_expr, expr, pos} | rest], acc, platform) do
-    case parse_for_expression(expr) do
-      {:ok, variable, collection} ->
+    case classify_eex_expression(expr) do
+      {:for, variable, collection} ->
         {body, rest} = parse_for_body(rest, [], platform)
+        do_parse(rest, [for_loop_node(variable, collection, body, pos) | acc], platform)
 
-        for_node = %{
-          node_type: :for_loop,
-          variable: variable,
-          collection: collection,
-          body: body,
-          line: elem(pos, 0),
-          column: elem(pos, 1)
-        }
+      {:if, condition} ->
+        {then_body, else_body, rest} = parse_if_body(rest, [], platform)
+        do_parse(rest, [if_block_node(condition, then_body, else_body, pos) | acc], platform)
 
-        do_parse(rest, [for_node | acc], platform)
-
-      :error ->
-        raise ParserError,
-          message: "Unsupported EEx expression '#{expr}', only for loops are supported",
-          line: elem(pos, 0),
-          column: elem(pos, 1)
+      :unknown ->
+        raise_unsupported_eex(expr, pos)
     end
   end
 
@@ -279,6 +270,7 @@ defmodule Juvet.Template.Parser do
   # so they must stay wrapped in a list.
   defp child_value([%{node_type: :for_loop}] = list), do: list
   defp child_value([%{node_type: :code_block}] = list), do: list
+  defp child_value([%{node_type: :if_block}] = list), do: list
   defp child_value([single]), do: single
   defp child_value(multiple), do: multiple
 
@@ -300,28 +292,24 @@ defmodule Juvet.Template.Parser do
     nested_elements(rest, [el | acc], platform)
   end
 
-  # EEx expression inside nested elements - detect for-loop
+  # EEx expression inside nested elements - detect for-loop or if-block
   defp nested_elements([{:eex_expr, expr, pos} | rest], acc, platform) do
-    case parse_for_expression(expr) do
-      {:ok, variable, collection} ->
+    case classify_eex_expression(expr) do
+      {:for, variable, collection} ->
         {body, rest} = parse_for_body(rest, [], platform)
+        nested_elements(rest, [for_loop_node(variable, collection, body, pos) | acc], platform)
 
-        for_node = %{
-          node_type: :for_loop,
-          variable: variable,
-          collection: collection,
-          body: body,
-          line: elem(pos, 0),
-          column: elem(pos, 1)
-        }
+      {:if, condition} ->
+        {then_body, else_body, rest} = parse_if_body(rest, [], platform)
 
-        nested_elements(rest, [for_node | acc], platform)
+        nested_elements(
+          rest,
+          [if_block_node(condition, then_body, else_body, pos) | acc],
+          platform
+        )
 
-      :error ->
-        raise ParserError,
-          message: "Unsupported EEx expression '#{expr}', only for loops are supported",
-          line: elem(pos, 0),
-          column: elem(pos, 1)
+      :unknown ->
+        raise_unsupported_eex(expr, pos)
     end
   end
 
@@ -417,14 +405,54 @@ defmodule Juvet.Template.Parser do
     end
   end
 
-  # Parses a for-loop expression like "for item <- items do",
-  # "for item <- parent.items do", or "for item <- helper.(items) do"
-  # Returns {:ok, variable, collection_expression} or :error
-  defp parse_for_expression(expr) do
-    case Regex.run(~r/\Afor\s+(\w+)\s*<-\s*(.+)\s+do\z/, expr) do
-      [_, variable, collection] -> {:ok, variable, String.trim(collection)}
-      _ -> :error
+  # Classifies an EEx expression into a dispatch tag. Designed so future
+  # additions (e.g. variable spread) slot in as new arms without disturbing
+  # existing call sites; the :unknown arm preserves back-compat raising.
+  defp classify_eex_expression(expr) do
+    cond do
+      match = Regex.run(~r/\Afor\s+(\w+)\s*<-\s*(.+)\s+do\z/, expr) ->
+        [_, variable, collection] = match
+        {:for, variable, String.trim(collection)}
+
+      match = Regex.run(~r/\Aif\s+(.+)\s+do\z/, expr) ->
+        [_, condition] = match
+        {:if, String.trim(condition)}
+
+      String.trim(expr) == "else" ->
+        :else
+
+      true ->
+        :unknown
     end
+  end
+
+  defp for_loop_node(variable, collection, body, {line, col}) do
+    %{
+      node_type: :for_loop,
+      variable: variable,
+      collection: collection,
+      body: body,
+      line: line,
+      column: col
+    }
+  end
+
+  defp if_block_node(condition, then_body, else_body, {line, col}) do
+    %{
+      node_type: :if_block,
+      condition: condition,
+      then_body: then_body,
+      else_body: else_body,
+      line: line,
+      column: col
+    }
+  end
+
+  defp raise_unsupported_eex(expr, {line, col}) do
+    raise ParserError,
+      message: "Unsupported EEx expression '#{expr}', only for loops are supported",
+      line: line,
+      column: col
   end
 
   # Collects elements inside a for-loop body until {:eex_code, "end", _}.
@@ -471,26 +499,22 @@ defmodule Juvet.Template.Parser do
   end
 
   defp parse_for_body([{:eex_expr, expr, pos} | rest], acc, platform) do
-    case parse_for_expression(expr) do
-      {:ok, variable, collection} ->
+    case classify_eex_expression(expr) do
+      {:for, variable, collection} ->
         {body, rest} = parse_for_body(rest, [], platform)
+        parse_for_body(rest, [for_loop_node(variable, collection, body, pos) | acc], platform)
 
-        for_node = %{
-          node_type: :for_loop,
-          variable: variable,
-          collection: collection,
-          body: body,
-          line: elem(pos, 0),
-          column: elem(pos, 1)
-        }
+      {:if, condition} ->
+        {then_body, else_body, rest} = parse_if_body(rest, [], platform)
 
-        parse_for_body(rest, [for_node | acc], platform)
+        parse_for_body(
+          rest,
+          [if_block_node(condition, then_body, else_body, pos) | acc],
+          platform
+        )
 
-      :error ->
-        raise ParserError,
-          message: "Unsupported EEx expression '#{expr}', only for loops are supported",
-          line: elem(pos, 0),
-          column: elem(pos, 1)
+      :unknown ->
+        raise_unsupported_eex(expr, pos)
     end
   end
 
@@ -511,5 +535,176 @@ defmodule Juvet.Template.Parser do
       message: "Unexpected end of template, expected <% end %> to close for loop",
       line: nil,
       column: nil
+  end
+
+  # Collects elements inside an if-block body until <% else %> or <% end %>.
+  # Returns {then_body, else_body | nil, remaining_tokens}.
+  defp parse_if_body([{:eex_code, "end", _} | rest], acc, _platform) do
+    {Enum.reverse(acc), nil, rest}
+  end
+
+  defp parse_if_body([{:eex_code, "else", _} | rest], acc, platform) do
+    {else_body, rest} = parse_else_body(rest, [], platform)
+    {Enum.reverse(acc), else_body, rest}
+  end
+
+  defp parse_if_body([{:eex_expr, "else", _} | rest], acc, platform) do
+    {else_body, rest} = parse_else_body(rest, [], platform)
+    {Enum.reverse(acc), else_body, rest}
+  end
+
+  defp parse_if_body([], _acc, _platform) do
+    raise ParserError,
+      message: "Unexpected end of template, expected <% end %> to close if block",
+      line: nil,
+      column: nil
+  end
+
+  defp parse_if_body([{:eof, _, _}], _acc, _platform) do
+    raise ParserError,
+      message: "Unexpected end of template, expected <% end %> to close if block",
+      line: nil,
+      column: nil
+  end
+
+  defp parse_if_body([{:newline, _, _} | rest], acc, platform),
+    do: parse_if_body(rest, acc, platform)
+
+  defp parse_if_body([{:whitespace, _, _} | rest], acc, platform),
+    do: parse_if_body(rest, acc, platform)
+
+  defp parse_if_body([{:indent, _, _} | rest], acc, platform),
+    do: parse_if_body(rest, acc, platform)
+
+  defp parse_if_body([{:dedent, _, _} | rest], acc, platform),
+    do: parse_if_body(rest, acc, platform)
+
+  defp parse_if_body([{:colon, _, _} | _] = tokens, acc, platform) do
+    {el, rest} = element(tokens)
+    parse_if_body(rest, [el | acc], platform)
+  end
+
+  defp parse_if_body([{:dot, _, _} | _] = tokens, acc, platform) when platform != nil do
+    {el, rest} = element(tokens, platform)
+    parse_if_body(rest, [el | acc], platform)
+  end
+
+  defp parse_if_body([{:dot, _, {line, col}} | _], _acc, _platform) do
+    raise ParserError,
+      message:
+        "Element with '.' shorthand must be inside a parent element that specifies a platform",
+      line: line,
+      column: col
+  end
+
+  defp parse_if_body([{:eex_expr, expr, pos} | rest], acc, platform) do
+    case classify_eex_expression(expr) do
+      {:for, variable, collection} ->
+        {body, rest} = parse_for_body(rest, [], platform)
+        parse_if_body(rest, [for_loop_node(variable, collection, body, pos) | acc], platform)
+
+      {:if, condition} ->
+        {then_body, else_body, rest} = parse_if_body(rest, [], platform)
+
+        parse_if_body(
+          rest,
+          [if_block_node(condition, then_body, else_body, pos) | acc],
+          platform
+        )
+
+      :unknown ->
+        raise_unsupported_eex(expr, pos)
+    end
+  end
+
+  defp parse_if_body([{:eex_code, code, pos} | rest], acc, platform) do
+    code_block = %{
+      node_type: :code_block,
+      code: String.trim(code),
+      line: elem(pos, 0),
+      column: elem(pos, 1)
+    }
+
+    parse_if_body(rest, [code_block | acc], platform)
+  end
+
+  # Collects elements inside an if-block else_body until <% end %>.
+  defp parse_else_body([{:eex_code, "end", _} | rest], acc, _platform) do
+    {Enum.reverse(acc), rest}
+  end
+
+  defp parse_else_body([], _acc, _platform) do
+    raise ParserError,
+      message: "Unexpected end of template, expected <% end %> to close if/else block",
+      line: nil,
+      column: nil
+  end
+
+  defp parse_else_body([{:eof, _, _}], _acc, _platform) do
+    raise ParserError,
+      message: "Unexpected end of template, expected <% end %> to close if/else block",
+      line: nil,
+      column: nil
+  end
+
+  defp parse_else_body([{:newline, _, _} | rest], acc, platform),
+    do: parse_else_body(rest, acc, platform)
+
+  defp parse_else_body([{:whitespace, _, _} | rest], acc, platform),
+    do: parse_else_body(rest, acc, platform)
+
+  defp parse_else_body([{:indent, _, _} | rest], acc, platform),
+    do: parse_else_body(rest, acc, platform)
+
+  defp parse_else_body([{:dedent, _, _} | rest], acc, platform),
+    do: parse_else_body(rest, acc, platform)
+
+  defp parse_else_body([{:colon, _, _} | _] = tokens, acc, platform) do
+    {el, rest} = element(tokens)
+    parse_else_body(rest, [el | acc], platform)
+  end
+
+  defp parse_else_body([{:dot, _, _} | _] = tokens, acc, platform) when platform != nil do
+    {el, rest} = element(tokens, platform)
+    parse_else_body(rest, [el | acc], platform)
+  end
+
+  defp parse_else_body([{:dot, _, {line, col}} | _], _acc, _platform) do
+    raise ParserError,
+      message:
+        "Element with '.' shorthand must be inside a parent element that specifies a platform",
+      line: line,
+      column: col
+  end
+
+  defp parse_else_body([{:eex_expr, expr, pos} | rest], acc, platform) do
+    case classify_eex_expression(expr) do
+      {:for, variable, collection} ->
+        {body, rest} = parse_for_body(rest, [], platform)
+        parse_else_body(rest, [for_loop_node(variable, collection, body, pos) | acc], platform)
+
+      {:if, condition} ->
+        {then_body, else_body, rest} = parse_if_body(rest, [], platform)
+
+        parse_else_body(
+          rest,
+          [if_block_node(condition, then_body, else_body, pos) | acc],
+          platform
+        )
+
+      :unknown ->
+        raise_unsupported_eex(expr, pos)
+    end
+  end
+
+  defp parse_else_body([{:eex_code, code, pos} | rest], acc, platform) do
+    code_block = %{
+      node_type: :code_block,
+      code: String.trim(code),
+      line: elem(pos, 0),
+      column: elem(pos, 1)
+    }
+
+    parse_else_body(rest, [code_block | acc], platform)
   end
 end

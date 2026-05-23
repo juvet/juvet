@@ -1783,4 +1783,86 @@ defmodule Juvet.TemplateTest do
       assert result.external_id == "modal-42"
     end
   end
+
+  describe "if/else expressions in cheex" do
+    defmodule IfBlockTemplates do
+      use Juvet.Template
+
+      template(:simple_if, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= if show do %>
+            .section{text: "Visible"}
+          <% end %>
+      """)
+
+      template(:if_else, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= if show do %>
+            .section{text: "Yes"}
+          <% else %>
+            .section{text: "No"}
+          <% end %>
+      """)
+
+      template(:if_inside_for, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+            <%= if item.show do %>
+              .section{text: "<%= item.label %>"}
+            <% end %>
+          <% end %>
+      """)
+    end
+
+    test "if-block with truthy condition renders then_body" do
+      result = IfBlockTemplates.simple_if(show: true)
+
+      assert result.blocks == [
+               %{type: "section", text: %{type: "mrkdwn", text: "Visible"}}
+             ]
+    end
+
+    test "if-block with falsy condition renders nothing when else_body is absent" do
+      result = IfBlockTemplates.simple_if(show: false)
+
+      assert result.blocks == []
+    end
+
+    test "if-else with truthy condition renders then_body" do
+      result = IfBlockTemplates.if_else(show: true)
+
+      assert result.blocks == [
+               %{type: "section", text: %{type: "mrkdwn", text: "Yes"}}
+             ]
+    end
+
+    test "if-else with falsy condition renders else_body" do
+      result = IfBlockTemplates.if_else(show: false)
+
+      assert result.blocks == [
+               %{type: "section", text: %{type: "mrkdwn", text: "No"}}
+             ]
+    end
+
+    test "if-block nested inside for-loop filters iterations" do
+      items = [
+        %{show: true, label: "first"},
+        %{show: false, label: "skipped"},
+        %{show: true, label: "third"}
+      ]
+
+      result = IfBlockTemplates.if_inside_for(items: items)
+
+      assert result.blocks == [
+               %{type: "section", text: %{type: "mrkdwn", text: "first"}},
+               %{type: "section", text: %{type: "mrkdwn", text: "third"}}
+             ]
+    end
+  end
 end

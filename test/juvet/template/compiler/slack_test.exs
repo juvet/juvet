@@ -5228,4 +5228,54 @@ defmodule Juvet.Template.Compiler.SlackTest do
              ] = result.blocks
     end
   end
+
+  describe "compile_element/1 with if_block" do
+    test "if_block AST node compiles to __if__ marker with recursively compiled bodies" do
+      node = %{
+        node_type: :if_block,
+        condition: "@show",
+        then_body: [
+          %{platform: :slack, element: :section, attributes: %{text: "Yes"}}
+        ],
+        else_body: [
+          %{platform: :slack, element: :divider, attributes: %{}}
+        ],
+        line: 1,
+        column: 1
+      }
+
+      result = Slack.compile_element(node)
+
+      assert result == %{
+               __if__: true,
+               condition: "@show",
+               then_body: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "Yes"}}
+               ],
+               else_body: [%{type: "divider"}]
+             }
+    end
+
+    test "if_block with nil else_body preserves nil in marker" do
+      node = %{
+        node_type: :if_block,
+        condition: "@show",
+        then_body: [
+          %{platform: :slack, element: :divider, attributes: %{}}
+        ],
+        else_body: nil,
+        line: 1,
+        column: 1
+      }
+
+      result = Slack.compile_element(node)
+
+      assert result == %{
+               __if__: true,
+               condition: "@show",
+               then_body: [%{type: "divider"}],
+               else_body: nil
+             }
+    end
+  end
 end

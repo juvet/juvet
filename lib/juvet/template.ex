@@ -291,6 +291,15 @@ defmodule Juvet.Template do
         %{node_type: :for_loop} = node ->
           [%{node | body: resolve_partials(node.body, existing_asts, stack)}]
 
+        %{node_type: :if_block} = node ->
+          [
+            %{
+              node
+              | then_body: resolve_partials(node.then_body, existing_asts, stack),
+                else_body: resolve_partials_else_body(node.else_body, existing_asts, stack)
+            }
+          ]
+
         %{node_type: :code_block} = node ->
           [node]
 
@@ -302,6 +311,11 @@ defmodule Juvet.Template do
       end
     end)
   end
+
+  defp resolve_partials_else_body(nil, _existing_asts, _stack), do: nil
+
+  defp resolve_partials_else_body(list, existing_asts, stack) when is_list(list),
+    do: resolve_partials(list, existing_asts, stack)
 
   defp resolve_partials_in_children(children, existing_asts, stack) do
     Map.new(children, fn
@@ -497,6 +511,12 @@ defmodule Juvet.Template do
     end)
   end
 
+  def eval_map(%{__if__: true} = node, bindings) do
+    {result, _} = Code.eval_string(node.condition, bindings)
+    body = if result, do: node.then_body, else: node.else_body || []
+    flat_eval_body(body, bindings)
+  end
+
   def eval_map(data, bindings) when is_map(data) do
     Enum.reduce(data, %{}, fn {k, v}, acc ->
       case eval_map(v, bindings) do
@@ -507,9 +527,10 @@ defmodule Juvet.Template do
   end
 
   def eval_map(data, bindings) when is_list(data) do
-    if Enum.any?(data, &match?(%{__for__: true}, &1)) do
+    if Enum.any?(data, &flattening_marker?/1) do
       Enum.flat_map(data, fn
         %{__for__: true} = node -> eval_map(node, bindings)
+        %{__if__: true} = node -> eval_map(node, bindings)
         item -> [eval_map(item, bindings)]
       end)
     else
@@ -684,7 +705,8 @@ defmodule Juvet.Template do
 
   defp generate_json_function(name, compiled, helper_bindings) when is_map(compiled) do
     cond do
-      map_contains_for?(compiled) or map_contains_code_block?(compiled) ->
+      map_contains_for?(compiled) or map_contains_code_block?(compiled) or
+          map_contains_if?(compiled) ->
         bindings_var = Macro.var(:bindings, __MODULE__)
         body = compiled_to_quoted(compiled, bindings_var)
 
@@ -716,7 +738,8 @@ defmodule Juvet.Template do
 
   defp generate_map_function(name, compiled, helper_bindings) when is_map(compiled) do
     cond do
-      map_contains_for?(compiled) or map_contains_code_block?(compiled) ->
+      map_contains_for?(compiled) or map_contains_code_block?(compiled) or
+          map_contains_if?(compiled) ->
         bindings_var = Macro.var(:bindings, __MODULE__)
         body = compiled_to_quoted(compiled, bindings_var)
 
@@ -747,6 +770,36 @@ defmodule Juvet.Template do
   end
 
   # Transforms a compiled map/list structure into quoted Elixir AST.
+  # Handles __if__ markers by generating a real Elixir `if`/`else` expression
+  # whose condition is evaluated via `Code.eval_string` against the bindings,
+  # matching the trust model used for code blocks.
+  defp compiled_to_quoted(%{__if__: true} = node, bindings_var) do
+    condition = node.condition
+    then_body = node.then_body
+    else_body = node.else_body || []
+
+    then_quoted = if_body_quoted(then_body, bindings_var)
+    else_quoted = if_body_quoted(else_body, bindings_var)
+
+    quote do
+      {__if_result__, _} = Code.eval_string(unquote(condition), unquote(bindings_var))
+
+      if __if_result__ do
+        unquote(then_quoted)
+      else
+        unquote(else_quoted)
+      end
+    end
+  end
+
+  defp if_body_quoted(body, bindings_var) when is_list(body) do
+    escaped = Macro.escape(body)
+
+    quote do
+      Juvet.Template.flat_eval_body(unquote(escaped), unquote(bindings_var))
+    end
+  end
+
   # Handles __for__ markers by generating real `for` comprehensions.
   # When the for-loop body contains code blocks, uses binding threading.
   defp compiled_to_quoted(%{__for__: true} = node, bindings_var) do
@@ -795,6 +848,7 @@ defmodule Juvet.Template do
   defp compiled_to_quoted(list, bindings_var) when is_list(list) do
     has_code_blocks = Enum.any?(list, &match?(%{__code_block__: true}, &1))
     has_for_loops = Enum.any?(list, &match?(%{__for__: true}, &1))
+    has_if_blocks = Enum.any?(list, &match?(%{__if__: true}, &1))
 
     cond do
       has_code_blocks ->
@@ -811,10 +865,10 @@ defmodule Juvet.Template do
           elements
         end
 
-      has_for_loops ->
+      has_for_loops or has_if_blocks ->
         segments =
           list
-          |> Enum.chunk_by(&match?(%{__for__: true}, &1))
+          |> Enum.chunk_by(&flattening_marker?/1)
           |> Enum.flat_map(&chunk_to_quoted_segment(&1, bindings_var))
 
         quote do
@@ -871,8 +925,22 @@ defmodule Juvet.Template do
         end
       end)
 
-    case body_elements do
-      [single] ->
+    body_produces_lists = Enum.any?(body, &flattening_marker?/1)
+
+    cond do
+      body_produces_lists ->
+        quote do
+          Enum.flat_map(
+            Juvet.Template.resolve_binding(unquote(collection_path), unquote(bindings_var)),
+            fn unquote(item_var) ->
+              Juvet.Template.flatten_results(unquote(body_elements))
+            end
+          )
+        end
+
+      match?([_], body_elements) ->
+        [single] = body_elements
+
         quote do
           for unquote(item_var) <-
                 Juvet.Template.resolve_binding(unquote(collection_path), unquote(bindings_var)) do
@@ -880,12 +948,12 @@ defmodule Juvet.Template do
           end
         end
 
-      multiple ->
+      true ->
         quote do
           Enum.flat_map(
             Juvet.Template.resolve_binding(unquote(collection_path), unquote(bindings_var)),
             fn unquote(item_var) ->
-              Juvet.Template.flatten_results(unquote(multiple))
+              Juvet.Template.flatten_results(unquote(body_elements))
             end
           )
         end
@@ -1011,10 +1079,20 @@ defmodule Juvet.Template do
     end
   end
 
+  # Markers (for-loops, if-blocks) flatten into the surrounding list because they
+  # can produce 0 or N elements at runtime.
+  defp flattening_marker?(%{__for__: true}), do: true
+  defp flattening_marker?(%{__if__: true}), do: true
+  defp flattening_marker?(_), do: false
+
   # Converts a chunk of elements (from Enum.chunk_by) into Enum.concat segments.
-  # For-loop chunks become individual for comprehensions; static chunks become a literal list.
-  defp chunk_to_quoted_segment([%{__for__: true} | _] = chunk, bindings_var) do
-    Enum.map(chunk, &compiled_to_quoted(&1, bindings_var))
+  # Marker chunks become individual quoted expressions; static chunks become a literal list.
+  defp chunk_to_quoted_segment([first | _] = chunk, bindings_var) when is_map(first) do
+    if flattening_marker?(first) do
+      Enum.map(chunk, &compiled_to_quoted(&1, bindings_var))
+    else
+      [Enum.map(chunk, &compiled_to_quoted(&1, bindings_var))]
+    end
   end
 
   defp chunk_to_quoted_segment(static_elements, bindings_var) do
@@ -1095,6 +1173,12 @@ defmodule Juvet.Template do
     validate_platform!(node.body, expected)
   end
 
+  defp validate_platform_element!(%{node_type: :if_block} = node, expected) do
+    validate_platform!(node.then_body, expected)
+    if node.else_body, do: validate_platform!(node.else_body, expected)
+    :ok
+  end
+
   defp validate_platform_element!(%{node_type: :code_block}, _expected), do: :ok
 
   defp validate_platform_element!(%{platform: platform, line: line, column: col}, expected)
@@ -1152,4 +1236,15 @@ defmodule Juvet.Template do
     do: Enum.any?(list, &map_contains_for?/1)
 
   defp map_contains_for?(_), do: false
+
+  # Checks if a compiled structure contains any __if__ markers.
+  defp map_contains_if?(%{__if__: true}), do: true
+
+  defp map_contains_if?(map) when is_map(map),
+    do: Enum.any?(map, fn {_k, v} -> map_contains_if?(v) end)
+
+  defp map_contains_if?(list) when is_list(list),
+    do: Enum.any?(list, &map_contains_if?/1)
+
+  defp map_contains_if?(_), do: false
 end
