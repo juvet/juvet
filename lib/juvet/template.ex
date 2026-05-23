@@ -790,14 +790,6 @@ defmodule Juvet.Template do
     end
   end
 
-  defp if_body_quoted(body, bindings_var) when is_list(body) do
-    escaped = Macro.escape(body)
-
-    quote do
-      Juvet.Template.flat_eval_body(unquote(escaped), unquote(bindings_var))
-    end
-  end
-
   # Handles __for__ markers by generating real `for` comprehensions.
   # When the for-loop body contains code blocks, uses binding threading.
   defp compiled_to_quoted(%{__for__: true} = node, bindings_var) do
@@ -889,6 +881,16 @@ defmodule Juvet.Template do
   end
 
   defp compiled_to_quoted(value, _bindings_var), do: Macro.escape(value)
+
+  # Builds a quoted expression that evaluates an if-block body (then or else)
+  # against the bindings at runtime.
+  defp if_body_quoted(body, bindings_var) when is_list(body) do
+    escaped = Macro.escape(body)
+
+    quote do
+      Juvet.Template.flat_eval_body(unquote(escaped), unquote(bindings_var))
+    end
+  end
 
   # For-loop quoted AST when body contains code blocks - uses binding threading.
   defp for_quoted_with_code_blocks(body, variable, collection_path, item_var, bindings_var) do
