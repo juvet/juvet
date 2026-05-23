@@ -4,7 +4,13 @@ defmodule Juvet.ViewStateTest do
   alias Juvet.{ViewState, ViewStateRegistry}
 
   setup_all do
-    ViewStateRegistry.start_link()
+    unless Process.whereis(ViewStateRegistry.name()) do
+      {:ok, _} = ViewStateRegistry.start_link()
+    end
+
+    on_exit(fn ->
+      if Process.whereis(ViewStateRegistry.name()), do: ViewStateRegistry.stop()
+    end)
 
     :ok
   end
