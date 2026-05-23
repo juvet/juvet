@@ -1724,4 +1724,63 @@ defmodule Juvet.TemplateTest do
       assert header.text.text == "Hello World"
     end
   end
+
+  describe "modal view envelope fields" do
+    defmodule ModalTemplates do
+      use Juvet.Template
+
+      template(:full_modal, """
+      :slack.view
+        type: :modal
+        callback_id: "submit_decision_modal"
+        title: "New Decision"
+        submit: "Save"
+        close: "Cancel"
+        private_metadata: "<%= decision_id %>"
+        notify_on_close: true
+        blocks:
+          :slack.section{text: "Are you sure?"}
+      """)
+
+      template(:modal_with_optional_external_id, """
+      :slack.view
+        type: :modal
+        title: "Pick a date"
+        external_id: <%= maybe_external %>
+        blocks:
+          :slack.divider
+      """)
+    end
+
+    test "full modal template compiles and evaluates with all envelope fields" do
+      result = ModalTemplates.full_modal(decision_id: "abc-123")
+
+      assert result == %{
+               type: "modal",
+               callback_id: "submit_decision_modal",
+               title: %{type: "plain_text", text: "New Decision"},
+               submit: %{type: "plain_text", text: "Save"},
+               close: %{type: "plain_text", text: "Cancel"},
+               private_metadata: "abc-123",
+               notify_on_close: true,
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "Are you sure?"}}
+               ]
+             }
+    end
+
+    test "modal with nil-valued external_id drops the key at runtime" do
+      result = ModalTemplates.modal_with_optional_external_id(maybe_external: nil)
+
+      refute Map.has_key?(result, :external_id)
+      assert result.type == "modal"
+      assert result.title == %{type: "plain_text", text: "Pick a date"}
+    end
+
+    test "modal with a non-nil external_id includes the key" do
+      result = ModalTemplates.modal_with_optional_external_id(maybe_external: "modal-42")
+
+      assert result.external_id == "modal-42"
+    end
+  end
 end
