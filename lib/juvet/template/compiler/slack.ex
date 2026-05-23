@@ -79,6 +79,15 @@ defmodule Juvet.Template.Compiler.Slack do
     }
   end
 
+  def compile_element(%{node_type: :if_block} = node) do
+    %{
+      __if__: true,
+      condition: node.condition,
+      then_body: Enum.map(node.then_body, &compile_element/1),
+      else_body: compile_else_body(node.else_body)
+    }
+  end
+
   def compile_element(%{element: :actions} = el), do: Actions.compile(el)
   def compile_element(%{element: :button} = el), do: Button.compile(el)
   def compile_element(%{element: :checkboxes} = el), do: Checkboxes.compile(el)
@@ -136,4 +145,7 @@ defmodule Juvet.Template.Compiler.Slack do
   def compile_element(%{element: element}) do
     raise ArgumentError, "Unknown Slack element: #{inspect(element)}"
   end
+
+  defp compile_else_body(nil), do: nil
+  defp compile_else_body(list) when is_list(list), do: Enum.map(list, &compile_element/1)
 end

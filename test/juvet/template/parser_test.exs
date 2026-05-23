@@ -26,6 +26,16 @@ defmodule Juvet.Template.ParserTest do
     |> Map.update!(:body, &strip_positions/1)
   end
 
+  defp strip_positions(%{node_type: :if_block} = node) do
+    node
+    |> Map.drop([:line, :column])
+    |> Map.update!(:then_body, &strip_positions/1)
+    |> Map.update!(:else_body, fn
+      nil -> nil
+      list when is_list(list) -> strip_positions(list)
+    end)
+  end
+
   defp strip_positions(%{node_type: :code_block} = node) do
     Map.drop(node, [:line, :column])
   end
@@ -669,6 +679,112 @@ defmodule Juvet.Template.ParserTest do
       assert node.column == 1
       assert node.node_type == :code_block
       assert node.code == "x = 1"
+    end
+  end
+
+  describe "parse/1 - Phase 12: If-block support" do
+    test "simple if-block without else produces if_block AST with nil else_body" do
+      template = "<%= if @show do %>\n:slack.section{text: \"Visible\"}\n<% end %>"
+
+      assert parse(template) == [
+               %{
+                 node_type: :if_block,
+                 condition: "@show",
+                 then_body: [
+                   %{
+                     platform: :slack,
+                     element: :section,
+                     attributes: %{text: "Visible"}
+                   }
+                 ],
+                 else_body: nil
+               }
+             ]
+    end
+
+    test "if-block with else splits then_body and else_body" do
+      template =
+        "<%= if @show do %>\n:slack.section{text: \"Yes\"}\n<% else %>\n:slack.section{text: \"No\"}\n<% end %>"
+
+      assert parse(template) == [
+               %{
+                 node_type: :if_block,
+                 condition: "@show",
+                 then_body: [
+                   %{
+                     platform: :slack,
+                     element: :section,
+                     attributes: %{text: "Yes"}
+                   }
+                 ],
+                 else_body: [
+                   %{
+                     platform: :slack,
+                     element: :section,
+                     attributes: %{text: "No"}
+                   }
+                 ]
+               }
+             ]
+    end
+
+    test "if-block accepts both <% else %> and <%= else %> forms" do
+      template_strict =
+        "<%= if @show do %>\n:slack.divider\n<% else %>\n:slack.section{text: \"No\"}\n<% end %>"
+
+      template_eq =
+        "<%= if @show do %>\n:slack.divider\n<%= else %>\n:slack.section{text: \"No\"}\n<% end %>"
+
+      assert parse(template_strict) == parse(template_eq)
+    end
+
+    test "if-block inside element children uses platform inheritance" do
+      template =
+        ":slack.view\n  type: :modal\n  blocks:\n    <%= if @show do %>\n    .section{text: \"Hi\"}\n    <% end %>"
+
+      [view] = parse(template)
+      blocks = view.children.blocks
+
+      assert [if_node] = blocks
+      assert if_node.node_type == :if_block
+      assert if_node.condition == "@show"
+      assert length(if_node.then_body) == 1
+      assert hd(if_node.then_body).element == :section
+      assert hd(if_node.then_body).platform == :slack
+      assert if_node.else_body == nil
+    end
+
+    test "if-block nested inside for-loop body" do
+      template =
+        "<%= for item <- items do %>\n<%= if item.show do %>\n:slack.section{text: \"<%= item.text %>\"}\n<% end %>\n<% end %>"
+
+      [for_node] = parse(template)
+      assert for_node.node_type == :for_loop
+      assert length(for_node.body) == 1
+
+      [if_node] = for_node.body
+      assert if_node.node_type == :if_block
+      assert if_node.condition == "item.show"
+      assert length(if_node.then_body) == 1
+      assert hd(if_node.then_body).element == :section
+    end
+
+    test "unsupported EEx expressions like unless still raise ParserError" do
+      template = "<%= unless @hidden do %>\n:slack.divider\n<% end %>"
+
+      assert_raise Juvet.Template.Parser.Error,
+                   ~r/Unsupported EEx expression/,
+                   fn -> parse(template) end
+    end
+
+    test "if-block includes line and column" do
+      template = "<%= if @x do %>\n:slack.divider\n<% end %>"
+
+      [node] = parse_with_positions(template)
+
+      assert node.node_type == :if_block
+      assert node.line == 1
+      assert node.column == 1
     end
   end
 

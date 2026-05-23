@@ -62,6 +62,30 @@ Each element becomes a map:
 
 The `line` and `column` fields track where each element was defined in the original template source, enabling precise error messages during compilation.
 
+### Control-flow AST nodes
+
+EEx control-flow expressions produce dedicated AST nodes (no `:platform` or `:element` keys; identified by `:node_type`):
+
+```elixir
+# <%= for item <- items do %> ... <% end %>
+%{node_type: :for_loop, variable: "item", collection: "items", body: [...], line: 1, column: 1}
+
+# <%= if condition do %> ... <% else %> ... <% end %>
+%{
+  node_type: :if_block,
+  condition: "show",
+  then_body: [...],
+  else_body: [...] | nil,
+  line: 1,
+  column: 1
+}
+
+# <% code %>
+%{node_type: :code_block, code: "x = 1", line: 1, column: 1}
+```
+
+`if_block` accepts both `<% else %>` (standard EEx) and `<%= else %>` (Phoenix/LiveView style) tokens for the optional else branch. `elsif`, `unless`, `cond`, and `case` are intentionally not supported &mdash; use nested `if` blocks instead.
+
 ## Compiler Output Format
 
 The Compiler transforms the AST into atom-keyed maps for the target platform.
