@@ -372,6 +372,10 @@ defmodule Juvet.Template.Parser do
   defp value([{:number, num_str, _} | rest]), do: {parse_number(num_str), rest}
   defp value([{:eex_expr, expr, _} | rest]), do: {"<%= #{expr} %>", rest}
 
+  # Bare identifier — resolved as a runtime binding lookup, equivalent to
+  # writing `<%= identifier %>`. Compound expressions still require EEx.
+  defp value([{:keyword, name, _} | rest]), do: {"<%= #{name} %>", rest}
+
   # Unexpected value type
   defp value([{type, val, {line, col}} | _]) do
     raise ParserError,
