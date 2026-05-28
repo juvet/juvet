@@ -27,4 +27,9 @@ defmodule Juvet.SlackViewState do
   end
 
   defp form_value(%{"value" => value}), do: value
+
+  # Catch-all for input types we don't yet extract — preserves the raw action
+  # so callers can introspect (`is_map(value)` signals "unhandled type") rather
+  # than crash with FunctionClauseError.
+  defp form_value(action), do: action
 end

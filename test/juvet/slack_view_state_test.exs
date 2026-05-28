@@ -70,6 +70,24 @@ defmodule Juvet.SlackViewStateTest do
              }
     end
 
+    test "returns the raw action for input types without a dedicated extractor" do
+      view_state = %{
+        "block_id" => %{
+          "rich_text_field" => %{
+            "type" => "rich_text_input",
+            "rich_text_value" => %{"type" => "rich_text", "elements" => []}
+          }
+        }
+      }
+
+      assert SlackViewState.parse(view_state) == %{
+               "rich_text_field" => %{
+                 "type" => "rich_text_input",
+                 "rich_text_value" => %{"type" => "rich_text", "elements" => []}
+               }
+             }
+    end
+
     test "handles multiple fields under one block" do
       view_state = %{
         "block_id_1" => %{
