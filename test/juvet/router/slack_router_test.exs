@@ -51,6 +51,94 @@ defmodule Juvet.Router.SlackRouterTest do
     end
   end
 
+  describe "find_route/2 with :if predicate" do
+    setup do
+      payload = %{
+        "type" => "block_actions",
+        "actions" => [%{"action_id" => "recording_action", "value" => "delete:poll:42:1"}]
+      }
+
+      request = Request.new(%{params: %{"payload" => payload}})
+
+      request = %{
+        request
+        | platform: :slack,
+          verified?: true,
+          raw_params: %{"payload" => payload}
+      }
+
+      [request: request]
+    end
+
+    defp router_with(routes) do
+      {:ok, platform} =
+        Enum.reduce(routes, {:ok, Platform.new(:slack)}, fn route, {:ok, acc} ->
+          Platform.put_route(acc, route)
+        end)
+
+      SlackRouter.new(platform)
+    end
+
+    defp action_value_starts_with?(prefix) do
+      fn %{raw_params: %{"payload" => payload}} ->
+        %{"actions" => [%{"value" => value} | _]} = payload
+        String.starts_with?(value, prefix)
+      end
+    end
+
+    test "matches when the :if predicate returns true", %{request: request} do
+      route =
+        Route.new(:action, "recording_action",
+          to: "controller#delete",
+          if: action_value_starts_with?("delete:")
+        )
+
+      router = router_with([route])
+
+      assert {:ok, matched} = SlackRouter.find_route(router, request)
+      assert matched.options[:to] == "controller#delete"
+    end
+
+    test "does not match when the :if predicate returns false", %{request: request} do
+      route =
+        Route.new(:action, "recording_action",
+          to: "controller#edit",
+          if: action_value_starts_with?("edit:")
+        )
+
+      router = router_with([route])
+
+      assert {:error, {:unknown_route, _}} = SlackRouter.find_route(router, request)
+    end
+
+    test "falls through to the next route when an earlier :if fails", %{request: request} do
+      edit_route =
+        Route.new(:action, "recording_action",
+          to: "controller#edit",
+          if: action_value_starts_with?("edit:")
+        )
+
+      delete_route =
+        Route.new(:action, "recording_action",
+          to: "controller#delete",
+          if: action_value_starts_with?("delete:")
+        )
+
+      router = router_with([edit_route, delete_route])
+
+      assert {:ok, matched} = SlackRouter.find_route(router, request)
+      assert matched.options[:to] == "controller#delete"
+    end
+
+    test "routes without :if are unaffected", %{request: request} do
+      route = Route.new(:action, "recording_action", to: "controller#any")
+      router = router_with([route])
+
+      assert {:ok, matched} = SlackRouter.find_route(router, request)
+      assert matched.options[:to] == "controller#any"
+    end
+  end
+
   describe "request_format/1" do
     test "returns :message when the payload has a message request" do
       payload = %{
