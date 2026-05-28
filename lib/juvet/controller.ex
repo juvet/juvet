@@ -5,8 +5,18 @@ defmodule Juvet.Controller do
 
   @view_context_key :juvet_view
 
+  alias Juvet.Controller.SlackViewState
   alias Juvet.Router.{Conn, Request, Response, RouterFactory}
   alias Juvet.{View, ViewStateManager}
+
+  @doc """
+  Extracts a flat `%{action_id => value}` map from a Slack view submission's
+  `state.values`. See `Juvet.Controller.SlackViewState` for the per-input-type
+  extraction rules.
+
+  Imported into modules that `use Juvet.Controller`.
+  """
+  defdelegate parse_view_state(view_state), to: SlackViewState, as: :parse
 
   defmacro __using__(opts) do
     quote do

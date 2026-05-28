@@ -1,7 +1,7 @@
-defmodule Juvet.SlackViewStateTest do
+defmodule Juvet.Controller.SlackViewStateTest do
   use ExUnit.Case, async: true
 
-  alias Juvet.SlackViewState
+  alias Juvet.Controller.SlackViewState
 
   describe "parse/1" do
     test "returns a map of keys and values parsed from Slack's conversation select" do

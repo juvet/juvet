@@ -1,4 +1,4 @@
-defmodule Juvet.SlackViewState do
+defmodule Juvet.Controller.SlackViewState do
   @moduledoc """
   Functions to operate on Slack's view responses and the view state passed back.
   """
