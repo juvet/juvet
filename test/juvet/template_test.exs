@@ -1828,10 +1828,10 @@ defmodule Juvet.TemplateTest do
              ]
     end
 
-    test "if-block with falsy condition renders nothing when else_body is absent" do
+    test "if-block with falsy condition drops the parent attribute when else_body is absent" do
       result = IfBlockTemplates.simple_if(show: false)
 
-      assert result.blocks == []
+      refute Map.has_key?(result, :blocks)
     end
 
     test "if-else with truthy condition renders then_body" do
@@ -1863,6 +1863,96 @@ defmodule Juvet.TemplateTest do
                %{type: "section", text: %{type: "mrkdwn", text: "first"}},
                %{type: "section", text: %{type: "mrkdwn", text: "third"}}
              ]
+    end
+  end
+
+  describe "empty conditional lists drop the parent attribute" do
+    defmodule EmptyConditionalListTemplates do
+      use Juvet.Template
+
+      template(:checkboxes_all_false, """
+      :slack.view
+        type: :modal
+        blocks:
+          .input
+            block_id: "opts"
+            label: "Options"
+            element:
+              .checkboxes
+                action_id: "opts"
+                options:
+                  .option{text: "A", value: "a"}
+                  .option{text: "B", value: "b"}
+                initial_options:
+                  <%= if a_selected do %>
+                    .option{text: "A", value: "a"}
+                  <% end %>
+                  <%= if b_selected do %>
+                    .option{text: "B", value: "b"}
+                  <% end %>
+      """)
+
+      template(:checkboxes_mixed, """
+      :slack.view
+        type: :modal
+        blocks:
+          .input
+            block_id: "opts"
+            label: "Options"
+            element:
+              .checkboxes
+                action_id: "opts"
+                options:
+                  .option{text: "A", value: "a"}
+                  .option{text: "B", value: "b"}
+                initial_options:
+                  <%= if a_selected do %>
+                    .option{text: "A", value: "a"}
+                  <% end %>
+                  <%= if b_selected do %>
+                    .option{text: "B", value: "b"}
+                  <% end %>
+      """)
+
+      template(:for_loop_empty_collection, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+            .section{text: "<%= item %>"}
+          <% end %>
+      """)
+    end
+
+    test "all if-block branches false inside a list-valued attribute drops the key" do
+      result =
+        EmptyConditionalListTemplates.checkboxes_all_false(
+          a_selected: false,
+          b_selected: false
+        )
+
+      [input] = result.blocks
+      refute Map.has_key?(input.element, :initial_options)
+    end
+
+    test "mixed if-block branches keep only the matching options" do
+      result =
+        EmptyConditionalListTemplates.checkboxes_mixed(
+          a_selected: false,
+          b_selected: true
+        )
+
+      [input] = result.blocks
+
+      assert input.element.initial_options == [
+               %{text: %{type: "plain_text", text: "B"}, value: "b"}
+             ]
+    end
+
+    test "for-loop over empty collection drops the parent attribute" do
+      result = EmptyConditionalListTemplates.for_loop_empty_collection(items: [])
+
+      refute Map.has_key?(result, :blocks)
     end
   end
 end

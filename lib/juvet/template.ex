@@ -528,11 +528,14 @@ defmodule Juvet.Template do
 
   def eval_map(data, bindings) when is_list(data) do
     if Enum.any?(data, &flattening_marker?/1) do
-      Enum.flat_map(data, fn
-        %{__for__: true} = node -> eval_map(node, bindings)
-        %{__if__: true} = node -> eval_map(node, bindings)
-        item -> [eval_map(item, bindings)]
-      end)
+      result =
+        Enum.flat_map(data, fn
+          %{__for__: true} = node -> eval_map(node, bindings)
+          %{__if__: true} = node -> eval_map(node, bindings)
+          item -> [eval_map(item, bindings)]
+        end)
+
+      if result == [], do: nil, else: result
     else
       Enum.map(data, &eval_map(&1, bindings))
     end
@@ -558,6 +561,14 @@ defmodule Juvet.Template do
   end
 
   def eval_map(data, _bindings), do: data
+
+  @doc false
+  def drop_nil_values(map) when is_map(map) do
+    Enum.reduce(map, %{}, fn
+      {_k, nil}, acc -> acc
+      {k, v}, acc -> Map.put(acc, k, v)
+    end)
+  end
 
   @doc false
   def flatten_results(results) do
@@ -832,7 +843,11 @@ defmodule Juvet.Template do
         {Macro.escape(k), compiled_to_quoted(v, bindings_var)}
       end)
 
-    {:%{}, [], pairs}
+    map_ast = {:%{}, [], pairs}
+
+    quote do
+      Juvet.Template.drop_nil_values(unquote(map_ast))
+    end
   end
 
   defp compiled_to_quoted(list, bindings_var) when is_list(list) do
@@ -862,7 +877,10 @@ defmodule Juvet.Template do
           |> Enum.flat_map(&chunk_to_quoted_segment(&1, bindings_var))
 
         quote do
-          Enum.concat(unquote(segments))
+          case Enum.concat(unquote(segments)) do
+            [] -> nil
+            result -> result
+          end
         end
 
       true ->
