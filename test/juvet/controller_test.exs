@@ -27,9 +27,12 @@ defmodule Juvet.ControllerTest do
     def send_response_test(context, response \\ nil), do: send_response(context, response)
 
     def update_response_test(context, response), do: update_response(context, response)
+
+    def parse_view_state_test(view_state), do: parse_view_state(view_state)
   end
 
   alias Controllers.MyController
+  alias Juvet.Controller.SlackViewState
   alias Juvet.Router.{Request, Response}
 
   describe "controller_prefix/1" do
@@ -104,6 +107,30 @@ defmodule Juvet.ControllerTest do
       view_state = MyController.view_state()
 
       assert view_state == Juvet.ViewStateManager
+    end
+  end
+
+  describe "parse_view_state/1" do
+    test "is imported into modules that use Juvet.Controller" do
+      view_state = %{
+        "block_id" => %{
+          "question" => %{"type" => "plain_text_input", "value" => "What's up?"}
+        }
+      }
+
+      assert MyController.parse_view_state_test(view_state) == %{
+               "question" => "What's up?"
+             }
+    end
+
+    test "delegates to Juvet.Controller.SlackViewState.parse/1" do
+      view_state = %{
+        "block_id" => %{
+          "date_field" => %{"type" => "datepicker", "selected_date" => "2026-06-15"}
+        }
+      }
+
+      assert Juvet.Controller.parse_view_state(view_state) == SlackViewState.parse(view_state)
     end
   end
 
