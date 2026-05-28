@@ -44,25 +44,25 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   defp find_slack_route(%Route{type: :action, route: action_id} = route, request, _opts) do
-    if action_request?(request, action_id), do: route
+    if action_request?(request, action_id) and if_matches?(route, request), do: route
   end
 
   defp find_slack_route(%Route{type: :command, route: command_text} = route, request, _opts) do
-    if command_request?(request, command_text), do: route
+    if command_request?(request, command_text) and if_matches?(route, request), do: route
   end
 
   defp find_slack_route(%Route{type: :event, route: event} = route, request, _opts) do
-    if event_request?(request, event), do: route
+    if event_request?(request, event) and if_matches?(route, request), do: route
   end
 
   defp find_slack_route(%Route{type: :oauth, route: phase} = route, request, opts) do
     configuration = Keyword.get(opts, :configuration)
 
-    if oauth_request?(request, phase, configuration), do: route
+    if oauth_request?(request, phase, configuration) and if_matches?(route, request), do: route
   end
 
   defp find_slack_route(%Route{type: :option_load, route: action_id} = route, request, _opts) do
-    if option_load_request?(request, action_id), do: route
+    if option_load_request?(request, action_id) and if_matches?(route, request), do: route
   end
 
   defp find_slack_route(%Route{type: :url_verification} = route, request, _opts) do
@@ -70,7 +70,7 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   defp find_slack_route(%Route{type: :view_closed, route: callback_id} = route, request, _opts) do
-    if view_closed_request?(request, callback_id), do: route
+    if view_closed_request?(request, callback_id) and if_matches?(route, request), do: route
   end
 
   defp find_slack_route(
@@ -78,7 +78,16 @@ defmodule Juvet.Router.SlackRouter do
          request,
          _opts
        ) do
-    if view_submission_request?(request, callback_id), do: route
+    if view_submission_request?(request, callback_id) and if_matches?(route, request), do: route
+  end
+
+  # Evaluates the route's optional `:if` predicate against the request.
+  # When `:if` is absent the route is treated as matching.
+  defp if_matches?(route, request) do
+    case Keyword.get(route.options, :if) do
+      nil -> true
+      fun when is_function(fun, 1) -> !!fun.(request)
+    end
   end
 
   @impl Juvet.Router
