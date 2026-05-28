@@ -83,8 +83,8 @@ defmodule Juvet.Router.SlackRouter do
 
   # Evaluates the route's optional `:if` predicate against the request.
   # When `:if` is absent the route is treated as matching.
-  defp if_matches?(%Route{options: options}, request) do
-    case Keyword.get(options, :if) do
+  defp if_matches?(route, request) do
+    case Keyword.get(route.options, :if) do
       nil -> true
       fun when is_function(fun, 1) -> !!fun.(request)
     end
