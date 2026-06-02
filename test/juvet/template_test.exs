@@ -347,6 +347,54 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "bare identifier attribute values" do
+    defmodule BareIdentifierTemplates do
+      use Juvet.Template
+
+      partial(:user_header, ":slack.header{text: \"Hello <%= name %>\"}")
+
+      template(:inline_bare, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header{text: greeting}
+      """)
+
+      template(:nested_bare, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.header
+            text: greeting
+      """)
+
+      template(:partial_bare, """
+      :slack.view
+        type: :modal
+        blocks:
+          :slack.partial{template: :user_header, name: user_name}
+      """)
+    end
+
+    test "bare identifier in inline attrs resolves from bindings at runtime" do
+      result = BareIdentifierTemplates.inline_bare(greeting: "Howdy")
+
+      assert %{blocks: [%{type: "header", text: %{text: "Howdy"}}]} = result
+    end
+
+    test "bare identifier in nested attrs resolves from bindings at runtime" do
+      result = BareIdentifierTemplates.nested_bare(greeting: "Hello")
+
+      assert %{blocks: [%{type: "header", text: %{text: "Hello"}}]} = result
+    end
+
+    test "bare identifier on a partial attribute resolves from bindings at runtime" do
+      result = BareIdentifierTemplates.partial_bare(user_name: "Alice")
+
+      assert %{blocks: [%{type: "header", text: %{text: "Hello Alice"}}]} = result
+    end
+  end
+
   describe "nested partials" do
     defmodule NestedPartialTemplates do
       use Juvet.Template

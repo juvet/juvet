@@ -822,4 +822,69 @@ defmodule Juvet.Template.ParserTest do
       assert image.column == 5
     end
   end
+
+  describe "parse/1 - Phase 13: Bare identifier attribute values" do
+    test "bare identifier in inline attrs resolves as an EEx binding lookup" do
+      template = ~s(:slack.header{text: greeting})
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :header,
+                 attributes: %{text: "<%= greeting %>"}
+               }
+             ]
+    end
+
+    test "bare identifier in nested attrs resolves as an EEx binding lookup" do
+      template = """
+      :slack.header
+        text: greeting
+      """
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :header,
+                 attributes: %{text: "<%= greeting %>"}
+               }
+             ]
+    end
+
+    test "bare identifier on a partial attribute resolves as an EEx binding lookup" do
+      template = ~s(:slack.partial{template: :user_header, name: user_name})
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :partial,
+                 attributes: %{template: :user_header, name: "<%= user_name %>"}
+               }
+             ]
+    end
+
+    test "bare identifiers mix freely with literal attribute values" do
+      template = ~s(:slack.header{text: greeting, emoji: true})
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :header,
+                 attributes: %{text: "<%= greeting %>", emoji: true}
+               }
+             ]
+    end
+
+    test "explicit <%= ... %> still works alongside bare identifiers" do
+      template = ":slack.header{text: <%= upcase.(greeting) %>}"
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :header,
+                 attributes: %{text: "<%= upcase.(greeting) %>"}
+               }
+             ]
+    end
+  end
 end
