@@ -37,6 +37,17 @@ If you or your company will benefit from a well-maintained and easy to use chat 
 
 Thank you for the support! :heartbeat:
 
+## SUPPORTED VERSIONS
+
+Juvet requires **Elixir ~> 1.14** and **Erlang/OTP 25+**.
+
+Every change is tested in CI against two version pairs:
+
+* the oldest supported pair (Elixir 1.14 / OTP 25), so the declared floor is always proven to work
+* the latest stable pair (currently Elixir 1.19 / OTP 28), with `--warnings-as-errors`, so consumers on newer Elixir never see compiler warnings from Juvet
+
+Raising the Elixir floor is considered a breaking change; it will only happen in a new minor version and will be called out in the [CHANGELOG](CHANGELOG.md).
+
 ## INSTALLATION
 
 * Add the Juvet dependencies to your `mix.exs` file
