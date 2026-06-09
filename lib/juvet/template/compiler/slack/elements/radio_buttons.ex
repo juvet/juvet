@@ -22,7 +22,12 @@ defmodule Juvet.Template.Compiler.Slack.Elements.RadioButtons do
 
   defp put_options(map, _), do: map
 
-  defp put_initial_option(map, %{children: %{initial_option: opt}}),
+  defp put_initial_option(map, %{
+         children: %{initial_option: [%{node_type: :if_block} = if_block]}
+       }),
+       do: Map.put(map, :initial_option, Slack.compile_single_if(if_block))
+
+  defp put_initial_option(map, %{children: %{initial_option: opt}}) when is_map(opt),
     do: Map.put(map, :initial_option, Slack.compile_element(opt))
 
   defp put_initial_option(map, _), do: map

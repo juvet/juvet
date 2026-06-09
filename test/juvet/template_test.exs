@@ -1109,6 +1109,118 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "conditional initial_option inside a select" do
+    defmodule ConditionalInitialOptionTemplates do
+      use Juvet.Template
+
+      template(:select_with_conditional_initial_option, """
+      :slack.view
+        type: :home
+        blocks:
+          .actions
+            elements:
+              .select
+                source: :external
+                action_id: "sched"
+                initial_option:
+                  <%= if preset do %>
+                  .option{text: "<%= preset.text %>", value: "<%= preset.value %>"}
+                  <% end %>
+      """)
+    end
+
+    test "renders a single initial_option object when the condition is true" do
+      result =
+        ConditionalInitialOptionTemplates.select_with_conditional_initial_option(
+          preset: %{text: "By Friday", value: "by_fri"}
+        )
+
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "external_select"
+      assert select.action_id == "sched"
+
+      assert select.initial_option == %{
+               text: %{type: "plain_text", text: "By Friday"},
+               value: "by_fri"
+             }
+    end
+
+    test "omits the initial_option key entirely when the condition is false" do
+      result =
+        ConditionalInitialOptionTemplates.select_with_conditional_initial_option(preset: nil)
+
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "external_select"
+      assert select.action_id == "sched"
+      refute Map.has_key?(select, :initial_option)
+    end
+  end
+
+  # A select with BOTH a for-loop (`options`) and a conditional `initial_option`
+  # forces the `compiled_to_quoted` path (the template contains `__for__`/`__if__`
+  # markers), as opposed to the `eval_map` runtime path above. Both paths must
+  # collapse the singular `__if_single__` slot identically.
+  describe "conditional initial_option alongside dynamic options" do
+    defmodule ConditionalInitialOptionWithLoopTemplates do
+      use Juvet.Template
+
+      template(:select_with_options_and_conditional_initial_option, """
+      :slack.view
+        type: :home
+        blocks:
+          .actions
+            elements:
+              .select
+                source: :static
+                action_id: "proj"
+                options:
+                  <%= for opt <- options do %>
+                  .option{text: "<%= opt.name %>", value: "<%= opt.id %>"}
+                  <% end %>
+                initial_option:
+                  <%= if preset do %>
+                  .option{text: "<%= preset.name %>", value: "<%= preset.id %>"}
+                  <% end %>
+      """)
+    end
+
+    test "renders a single initial_option object when the condition is true" do
+      result =
+        ConditionalInitialOptionWithLoopTemplates.select_with_options_and_conditional_initial_option(
+          options: [%{id: 1, name: "Alpha"}, %{id: 2, name: "Beta"}],
+          preset: %{id: 2, name: "Beta"}
+        )
+
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert length(select.options) == 2
+
+      assert select.initial_option == %{
+               text: %{type: "plain_text", text: "Beta"},
+               value: "2"
+             }
+    end
+
+    test "omits the initial_option key entirely when the condition is false" do
+      result =
+        ConditionalInitialOptionWithLoopTemplates.select_with_options_and_conditional_initial_option(
+          options: [%{id: 1, name: "Alpha"}],
+          preset: nil
+        )
+
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert length(select.options) == 1
+      refute Map.has_key?(select, :initial_option)
+    end
+  end
+
   describe "for-loop with JSON format" do
     defmodule ForLoopJsonTemplates do
       use Juvet.Template, format: :json
