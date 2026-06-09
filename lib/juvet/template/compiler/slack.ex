@@ -148,4 +148,23 @@ defmodule Juvet.Template.Compiler.Slack do
 
   defp compile_else_body(nil), do: nil
   defp compile_else_body(list) when is_list(list), do: Enum.map(list, &compile_element/1)
+
+  @doc false
+  # Compiles an `if_block` that occupies a *singular* slot (e.g. a select's
+  # `initial_option`) into an `__if_single__` marker. The regular `__if__`
+  # marker resolves to a list at eval time, which is correct for list slots
+  # (`options`, `initial_options`) but wrong for a slot that must hold a single
+  # object or be omitted. `__if_single__` is resolved by `Juvet.Template.eval_map/2`.
+  def compile_single_if(%{node_type: :if_block} = node) do
+    %{
+      __if_single__: true,
+      condition: node.condition,
+      then: single_branch(node.then_body),
+      else: single_branch(node.else_body)
+    }
+  end
+
+  defp single_branch(nil), do: nil
+  defp single_branch([]), do: nil
+  defp single_branch([element | _]), do: compile_element(element)
 end

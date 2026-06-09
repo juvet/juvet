@@ -517,6 +517,20 @@ defmodule Juvet.Template do
     flat_eval_body(body, bindings)
   end
 
+  # Singular-slot conditional (e.g. a select's `initial_option`). Unlike `__if__`,
+  # which flattens into a list, this collapses an `if`-wrapped 0-or-1 child to a
+  # single object (condition true) or `nil` (false). A `nil` value is dropped by
+  # the map branch below, so the slot key is omitted entirely — which is what
+  # Slack requires for an absent `initial_option`.
+  def eval_map(%{__if_single__: true} = node, bindings) do
+    {result, _} = Code.eval_string(node.condition, bindings)
+
+    case if(result, do: node.then, else: node.else) do
+      nil -> nil
+      element -> eval_map(element, bindings)
+    end
+  end
+
   def eval_map(data, bindings) when is_map(data) do
     Enum.reduce(data, %{}, fn {k, v}, acc ->
       case eval_map(v, bindings) do
@@ -837,6 +851,26 @@ defmodule Juvet.Template do
     end
   end
 
+  # Singular-slot conditional (mirrors the `%{__if_single__: true}` eval_map/2
+  # clause for the compiled-to-quoted path). Yields the single `then`/`else`
+  # element or `nil` — not the list `__if__` produces. A `nil` result is dropped
+  # by the surrounding `drop_nil_values/1`, omitting the slot key entirely.
+  defp compiled_to_quoted(%{__if_single__: true} = node, bindings_var) do
+    condition = node.condition
+    then_quoted = single_branch_quoted(node.then, bindings_var)
+    else_quoted = single_branch_quoted(node.else, bindings_var)
+
+    quote do
+      {__if_single_result__, _} = Code.eval_string(unquote(condition), unquote(bindings_var))
+
+      if __if_single_result__ do
+        unquote(then_quoted)
+      else
+        unquote(else_quoted)
+      end
+    end
+  end
+
   defp compiled_to_quoted(map, bindings_var) when is_map(map) do
     pairs =
       Enum.map(map, fn {k, v} ->
@@ -899,6 +933,11 @@ defmodule Juvet.Template do
   end
 
   defp compiled_to_quoted(value, _bindings_var), do: Macro.escape(value)
+
+  # Quotes a single `__if_single__` branch element (or nil when the branch is
+  # absent), deferring its EEx string evaluation to runtime.
+  defp single_branch_quoted(nil, _bindings_var), do: nil
+  defp single_branch_quoted(element, bindings_var), do: compiled_to_quoted(element, bindings_var)
 
   # Builds a quoted expression that evaluates an if-block body (then or else)
   # against the bindings at runtime.
