@@ -61,8 +61,21 @@ defmodule Juvet.ViewStateRegistry do
     {:stop, :normal, state, state}
   end
 
+  # A registered process can die before its :DOWN message is processed, so a
+  # lookup in that window would hand out a dead pid. Treat it as unregistered
+  # and clean up eagerly.
   def handle_call({:whereis_name, name}, _from, state) do
-    {:reply, state |> find_by_name(name), state}
+    case state |> find_by_name(name) do
+      :undefined ->
+        {:reply, :undefined, state}
+
+      pid ->
+        if Process.alive?(pid) do
+          {:reply, pid, state}
+        else
+          {:reply, :undefined, state |> Map.delete(name)}
+        end
+    end
   end
 
   def handle_cast({:unregister_name, name}, state) do
