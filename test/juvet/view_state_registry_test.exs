@@ -50,6 +50,30 @@ defmodule Juvet.ViewStateRegistryTest do
     end
   end
 
+  describe "whereis_name/1" do
+    setup do
+      start_supervised(ViewStateRegistry)
+      on_exit(&shut_down_registry/0)
+      :ok
+    end
+
+    test "returns :undefined for a dead process even before its :DOWN is processed" do
+      name = {:stale, :key}
+
+      pid = spawn(fn -> nil end)
+      ref = Process.monitor(pid)
+      assert_receive {:DOWN, ^ref, :process, ^pid, _}
+
+      # Inject the stale entry directly, simulating a lookup that races the
+      # registry's own :DOWN handling for the dead process.
+      :sys.replace_state(Process.whereis(ViewStateRegistry.name()), fn state ->
+        Map.put(state, name, pid)
+      end)
+
+      assert :undefined = ViewStateRegistry.whereis_name(name)
+    end
+  end
+
   describe "send/2" do
     setup do
       start_supervised(ViewStateRegistry)
