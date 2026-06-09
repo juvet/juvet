@@ -117,8 +117,10 @@ defmodule Juvet.Template.Compiler.Slack.Elements.Select do
 
   # Conditionally-included child: `child_value/1` wraps an `<%= if %>`-guarded
   # option as `[if_block]`. Collapse it to a single-object-or-omitted slot.
-  defp compile_initial_option(%{children: %{initial_option: [%{node_type: :if_block} = if_block]}}),
-    do: Slack.compile_single_if(if_block)
+  defp compile_initial_option(%{
+         children: %{initial_option: [%{node_type: :if_block} = if_block]}
+       }),
+       do: Slack.compile_single_if(if_block)
 
   defp compile_initial_option(%{children: %{initial_option: opt}}) when is_map(opt),
     do: Slack.compile_element(opt)
