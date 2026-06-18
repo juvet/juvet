@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Juvet.SlackAPI` now surfaces rate limiting: a Slack `HTTP 429` response is
+  parsed into an `ok: false` body with `error: "ratelimited"` and a
+  `retry_after` value (seconds) read from the `Retry-After` header, so callers
+  can back off for the duration Slack requests instead of treating it as an
+  opaque parse error.
 - Cheex templates can now conditionally render a select's or radio button group's
   `initial_option` with `<%= if %>` around the option child. The slot resolves to
   a single object when the condition is true and is omitted entirely when false,

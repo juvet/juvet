@@ -20,10 +20,22 @@ defmodule Juvet.SlackAPI do
     {:ok, body}
   end
 
+  # Default seconds to wait when Slack returns a 429 without a parseable
+  # `Retry-After` header (Slack always sends one, but be defensive).
+  @default_retry_after 30
+
   @doc """
   Decodes a JSON response and converts it into a Map.
+
+  A Slack rate-limited response (HTTP 429) is surfaced as an `ok: false` body
+  with `error: "ratelimited"` and a `retry_after` value (seconds) read from the
+  `Retry-After` header, so callers can back off for the duration Slack asks for.
   """
   @spec parse_response({:ok, HTTPoison.Response.t()}) :: {:ok, map()} | {:error, Exception.t()}
+  def parse_response({:ok, %HTTPoison.Response{status_code: 429, headers: headers}}) do
+    {:ok, %{ok: false, error: "ratelimited", retry_after: retry_after(headers)}}
+  end
+
   def parse_response({:ok, %HTTPoison.Response{body: body}}) do
     Poison.decode(body, keys: :atoms)
   end
@@ -58,6 +70,25 @@ defmodule Juvet.SlackAPI do
       params,
       headers(access_token)
     )
+  end
+
+  @doc false
+  defp retry_after(headers) do
+    headers
+    |> Enum.find_value(fn {key, value} ->
+      if String.downcase(key) == "retry-after", do: value
+    end)
+    |> parse_retry_after()
+  end
+
+  @doc false
+  defp parse_retry_after(nil), do: @default_retry_after
+
+  defp parse_retry_after(value) do
+    case Integer.parse(value) do
+      {seconds, _rest} when seconds > 0 -> seconds
+      _ -> @default_retry_after
+    end
   end
 
   @doc false
