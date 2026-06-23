@@ -100,6 +100,56 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  # A top-level `blocks:` (no `.view` wrapper) compiles to a bare list of blocks,
+  # for a Slack message rather than a modal/home view.
+  describe "blocks-only templates (top-level blocks:)" do
+    defmodule MessageTemplates do
+      use Juvet.Template
+
+      template(:message, file: "templates/blocks_message.slack.cheex")
+    end
+
+    test "compiles to a bare list of blocks, interpolating bindings" do
+      assert MessageTemplates.message(name: "World", show_extra: false) == [
+               %{type: "section", text: %{type: "mrkdwn", text: "Hi World"}},
+               %{
+                 type: "actions",
+                 elements: [
+                   %{type: "button", text: %{type: "plain_text", text: "Go"}, action_id: "go"}
+                 ]
+               }
+             ]
+    end
+
+    test "supports conditionals within the block list" do
+      assert MessageTemplates.message(name: "X", show_extra: true) == [
+               %{type: "section", text: %{type: "mrkdwn", text: "Hi X"}},
+               %{type: "divider"},
+               %{
+                 type: "actions",
+                 elements: [
+                   %{type: "button", text: %{type: "plain_text", text: "Go"}, action_id: "go"}
+                 ]
+               }
+             ]
+    end
+
+    test "a loose top-level element list (no blocks:) is rejected" do
+      assert_raise CompileError, ~r/a Slack template must be a single/, fn ->
+        Code.compile_string("""
+        defmodule LooseBlocks do
+          use Juvet.Template
+
+          template(:loose, \"\"\"
+          :slack.section{text: "Hi", type: :mrkdwn}
+          :slack.divider
+          \"\"\")
+        end
+        """)
+      end
+    end
+  end
+
   describe "compile-time errors" do
     test "invalid template syntax raises CompileError" do
       assert_raise CompileError, ~r/template :bad has a syntax error/, fn ->

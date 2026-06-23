@@ -61,8 +61,29 @@ defmodule Juvet.Template.Compiler.Slack do
 
   alias Juvet.Template.Compiler.Slack.View
 
-  @spec compile([Compiler.ast_element()]) :: map()
+  @spec compile([Compiler.ast_element()]) :: map() | [map()]
   def compile([%{element: :view} = view]), do: View.compile(view)
+
+  # A top-level `blocks:` template (no `.view` wrapper) compiles to a bare list
+  # of blocks, suitable for a Slack message (`chat.postMessage`) rather than a
+  # modal/home view.
+  def compile([%{element: :blocks} = node]), do: compile_block_list(node)
+
+  # A template must be a single `.view` or a top-level `blocks:` list — a loose
+  # list of top-level elements is not a valid template.
+  def compile(elements) when is_list(elements) do
+    raise ArgumentError,
+          "a Slack template must be a single `.view` or a top-level `blocks:` list, " <>
+            "got top-level element(s): #{inspect(Enum.map(elements, &Map.get(&1, :element)))}"
+  end
+
+  defp compile_block_list(%{children: %{blocks: blocks}}) when is_list(blocks),
+    do: Enum.map(blocks, &compile_element/1)
+
+  defp compile_block_list(%{children: %{blocks: block}}) when is_map(block),
+    do: [compile_element(block)]
+
+  defp compile_block_list(_), do: []
 
   @doc false
   @spec compile_element(Compiler.ast_element() | map()) :: map()
