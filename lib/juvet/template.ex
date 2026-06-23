@@ -760,6 +760,20 @@ defmodule Juvet.Template do
     end
   end
 
+  # Blocks-only template (no `.view` wrapper): `compiled` is a list of blocks.
+  # `compiled_to_quoted/2` already handles list bodies (static, EEx, if, for).
+  defp generate_json_function(name, compiled, helper_bindings) when is_list(compiled) do
+    bindings_var = Macro.var(:bindings, __MODULE__)
+    body = compiled_to_quoted(compiled, bindings_var)
+
+    quote do
+      def unquote(name)(bindings \\ []) do
+        unquote(bindings_var) = Keyword.merge(unquote(helper_bindings), bindings)
+        Juvet.Template.Compiler.Encoder.encode!(unquote(body))
+      end
+    end
+  end
+
   defp generate_map_function(name, compiled, helper_bindings) when is_map(compiled) do
     cond do
       map_contains_dynamic_marker?(compiled) ->
@@ -789,6 +803,20 @@ defmodule Juvet.Template do
         quote do
           def unquote(name)(_bindings \\ []), do: unquote(escaped)
         end
+    end
+  end
+
+  # Blocks-only template (no `.view` wrapper): `compiled` is a list of blocks.
+  # `compiled_to_quoted/2` already handles list bodies (static, EEx, if, for).
+  defp generate_map_function(name, compiled, helper_bindings) when is_list(compiled) do
+    bindings_var = Macro.var(:bindings, __MODULE__)
+    body = compiled_to_quoted(compiled, bindings_var)
+
+    quote do
+      def unquote(name)(bindings \\ []) do
+        unquote(bindings_var) = Keyword.merge(unquote(helper_bindings), bindings)
+        unquote(body)
+      end
     end
   end
 

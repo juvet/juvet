@@ -1,0 +1,12 @@
+blocks:
+  .section
+    text: "Hi <%= name %>"
+    type: :mrkdwn
+  <%= if show_extra do %>
+    .divider
+  <% end %>
+  .actions
+    elements:
+      .button
+        text: "Go"
+        action_id: "go"

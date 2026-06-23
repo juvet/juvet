@@ -149,6 +149,31 @@ Juvet does not validate Slack's contract (e.g., `title.text` &le; 24 characters,
 The template layer then either returns the map directly (`:map` format, the default)
 or encodes it to JSON (`:json` format) via `Encoder.encode!/1`.
 
+### Message blocks (top-level `blocks:`)
+
+A template can omit the `.view` wrapper and declare a top-level `blocks:` instead.
+This compiles to a **bare list of blocks** rather than a view map — use it for a
+Slack message (`chat.postMessage`), which takes a top-level `blocks` array.
+
+```elixir
+# cheex source (a `.slack.cheex` file, so the platform is :slack):
+#
+# blocks:
+#   :slack.section{text: "Heads up <%= name %>", type: :mrkdwn}
+#   :slack.divider
+
+[
+  %{type: "section", text: %{type: "mrkdwn", text: "Heads up Sam"}},
+  %{type: "divider"}
+]
+```
+
+The generated function returns the list directly, e.g.
+`MyTemplates.message(name: "Sam")`. EEx interpolation and `<%= if %>`/`<%= for %>`
+work inside `blocks:` just as they do inside a view. A loose list of top-level
+elements (without the `blocks:` key) is rejected — a template must be a single
+`.view` or a top-level `blocks:`.
+
 ## Compiler Architecture
 
 The compiler delegates to platform-specific compilers based on the `platform:` field in each AST element.

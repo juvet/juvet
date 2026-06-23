@@ -95,6 +95,27 @@ defmodule Juvet.Template.Parser do
       column: col
   end
 
+  # Top-level `blocks:` (no `.view` wrapper) — a message's block list. Requires a
+  # known platform (e.g. a `.slack.cheex` file) to resolve `.element` shorthand.
+  defp do_parse(
+         [{:keyword, "blocks", pos}, {:colon, _, _}, {:newline, _, _}, {:indent, _, _} | rest],
+         acc,
+         platform
+       )
+       when not is_nil(platform) do
+    {nested, rest} = nested_elements(rest, [], platform)
+
+    node = %{
+      platform: platform,
+      element: :blocks,
+      line: elem(pos, 0),
+      column: elem(pos, 1),
+      children: %{blocks: child_value(nested)}
+    }
+
+    do_parse(rest, [node | acc], platform)
+  end
+
   # Unexpected token at top level
   defp do_parse([{type, value, {line, col}} | _], _acc, _platform) do
     raise ParserError,
