@@ -358,13 +358,37 @@ defmodule Juvet.Template do
 
     case Map.fetch(existing_asts, template_name) do
       {:ok, partial_ast} ->
-        inlined = substitute_bindings(partial_ast, bindings)
+        subst = build_substitution(bindings, template_name, location)
+        inlined = substitute_bindings(partial_ast, subst)
         resolve_partials(inlined, existing_asts, [template_name | stack])
 
       :error ->
         raise ArgumentError,
               "partial #{inspect(template_name)} not found#{location}"
     end
+  end
+
+  # Splits partial args into literal values and dynamic expressions.
+  #
+  # Literal args (non-strings, plain strings, and mixed-text EEx strings) keep
+  # the legacy exact-string leaf substitution. Dynamic args — single-EEx
+  # strings, which is what the parser emits for bare identifiers, dotted paths,
+  # and explicit `<%= expr %>` values — are parsed to expression ASTs and
+  # substituted like macro parameters into every expression position of the
+  # partial body (EEx segments, code blocks, if conditions, for collections).
+  defp build_substitution(bindings, template_name, location) do
+    {dynamic, literals} =
+      Enum.split_with(bindings, fn {_name, value} ->
+        is_binary(value) and single_eex_expression?(value)
+      end)
+
+    exprs =
+      Map.new(dynamic, fn {name, value} ->
+        [_, expression] = Regex.run(~r/\A<%=\s*(.+?)\s*%>\z/s, value)
+        {name, parse_substitution_target!(expression, template_name, location)}
+      end)
+
+    %{literals: Map.new(literals), exprs: exprs, partial: template_name, location: location}
   end
 
   defp store_partial(name, source, caller, opts \\ []) do
@@ -422,51 +446,161 @@ defmodule Juvet.Template do
 
   defp format_location(_), do: ""
 
-  # Substitutes bindings into an AST.
+  # Substitutes partial args into an AST (see build_substitution/3 for the
+  # literal/dynamic split).
   #
-  # For each EEx interpolation `<%= name %>` in the partial's AST,
-  # replaces it with the corresponding binding value.
-  #
-  # Example:
+  # Literal example (legacy leaf substitution):
   #   partial AST has: %{text: "Hello <%= name %>"}
-  #   bindings: %{name: "<%= user_name %>"}
-  #   result: %{text: "Hello <%= user_name %>"}
-  defp substitute_bindings(ast, bindings) when is_list(ast) do
-    Enum.map(ast, &substitute_bindings(&1, bindings))
+  #   args: %{name: "World"}
+  #   result: %{text: "Hello World"}
+  #
+  # Dynamic example (expression substitution):
+  #   partial AST has: %{node_type: :code_block, code: "x = starting_at(decision)"}
+  #   args: %{decision: "<%= item.decision %>"}
+  #   result: %{node_type: :code_block, code: "x = starting_at(item.decision)"}
+  defp substitute_bindings(ast, subst) when is_list(ast) do
+    Enum.map(ast, &substitute_bindings(&1, subst))
   end
 
-  defp substitute_bindings(%{node_type: :for_loop} = node, bindings) do
-    %{node | body: substitute_bindings(node.body, bindings)}
+  defp substitute_bindings(%{node_type: :code_block} = node, subst) do
+    %{node | code: rewrite_expression_string(node.code, subst)}
   end
 
-  defp substitute_bindings(%{} = element, bindings) do
+  defp substitute_bindings(%{node_type: :if_block} = node, subst) do
+    %{
+      node
+      | condition: rewrite_expression_string(node.condition, subst),
+        then_body: substitute_bindings(node.then_body, subst),
+        else_body: node.else_body && substitute_bindings(node.else_body, subst)
+    }
+  end
+
+  defp substitute_bindings(%{node_type: :for_loop} = node, subst) do
+    # The loop variable shadows a same-named arg inside the body.
+    body_subst = drop_shadowed(subst, String.to_atom(node.variable))
+
+    %{
+      node
+      | collection: rewrite_expression_string(node.collection, subst),
+        body: substitute_bindings(node.body, body_subst)
+    }
+  end
+
+  defp substitute_bindings(%{} = element, subst) do
     element
-    |> Map.update(:attributes, %{}, &substitute_in_attributes(&1, bindings))
-    |> Map.update(:children, nil, &substitute_in_children(&1, bindings))
+    |> Map.update(:attributes, %{}, &substitute_in_attributes(&1, subst))
+    |> Map.update(:children, nil, &substitute_in_children(&1, subst))
     |> then(fn el ->
       if el.children == nil, do: Map.delete(el, :children), else: el
     end)
   end
 
-  defp substitute_in_attributes(attrs, bindings) do
+  defp substitute_in_attributes(attrs, subst) do
     Map.new(attrs, fn {key, value} ->
-      {key, substitute_in_value(value, bindings)}
+      {key, substitute_in_value(value, subst)}
     end)
   end
 
-  defp substitute_in_value(value, bindings) when is_binary(value) do
-    Enum.reduce(bindings, value, fn {name, replacement}, acc ->
+  defp substitute_in_value(value, subst) when is_binary(value) do
+    value
+    |> replace_literal_leaves(subst.literals)
+    |> rewrite_eex_segments(subst)
+  end
+
+  defp substitute_in_value(value, _subst), do: value
+
+  defp replace_literal_leaves(value, literals) do
+    Enum.reduce(literals, value, fn {name, replacement}, acc ->
       String.replace(acc, "<%= #{name} %>", to_string(replacement))
     end)
   end
 
-  defp substitute_in_value(value, _bindings), do: value
+  # Rewrites every `<%= ... %>` segment of a string value so dynamic args
+  # reach expressions like `<%= starting_at(decision) %>`, not just exact
+  # leaf `<%= decision %>` occurrences.
+  defp rewrite_eex_segments(value, %{exprs: exprs}) when map_size(exprs) == 0, do: value
 
-  defp substitute_in_children(nil, _bindings), do: nil
+  defp rewrite_eex_segments(value, subst) do
+    if String.contains?(value, "<%") do
+      Regex.replace(~r/<%=\s*(.+?)\s*%>/s, value, fn _match, expression ->
+        "<%= #{rewrite_expression_string(expression, subst)} %>"
+      end)
+    else
+      value
+    end
+  end
 
-  defp substitute_in_children(children, bindings) when is_map(children) do
+  # Parses an expression string from the partial body, replaces references to
+  # dynamic args with the caller's expressions, and re-emits it as a string.
+  # A no-op when there are no dynamic args, keeping literal-only partials
+  # byte-identical to the legacy behavior.
+  defp rewrite_expression_string(code, %{exprs: exprs}) when map_size(exprs) == 0, do: code
+
+  defp rewrite_expression_string(code, subst) do
+    code
+    |> parse_substitution_target!(subst.partial, subst.location)
+    |> rewrite_arg_references(subst.exprs)
+    |> Macro.to_string()
+  end
+
+  defp parse_substitution_target!(code, template_name, location) do
+    case Code.string_to_quoted(code) do
+      {:ok, ast} ->
+        ast
+
+      {:error, {_meta, message, token}} ->
+        raise CompileError,
+          description:
+            "cannot substitute args into partial #{inspect(template_name)}#{location}: " <>
+              "#{inspect(code)} is not a valid expression (#{format_parse_error(message, token)})"
+    end
+  end
+
+  defp format_parse_error({prefix, suffix}, token), do: "#{prefix}#{token}#{suffix}"
+  defp format_parse_error(message, token), do: "#{message}#{token}"
+
+  # Replaces variable nodes whose names are dynamic args with the caller's
+  # expression AST. Assignment/match targets and fn clause parameters are
+  # never rewritten; references after an arg name is rebound are not
+  # scope-tracked (rebinding an arg inside a partial is documented as
+  # discouraged).
+  defp rewrite_arg_references({:=, meta, [lhs, rhs]}, exprs),
+    do: {:=, meta, [lhs, rewrite_arg_references(rhs, exprs)]}
+
+  defp rewrite_arg_references({:->, meta, [params, body]}, exprs),
+    do: {:->, meta, [params, rewrite_arg_references(body, exprs)]}
+
+  defp rewrite_arg_references({name, _meta, context} = var, exprs)
+       when is_atom(name) and is_atom(context) do
+    Map.get(exprs, name, var)
+  end
+
+  defp rewrite_arg_references({form, meta, args}, exprs) when is_list(args) do
+    rewritten_args = Enum.map(args, &rewrite_arg_references(&1, exprs))
+    {rewrite_arg_references(form, exprs), meta, rewritten_args}
+  end
+
+  defp rewrite_arg_references({left, right}, exprs),
+    do: {rewrite_arg_references(left, exprs), rewrite_arg_references(right, exprs)}
+
+  defp rewrite_arg_references(list, exprs) when is_list(list),
+    do: Enum.map(list, &rewrite_arg_references(&1, exprs))
+
+  defp rewrite_arg_references(other, _exprs), do: other
+
+  defp drop_shadowed(subst, variable) do
+    %{
+      subst
+      | literals: Map.delete(subst.literals, variable),
+        exprs: Map.delete(subst.exprs, variable)
+    }
+  end
+
+  defp substitute_in_children(nil, _subst), do: nil
+
+  defp substitute_in_children(children, subst) when is_map(children) do
     Map.new(children, fn {key, value} ->
-      {key, substitute_in_child_value(value, bindings)}
+      {key, substitute_in_child_value(value, subst)}
     end)
   end
 
@@ -1073,7 +1207,10 @@ defmodule Juvet.Template do
 
   defp compiled_to_quoted_with_bindings(%{__for__: true} = node) do
     variable = String.to_atom(node.variable)
-    collection = String.to_atom(node.collection)
+    # The collection stays a string and resolves at runtime via
+    # resolve_binding/2 (like for_quoted_without_code_blocks) so dotted or
+    # complex collection expressions work; atomizing it broke `group.items`.
+    collection = node.collection
     item_var = Macro.var(variable, __MODULE__)
 
     if Enum.any?(node.body, &match?(%{__code_block__: true}, &1)) do
@@ -1100,7 +1237,7 @@ defmodule Juvet.Template do
       fn bindings ->
         results =
           Enum.flat_map(
-            Keyword.fetch!(bindings, unquote(collection)),
+            Juvet.Template.resolve_binding(unquote(collection), bindings),
             fn unquote(item_var) ->
               iter_bindings = Keyword.put(bindings, unquote(variable), unquote(item_var))
 
@@ -1142,7 +1279,7 @@ defmodule Juvet.Template do
     quote do
       fn bindings ->
         results =
-          for unquote(item_var) <- Keyword.fetch!(bindings, unquote(collection)) do
+          for unquote(item_var) <- Juvet.Template.resolve_binding(unquote(collection), bindings) do
             unquote(body_element)
           end
 
@@ -1163,9 +1300,12 @@ defmodule Juvet.Template do
 
   defp for_flat_map_body(collection, item_var, body_elements) do
     quote do
-      Enum.flat_map(Keyword.fetch!(bindings, unquote(collection)), fn unquote(item_var) ->
-        unquote(body_elements)
-      end)
+      Enum.flat_map(
+        Juvet.Template.resolve_binding(unquote(collection), bindings),
+        fn unquote(item_var) ->
+          unquote(body_elements)
+        end
+      )
     end
   end
 

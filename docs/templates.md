@@ -325,7 +325,8 @@ default_value -> whitespace text
 inline_attrs -> open_brace attr_list close_brace
 attr_list    -> (attr (comma attr)*)?
 attr         -> whitespace? keyword colon whitespace? value
-value        -> text | boolean | atom | number
+value        -> text | boolean | atom | number | eex_expr | identifier_path
+identifier_path -> keyword (dot keyword)*    (no whitespace around the dots)
 block        -> indent (nested_attr | attr | element)+ dedent
 nested_attr  -> keyword colon newline indent attr+ dedent
 ```
@@ -333,6 +334,21 @@ nested_attr  -> keyword colon newline indent attr+ dedent
 Short elements (`.element`) inherit their platform from the parent element.
 They can only appear as children — using `.element` at the top level is an error,
 unless a file-level platform is set (e.g., `.slack.cheex` files).
+
+## Bare Identifiers and Dotted Paths
+
+Attribute values can be bare identifiers or dotted paths, which desugar to the
+equivalent EEx binding lookup:
+
+```
+:slack.header{text: greeting}        # same as text: <%= greeting %>
+:slack.header{text: item.decision}   # same as text: <%= item.decision %>
+:slack.header{text: a.b.c}           # chains any depth
+```
+
+Path segments must be adjacent — `item .decision` and `item.` are parse errors.
+Anything richer than a dotted path (function calls, operators, indexing) uses
+the explicit `<%= expr %>` escape hatch, which supports arbitrary expressions.
 
 ## Error Handling and Line Number Tracking
 
@@ -1519,21 +1535,62 @@ When `:full_page` is compiled:
 
 ### Binding Substitution
 
-Bindings map the partial's attributes to EEx markers in the referenced template:
+Partial args come in two kinds, substituted differently:
 
-```elixir
-# Partial defines: "Hello <%= name %>"
-# Parent passes: name: "<%= user_name %>"
-# Result: "Hello <%= user_name %>"
-```
-
-Static values are substituted directly:
+**Literal args** (plain strings, atoms, numbers, booleans, and mixed-text EEx
+strings like `"Hello <%= name %>"`) substitute into exact leaf `<%= name %>`
+occurrences in the partial's attribute strings:
 
 ```elixir
 # Partial defines: "Hello <%= name %>"
 # Parent passes: name: "Alice"
 # Result: "Hello Alice"
 ```
+
+**Dynamic args** (bare identifiers, dotted paths, or single `<%= expr %>`
+values) behave like macro parameters: every reference to the arg name in the
+partial body's expression positions is replaced with the caller's expression —
+EEx segments, `<% %>` code blocks, `if` conditions and bodies, and `for`
+collections alike:
+
+```elixir
+# Partial :decision_row defines:
+#   <% starting = starting_at(decision) %>
+#   :slack.section{text: "<%= starting %>", type: :mrkdwn}
+#
+# Parent passes: decision: item.decision
+# Inlined code block: starting = starting_at(item.decision)
+```
+
+This removes the need for per-field extraction blocks at call sites:
+
+```
+# Before
+<%= for item <- items do %>
+  <% decision = item.decision %>
+  <% editable = item.editable %>
+  .partial{template: :decision_row, decision: decision, editable: editable}
+<% end %>
+
+# After
+<%= for item <- items do %>
+  .partial{template: :decision_row, decision: item.decision, editable: item.editable}
+<% end %>
+```
+
+Substitution rules:
+
+- A `for` loop variable inside the partial body **shadows** a same-named arg —
+  references inside the loop bind to the loop variable.
+- Assignment targets and `fn` clause parameters are never rewritten.
+- **Rebinding an arg name inside a partial** (`<% name = ... %>`) is
+  discouraged and its behavior undefined: references to the name are
+  substituted with the caller's expression even after the rebind, so the
+  rebind is ineffective.
+- An arg value that isn't a parseable expression raises `CompileError` naming
+  the partial.
+- Identifiers in the partial body that are **not** arg names still resolve
+  against the caller's bindings at render time, as before.
 
 ### Ordering Requirement
 

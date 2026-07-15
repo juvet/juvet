@@ -393,9 +393,14 @@ defmodule Juvet.Template.Parser do
   defp value([{:number, num_str, _} | rest]), do: {parse_number(num_str), rest}
   defp value([{:eex_expr, expr, _} | rest]), do: {"<%= #{expr} %>", rest}
 
-  # Bare identifier — resolved as a runtime binding lookup, equivalent to
-  # writing `<%= identifier %>`. Compound expressions still require EEx.
-  defp value([{:keyword, name, _} | rest]), do: {"<%= #{name} %>", rest}
+  # Bare identifier or dotted path (`item`, `item.decision`, `a.b.c`) —
+  # resolved as a runtime binding lookup, equivalent to writing
+  # `<%= identifier %>` / `<%= item.decision %>`. Segments must be adjacent
+  # (no whitespace around the dots). Richer expressions still require EEx.
+  defp value([{:keyword, name, _} | rest]) do
+    {segments, rest} = dotted_segments(rest, [name])
+    {"<%= #{segments |> Enum.reverse() |> Enum.join(".")} %>", rest}
+  end
 
   # Unexpected value type
   defp value([{type, val, {line, col}} | _]) do
@@ -411,6 +416,15 @@ defmodule Juvet.Template.Parser do
       line: nil,
       column: nil
   end
+
+  # Consumes adjacent `.segment` pairs after a bare identifier. Anything other
+  # than an immediate `dot keyword` pair (whitespace before the dot, trailing
+  # dot, end of input) stops the chain, leaving the remaining tokens to the
+  # caller's existing error handling.
+  defp dotted_segments([{:dot, _, _}, {:keyword, segment, _} | rest], acc),
+    do: dotted_segments(rest, [segment | acc])
+
+  defp dotted_segments(rest, acc), do: {acc, rest}
 
   # Helper functions
   defp unquote_text(text) do

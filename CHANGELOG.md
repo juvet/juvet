@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Cheex attribute values can be dotted paths (`text: item.decision`, any
+  depth), desugaring to the equivalent `<%= item.decision %>` binding lookup.
+  Segments must be adjacent; richer expressions keep the `<%= expr %>` escape
+  hatch.
+- Dynamic partial args (bare identifiers, dotted paths, or `<%= expr %>`
+  values) now substitute like macro parameters into every expression position
+  of the partial body — EEx segments, code blocks, `if` conditions and bodies,
+  and `for` collections — instead of only exact leaf `<%= name %>` occurrences
+  in attribute strings. Call sites no longer need per-field
+  `<% x = item.x %>` extraction blocks before `.partial{...}`. Loop variables
+  shadow same-named args; literal args keep the existing leaf substitution
+  unchanged.
+
+### Fixed
+
+- `for x <- group.items` (a dotted or complex collection expression) no longer
+  raises `KeyError` when the loop has a sibling `<% %>` code block; the
+  collection is resolved at runtime like in the code-block-free path.
+
 - Templates can now have a top-level `blocks:` (no `.view` wrapper), which
   compiles to a bare list of blocks — suitable for a Slack **message**
   (`chat.postMessage`) rather than a modal/home view. The generated function

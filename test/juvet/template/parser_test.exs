@@ -887,4 +887,85 @@ defmodule Juvet.Template.ParserTest do
              ]
     end
   end
+
+  describe "parse/1 - Phase 14: Dotted-path attribute values" do
+    test "dotted path in inline attrs resolves as an EEx binding lookup" do
+      template = ~s(:slack.header{text: item.decision})
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :header,
+                 attributes: %{text: "<%= item.decision %>"}
+               }
+             ]
+    end
+
+    test "multi-segment dotted path chains all segments" do
+      template = ~s(:slack.header{text: a.b.c})
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :header,
+                 attributes: %{text: "<%= a.b.c %>"}
+               }
+             ]
+    end
+
+    test "dotted path in nested attrs resolves as an EEx binding lookup" do
+      template = """
+      :slack.header
+        text: item.decision
+      """
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :header,
+                 attributes: %{text: "<%= item.decision %>"}
+               }
+             ]
+    end
+
+    test "dotted path on a partial attribute resolves as an EEx binding lookup" do
+      template = ~s(:slack.partial{template: :decision_row, decision: item.decision})
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :partial,
+                 attributes: %{template: :decision_row, decision: "<%= item.decision %>"}
+               }
+             ]
+    end
+
+    test "dotted paths mix freely with literal and bare-identifier values" do
+      template = ~s(:slack.header{text: item.name, emoji: true, alt: greeting})
+
+      assert parse(template) == [
+               %{
+                 platform: :slack,
+                 element: :header,
+                 attributes: %{text: "<%= item.name %>", emoji: true, alt: "<%= greeting %>"}
+               }
+             ]
+    end
+
+    test "whitespace before the dot does not chain and still raises" do
+      template = ~s(:slack.header{text: item .decision})
+
+      assert_raise Juvet.Template.Parser.Error,
+                   ~r/Unexpected dot/,
+                   fn -> parse(template) end
+    end
+
+    test "trailing dot still raises" do
+      template = ~s(:slack.header{text: item.})
+
+      assert_raise Juvet.Template.Parser.Error,
+                   ~r/Unexpected/,
+                   fn -> parse(template) end
+    end
+  end
 end

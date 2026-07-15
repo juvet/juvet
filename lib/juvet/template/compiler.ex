@@ -16,16 +16,20 @@ defmodule Juvet.Template.Compiler do
 
   alias Juvet.Template.Compiler.Slack
 
+  # `:attributes` is optional: top-level `blocks:` nodes (blocks-only message
+  # templates) are built without one.
   @type ast_element :: %{
           :platform => atom(),
           :element => atom(),
-          :attributes => map(),
+          optional(:attributes) => map(),
           optional(:children) => map(),
           optional(:line) => pos_integer(),
           optional(:column) => pos_integer()
         }
 
-  @spec compile([ast_element()]) :: map()
+  # A `.view` template compiles to a view map; a blocks-only template
+  # compiles to a bare list of blocks.
+  @spec compile([ast_element()]) :: map() | [map()]
   def compile([]), do: %{}
   def compile([%{platform: :slack} | _] = ast), do: Slack.compile(ast)
 end
