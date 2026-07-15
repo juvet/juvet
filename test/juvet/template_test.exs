@@ -1385,6 +1385,18 @@ defmodule Juvet.TemplateTest do
           .section{text: "<%= x %>", type: :mrkdwn}
           .divider
       """)
+
+      # A sibling code block forces the binding-threading compiled path, which
+      # used to atomize the collection and KeyError on dotted expressions.
+      template(:code_block_with_dotted_collection, """
+      :slack.view
+        type: :modal
+        blocks:
+          <% prefix = String.upcase(label) %>
+          <%= for item <- group.items do %>
+          .section{text: "<%= prefix %>: <%= item %>", type: :mrkdwn}
+          <% end %>
+      """)
     end
 
     test "simple code block defines variable for subsequent elements" do
@@ -1441,6 +1453,46 @@ defmodule Juvet.TemplateTest do
                  %{type: "header", text: %{type: "plain_text", text: "Title"}},
                  %{type: "section", text: %{type: "mrkdwn", text: "1"}},
                  %{type: "divider"}
+               ]
+             }
+    end
+
+    test "for-loop over a dotted collection works with a sibling code block (macro path)" do
+      result =
+        CodeBlockTemplates.code_block_with_dotted_collection(
+          label: "row",
+          group: %{items: ["a", "b"]}
+        )
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "ROW: a"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "ROW: b"}}
+               ]
+             }
+    end
+
+    # The runtime eval path does not execute sibling code blocks at all
+    # (pre-existing, documented out of scope), so the runtime half of this
+    # regression only covers the dotted collection itself.
+    test "for-loop over a dotted collection works at runtime" do
+      source = """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- group.items do %>
+          .section{text: "<%= item %>", type: :mrkdwn}
+          <% end %>
+      """
+
+      result = Template.render(source, group: %{items: ["a", "b"]})
+
+      assert result == %{
+               type: "modal",
+               blocks: [
+                 %{type: "section", text: %{type: "mrkdwn", text: "a"}},
+                 %{type: "section", text: %{type: "mrkdwn", text: "b"}}
                ]
              }
     end

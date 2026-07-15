@@ -1073,7 +1073,10 @@ defmodule Juvet.Template do
 
   defp compiled_to_quoted_with_bindings(%{__for__: true} = node) do
     variable = String.to_atom(node.variable)
-    collection = String.to_atom(node.collection)
+    # The collection stays a string and resolves at runtime via
+    # resolve_binding/2 (like for_quoted_without_code_blocks) so dotted or
+    # complex collection expressions work; atomizing it broke `group.items`.
+    collection = node.collection
     item_var = Macro.var(variable, __MODULE__)
 
     if Enum.any?(node.body, &match?(%{__code_block__: true}, &1)) do
@@ -1100,7 +1103,7 @@ defmodule Juvet.Template do
       fn bindings ->
         results =
           Enum.flat_map(
-            Keyword.fetch!(bindings, unquote(collection)),
+            Juvet.Template.resolve_binding(unquote(collection), bindings),
             fn unquote(item_var) ->
               iter_bindings = Keyword.put(bindings, unquote(variable), unquote(item_var))
 
@@ -1142,7 +1145,7 @@ defmodule Juvet.Template do
     quote do
       fn bindings ->
         results =
-          for unquote(item_var) <- Keyword.fetch!(bindings, unquote(collection)) do
+          for unquote(item_var) <- Juvet.Template.resolve_binding(unquote(collection), bindings) do
             unquote(body_element)
           end
 
@@ -1163,9 +1166,12 @@ defmodule Juvet.Template do
 
   defp for_flat_map_body(collection, item_var, body_elements) do
     quote do
-      Enum.flat_map(Keyword.fetch!(bindings, unquote(collection)), fn unquote(item_var) ->
-        unquote(body_elements)
-      end)
+      Enum.flat_map(
+        Juvet.Template.resolve_binding(unquote(collection), bindings),
+        fn unquote(item_var) ->
+          unquote(body_elements)
+        end
+      )
     end
   end
 
