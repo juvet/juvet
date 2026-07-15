@@ -445,6 +445,226 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "partial args as expression parameters" do
+    defmodule ExpressionArgTemplates do
+      use Juvet.Template
+
+      partial(:leaf_row, ":slack.section{text: \"<%= val %>\", type: :mrkdwn}")
+
+      partial(:derived_row, """
+      <% label = String.upcase(val) %>
+      :slack.section{text: "<%= label %>", type: :mrkdwn}
+      """)
+
+      partial(:conditional_row, """
+      <%= if flag do %>
+      :slack.section{text: "shown", type: :mrkdwn}
+      <% end %>
+      """)
+
+      partial(:collection_rows, """
+      <%= for entry <- rows do %>
+      :slack.section{text: "<%= entry %>", type: :mrkdwn}
+      <% end %>
+      """)
+
+      partial(:forwarding_row, ":slack.partial{template: :leaf_row, val: outer_val}")
+
+      partial(:shadowing_rows, """
+      <%= for val <- rows do %>
+      :slack.section{text: "<%= val %>", type: :mrkdwn}
+      <% end %>
+      """)
+
+      partial(:literal_row, ":slack.section{text: \"<%= label %>/<%= count %>\", type: :mrkdwn}")
+
+      partial(:rebinding_row, """
+      <% val = String.upcase(val) %>
+      :slack.section{text: "<%= val %>", type: :mrkdwn}
+      """)
+
+      template(:leaf_case, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+          .partial{template: :leaf_row, val: item.name}
+          <% end %>
+      """)
+
+      template(:code_block_case, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+          .partial{template: :derived_row, val: item.name}
+          <% end %>
+      """)
+
+      template(:if_condition_case, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+          .partial{template: :conditional_row, flag: item.visible}
+          <% end %>
+      """)
+
+      template(:for_collection_case, """
+      :slack.view
+        type: :modal
+        blocks:
+          .partial{template: :collection_rows, rows: group.items}
+      """)
+
+      template(:forwarding_case, """
+      :slack.view
+        type: :modal
+        blocks:
+          <%= for item <- items do %>
+          .partial{template: :forwarding_row, outer_val: item.name}
+          <% end %>
+      """)
+
+      template(:shadowing_case, """
+      :slack.view
+        type: :modal
+        blocks:
+          .partial{template: :shadowing_rows, rows: group.items, val: poison}
+      """)
+
+      template(:literal_case, """
+      :slack.view
+        type: :modal
+        blocks:
+          .partial{template: :literal_row, label: "static", count: 42}
+      """)
+
+      template(:rebinding_case, """
+      :slack.view
+        type: :modal
+        blocks:
+          .partial{template: :rebinding_row, val: item.name}
+      """)
+    end
+
+    test "dotted arg reaches a leaf <%= %> in the partial body" do
+      result = ExpressionArgTemplates.leaf_case(items: [%{name: "alpha"}, %{name: "beta"}])
+
+      assert %{
+               blocks: [
+                 %{type: "section", text: %{text: "alpha"}},
+                 %{type: "section", text: %{text: "beta"}}
+               ]
+             } = result
+    end
+
+    test "dotted arg reaches a code block in the partial body (the decision_row pattern)" do
+      result = ExpressionArgTemplates.code_block_case(items: [%{name: "alpha"}, %{name: "beta"}])
+
+      assert %{
+               blocks: [
+                 %{type: "section", text: %{text: "ALPHA"}},
+                 %{type: "section", text: %{text: "BETA"}}
+               ]
+             } = result
+    end
+
+    test "dotted arg reaches an if condition in the partial body" do
+      result =
+        ExpressionArgTemplates.if_condition_case(
+          items: [%{name: "a", visible: true}, %{name: "b", visible: false}]
+        )
+
+      assert %{blocks: [%{type: "section", text: %{text: "shown"}}]} = result
+    end
+
+    test "dotted arg works as a for collection in the partial body" do
+      result = ExpressionArgTemplates.for_collection_case(group: %{items: ["x", "y"]})
+
+      assert %{
+               blocks: [
+                 %{type: "section", text: %{text: "x"}},
+                 %{type: "section", text: %{text: "y"}}
+               ]
+             } = result
+    end
+
+    test "args forward through nested partials" do
+      result = ExpressionArgTemplates.forwarding_case(items: [%{name: "forwarded"}])
+
+      assert %{blocks: [%{type: "section", text: %{text: "forwarded"}}]} = result
+    end
+
+    test "a partial-body loop variable shadows a same-named arg" do
+      result =
+        ExpressionArgTemplates.shadowing_case(
+          group: %{items: ["kept"]},
+          poison: "SHOULD NOT APPEAR"
+        )
+
+      assert %{blocks: [%{type: "section", text: %{text: "kept"}}]} = result
+    end
+
+    test "literal args keep the legacy leaf substitution" do
+      result = ExpressionArgTemplates.literal_case()
+
+      assert %{blocks: [%{type: "section", text: %{text: "static/42"}}]} = result
+    end
+
+    # Rebinding an arg name inside a partial is documented as discouraged:
+    # every reference to the name — including ones after the rebind — is
+    # substituted with the caller's expression, so the rebind is ineffective.
+    # This test pins that behavior so any future change is deliberate.
+    test "rebinding an arg name inside a partial leaves references substituted" do
+      result = ExpressionArgTemplates.rebinding_case(item: %{name: "alpha"})
+
+      assert %{blocks: [%{type: "section", text: %{text: "alpha"}}]} = result
+    end
+
+    test "unparseable dynamic arg raises CompileError naming the partial" do
+      assert_raise CompileError, ~r/leaf_row/, fn ->
+        Code.eval_string("""
+        defmodule UnparseableArgTemplate do
+          use Juvet.Template
+
+          partial(:leaf_row, ":slack.section{text: \\"<%= val %>\\", type: :mrkdwn}")
+
+          template(:bad, \"\"\"
+          :slack.view
+            type: :modal
+            blocks:
+              .partial{template: :leaf_row, val: <%= 1 + %>}
+          \"\"\")
+        end
+        """)
+      end
+    end
+
+    test "dotted args render through format: :json" do
+      defmodule JsonExpressionArgTemplate do
+        use Juvet.Template
+
+        partial(:leaf_row, ":slack.section{text: \"<%= val %>\", type: :mrkdwn}")
+
+        template(
+          :leaf_case,
+          """
+          :slack.view
+            type: :modal
+            blocks:
+              .partial{template: :leaf_row, val: item.name}
+          """,
+          format: :json
+        )
+      end
+
+      json = JsonExpressionArgTemplate.leaf_case(item: %{name: "alpha"})
+
+      assert json =~ ~s("text":"alpha")
+    end
+  end
+
   describe "nested partials" do
     defmodule NestedPartialTemplates do
       use Juvet.Template
