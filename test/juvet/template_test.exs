@@ -1491,6 +1491,41 @@ defmodule Juvet.TemplateTest do
     end
   end
 
+  describe "expression attribute values that evaluate to lists" do
+    defmodule ListExpressionTemplates do
+      use Juvet.Template
+
+      template(:select_with_conversation_filter, """
+      :slack.view
+        type: :home
+        blocks:
+          .actions
+            elements:
+              .select
+                source: :conversations
+                action_id: "project"
+                filter:
+                  .filter
+                    include: <%= ["public", "private"] %>
+                    exclude_bot_users: true
+      """)
+    end
+
+    test "preserves the evaluated list instead of stringifying it" do
+      result = ListExpressionTemplates.select_with_conversation_filter([])
+
+      [actions] = result.blocks
+      [select] = actions.elements
+
+      assert select.type == "conversations_select"
+
+      assert select.filter == %{
+               include: ["public", "private"],
+               exclude_bot_users: true
+             }
+    end
+  end
+
   describe "for-loop with JSON format" do
     defmodule ForLoopJsonTemplates do
       use Juvet.Template, format: :json

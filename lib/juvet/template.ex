@@ -697,6 +697,7 @@ defmodule Juvet.Template do
       cond do
         is_nil(result) -> nil
         is_boolean(result) -> result
+        is_list(result) -> result
         true -> to_string(result)
       end
     else
