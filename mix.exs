@@ -32,7 +32,7 @@ defmodule Juvet.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger, :httpoison, :plug_cowboy, :websockex],
+      extra_applications: [:logger, :httpoison, :websockex],
       mod: {Juvet, []}
     ]
   end
@@ -56,9 +56,10 @@ defmodule Juvet.Mixfile do
       {:jason, "~> 1.4", optional: true},
       {:mock, "~> 0.3.0", only: :test},
       {:oauth2, "~> 2.1.0"},
-      {:plug_cowboy, "~> 2.0"},
+      {:plug, "~> 1.14"},
+      {:plug_cowboy, "~> 2.0", only: :test},
       {:poison, "~> 4.0"},
-      {:websockex, "~> 0.4.0"}
+      {:websockex, "~> 0.5"}
     ]
   end
 
