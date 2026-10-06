@@ -64,7 +64,6 @@ defmodule Juvet.Integration.SlackOauthTest do
                <html><body>You are being <a href=\"https://slack.com/oauth/v2/authorize\?\
                app_id=APP_ID&amp;\
                client_id=CLIENT_ID&amp;\
-               client_secret=CLIENT_SECRET&amp;\
                redirect_uri=REDIRECT_URI&amp;\
                response_type=code&amp;\
                scope=SCOPE&amp;\
