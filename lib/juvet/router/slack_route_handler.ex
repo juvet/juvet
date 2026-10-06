@@ -4,6 +4,7 @@ defmodule Juvet.Router.SlackRouteHandler do
   """
 
   alias Juvet.{Config, Router}
+  alias Juvet.OAuth.State
   alias Juvet.Router.{Conn, OAuthRouter, Response}
 
   def handle_route(
@@ -25,10 +26,49 @@ defmodule Juvet.Router.SlackRouteHandler do
   def handle_route(
         %{
           configuration: configuration,
+          conn: conn,
           route: %{type: :oauth, route: "callback"},
-          request: %{platform: platform, raw_params: %{"code" => code}}
+          request: %{raw_params: %{"code" => _code} = params}
         } = context
       ) do
+    case State.verify(conn, params, configuration) do
+      :ok ->
+        context
+        |> delete_oauth_state()
+        |> authorize()
+
+      {:error, :invalid_state} ->
+        context
+        |> delete_oauth_state()
+        |> Map.put(:error, :invalid_state)
+        |> route_oauth_or_error("error")
+
+      {:error, _error} = error ->
+        error
+    end
+  end
+
+  def handle_route(
+        %{
+          route: %{type: :oauth, route: "callback"},
+          request: %{
+            raw_params: %{"error" => error, "error_description" => error_description}
+          }
+        } = context
+      ) do
+    context
+    |> delete_oauth_state()
+    |> Map.put(:error, error)
+    |> Map.put(:error_description, error_description)
+    |> route_oauth_or_error("error")
+  end
+
+  defp authorize(
+         %{
+           configuration: configuration,
+           request: %{platform: platform, raw_params: %{"code" => code}}
+         } = context
+       ) do
     case OAuthRouter.auth_for(platform, configuration, code: code) do
       {:ok, response} ->
         context
@@ -43,19 +83,10 @@ defmodule Juvet.Router.SlackRouteHandler do
     end
   end
 
-  def handle_route(
-        %{
-          route: %{type: :oauth, route: "callback"},
-          request: %{
-            raw_params: %{"error" => error, "error_description" => error_description}
-          }
-        } = context
-      ) do
-    context
-    |> Map.put(:error, error)
-    |> Map.put(:error_description, error_description)
-    |> route_oauth_or_error("error")
-  end
+  defp delete_oauth_state(%{configuration: configuration, conn: conn} = context),
+    do: Map.put(context, :conn, State.delete(conn, configuration))
+
+  defp delete_oauth_state(context), do: context
 
   defp route_oauth_or_error(
          %{configuration: configuration, request: %{platform: platform}} = context,
