@@ -111,6 +111,29 @@ defmodule Juvet.Router.RequestIdentifierTest do
                "callback"
     end
 
+    test "returns callback when the request endpoint is configured first" do
+      configuration = [
+        slack: [
+          oauth_request_endpoint: "/auth/slack",
+          oauth_callback_endpoint: "/auth/slack/callback"
+        ]
+      ]
+
+      request = Request.new(%{method: "GET", request_path: "/auth/slack/callback"})
+
+      assert RequestIdentifier.oauth_path(%{request | platform: :slack}, configuration) ==
+               "callback"
+    end
+
+    test "does not match paths that only start with an oauth endpoint", %{
+      configuration: configuration
+    } do
+      request = Request.new(%{method: "GET", request_path: "/auth/slack/other"})
+
+      refute RequestIdentifier.oauth_path(%{request | platform: :slack}, configuration)
+      refute RequestIdentifier.oauth?(%{request | platform: :slack}, configuration)
+    end
+
     test "returns nil for a slack oauth request with a different request path", %{
       configuration: configuration
     } do
