@@ -9,6 +9,8 @@ defmodule Juvet.OAuth.StateTest do
     slack: [oauth_callback_endpoint: "/auth/slack/callback", state_secret: "STATE_SECRET"]
   ]
 
+  @secret_key_base String.duplicate("a", 64)
+
   describe "put/2" do
     test "returns the state and sets it in a signed cookie scoped to the callback" do
       assert {:ok, conn, state} = State.put(conn(:get, "/auth/slack"), @configuration)
@@ -40,6 +42,21 @@ defmodule Juvet.OAuth.StateTest do
     test "returns a configuration error without a state secret" do
       assert {:error, %ConfigurationError{}} =
                State.put(conn(:get, "/auth/slack"), slack: [client_id: "CLIENT_ID"])
+    end
+
+    test "falls back to the conn's secret_key_base without a state secret" do
+      conn = %{conn(:get, "/auth/slack") | secret_key_base: @secret_key_base}
+
+      assert {:ok, conn, state} = State.put(conn, slack: [])
+
+      cookie = conn.resp_cookies[State.cookie_name()].value
+
+      assert :ok =
+               State.verify(
+                 %{callback_conn(cookie) | secret_key_base: @secret_key_base},
+                 %{"state" => state},
+                 slack: []
+               )
     end
   end
 
@@ -89,6 +106,16 @@ defmodule Juvet.OAuth.StateTest do
     test "returns a configuration error without a state secret", %{cookie: cookie, state: state} do
       assert {:error, %ConfigurationError{}} =
                State.verify(callback_conn(cookie), %{"state" => state}, slack: [])
+    end
+
+    test "prefers the state secret over the conn's secret_key_base", %{
+      cookie: cookie,
+      state: state
+    } do
+      conn = %{callback_conn(cookie) | secret_key_base: @secret_key_base}
+
+      assert :ok = State.verify(conn, %{"state" => state}, @configuration)
+      assert {:error, :invalid_state} = State.verify(conn, %{"state" => state}, slack: [])
     end
   end
 

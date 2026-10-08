@@ -7,7 +7,9 @@ defmodule Juvet.OAuth.State do
   scoped to the callback endpoint, and sends it to Slack in the authorize URL. The
   callback phase verifies the `state` Slack sends back matches the cookie.
 
-  The cookie is signed with the `state_secret` from the Slack configuration:
+  The cookie is signed with the conn's `secret_key_base`, which Phoenix endpoints
+  set on every request. Set a `state_secret` in the Slack configuration to use a
+  separate secret, or when the conn has no `secret_key_base`:
 
   ```
   config :juvet,
@@ -15,6 +17,8 @@ defmodule Juvet.OAuth.State do
       state_secret: System.fetch_env!("SLACK_STATE_SECRET")
     ]
   ```
+
+  Never use a secret from the Slack app, such as the signing secret, here.
   """
 
   alias Juvet.{Config, ConfigurationError}
@@ -37,7 +41,7 @@ defmodule Juvet.OAuth.State do
   @spec put(Plug.Conn.t(), Keyword.t()) ::
           {:ok, Plug.Conn.t(), String.t()} | {:error, Exception.t()}
   def put(conn, configuration) do
-    with {:ok, secret} <- secret(configuration) do
+    with {:ok, secret} <- secret(conn, configuration) do
       state = generate()
       token = Plug.Crypto.sign(secret, @salt, state, max_age: @max_age)
 
@@ -60,7 +64,7 @@ defmodule Juvet.OAuth.State do
   @spec verify(Plug.Conn.t(), map(), Keyword.t()) ::
           :ok | {:error, :invalid_state} | {:error, Exception.t()}
   def verify(conn, params, configuration) do
-    with {:ok, secret} <- secret(configuration),
+    with {:ok, secret} <- secret(conn, configuration),
          %{@cookie => token} <- Plug.Conn.fetch_cookies(conn).req_cookies,
          {:ok, state} <- Plug.Crypto.verify(secret, @salt, token, max_age: @max_age),
          %{"state" => param} when is_binary(param) <- params,
@@ -96,17 +100,20 @@ defmodule Juvet.OAuth.State do
 
   defp generate, do: 32 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
 
-  defp secret(configuration) do
-    case get_in(Config.slack(configuration) || %{}, [:state_secret]) do
-      secret when is_binary(secret) and secret != "" ->
-        {:ok, secret}
-
-      _ ->
+  defp secret(conn, configuration) do
+    [get_in(Config.slack(configuration) || %{}, [:state_secret]), conn.secret_key_base]
+    |> Enum.find(&(is_binary(&1) and &1 != ""))
+    |> case do
+      nil ->
         {:error,
          %ConfigurationError{
            message:
-             "Slack state secret missing in Juvet configuration (slack: [state_secret: ...])."
+             "Slack state secret missing. Set slack: [state_secret: ...] in the Juvet " <>
+               "configuration, or a secret_key_base on the conn."
          }}
+
+      secret ->
+        {:ok, secret}
     end
   end
 end

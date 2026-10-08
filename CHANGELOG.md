@@ -13,8 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stores a random state in a signed, HttpOnly cookie scoped to the callback
   endpoint (`Juvet.OAuth.State`), and the callback routes to the `error`
   action with `context.error == :invalid_state` when it doesn't match.
-  **Breaking:** the request phase returns a configuration error unless
-  `slack: [state_secret: ...]` is set.
+  The cookie is signed with the conn's `secret_key_base` (set by Phoenix
+  endpoints), or with `slack: [state_secret: ...]` when it's configured.
+  **Breaking:** the request phase returns a configuration error when neither
+  is set.
 - The Slack authorize URL no longer includes `client_secret`. It was being
   sent to the browser of every user who started OAuth.
 

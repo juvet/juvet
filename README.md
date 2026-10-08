@@ -180,8 +180,7 @@ config :juvet,
     client_id: System.fetch_env!("SLACK_CLIENT_ID"),
     client_secret: System.fetch_env!("SLACK_CLIENT_SECRET"),
     redirect_uri: "https://example.com/auth/slack/callback",
-    scope: "chat:write,commands",
-    state_secret: System.fetch_env!("SLACK_STATE_SECRET")
+    scope: "chat:write,commands"
   ]
 ```
 
@@ -196,7 +195,9 @@ end
 
 Visiting the request endpoint redirects to Slack. The success action receives the token response as `context.auth_response`. The error action receives `context.error`.
 
-The `state_secret` is required. Juvet sends a random `state` to Slack and stores it in a signed, HttpOnly cookie scoped to the callback endpoint. The callback checks that the `state` Slack sends back matches the cookie. If it doesn't, the request goes to the error action with `context.error` set to `:invalid_state`. This protects the flow against CSRF and login injection. Generate the secret with `mix phx.gen.secret` or `openssl rand -base64 48`.
+Juvet sends a random `state` to Slack and stores it in a signed, HttpOnly cookie scoped to the callback endpoint. The callback checks that the `state` Slack sends back matches the cookie. If it doesn't, the request goes to the error action with `context.error` set to `:invalid_state`. This protects the flow against CSRF and login injection.
+
+The cookie is signed with the conn's `secret_key_base`, which Phoenix endpoints already set, so a Phoenix app needs no extra configuration. Without a `secret_key_base` (or to use a separate secret), set `state_secret: System.fetch_env!("SLACK_STATE_SECRET")` in the `slack` configuration and generate it with `mix phx.gen.secret` or `openssl rand -base64 48`. Don't reuse a secret from your Slack app, such as the signing secret.
 
 Once you have the bot access token for your team, you are ready to go.
 
