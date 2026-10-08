@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   gone. `make_request/2` returns `{:ok, %{status:, headers:, body:}}`, and
   `parse_response/1` and `render_response/1` take that shape and pass
   `{:error, reason}` through instead of raising.
+- **Breaking:** the minimum Elixir version is now 1.15, which Req's HTTP stack
+  (Finch, Mint) requires.
 - `config :juvet, :json_encoder` is deprecated in favour of `:json_library`. It is
   still read when `:json_library` is not set.
 - `Juvet.Plug` decodes JSON bodies with the configured library at runtime.

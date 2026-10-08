@@ -5,7 +5,7 @@ defmodule Juvet.Mixfile do
     [
       app: :juvet,
       version: "0.7.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "Juvet",
       deps: deps(),
