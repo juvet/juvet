@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- **Breaking:** Juvet calls Slack with Req and encodes JSON with Jason instead of
+  HTTPoison and Poison. Both are now configurable, the same way Phoenix and
+  Swoosh are: `config :juvet, :json_library, Jason` and
+  `config :juvet, :http_client, Juvet.HTTPClient.Req`.
+- **Breaking:** `Juvet.SlackAPI` no longer `use`s `HTTPoison.Base`, so
+  `SlackAPI.post/3`, `SlackAPI.start/0` and the other HTTPoison functions are
+  gone. `make_request/2` returns `{:ok, %{status:, headers:, body:}}`, and
+  `parse_response/1` and `render_response/1` take that shape and pass
+  `{:error, reason}` through instead of raising.
+- `config :juvet, :json_encoder` is deprecated in favour of `:json_library`. It is
+  still read when `:json_library` is not set.
+- `Juvet.Plug` decodes JSON bodies with the configured library at runtime.
+- Slack OAuth serializes JSON with the configured library. `oauth2` keeps using
+  its own Tesla adapter.
+
 ### Security
 
 - The Slack OAuth flow now requires a `state` parameter. The request phase
@@ -22,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Juvet.HTTPClient`, a behaviour for the HTTP client, with `Juvet.HTTPClient.Req`
+  as the default. Req options can be set with
+  `config :juvet, Juvet.HTTPClient.Req, [...]`.
+- `Juvet.JSON`, which encodes and decodes with the configured `:json_library`.
 - Cheex attribute values can be dotted paths (`text: item.decision`, any
   depth), desugaring to the equivalent `<%= item.decision %>` binding lookup.
   Segments must be adjacent; richer expressions keep the `<%= expr %>` escape

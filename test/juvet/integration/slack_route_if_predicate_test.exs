@@ -66,7 +66,7 @@ defmodule Juvet.Integration.SlackRouteIfPredicateTest do
         "type" => "block_actions",
         "actions" => [%{"action_id" => "recording_action", "value" => value}]
       }
-      |> Poison.encode!()
+      |> Jason.encode!()
 
     %{"token" => "SLACK_TOKEN", "payload" => payload}
   end

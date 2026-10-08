@@ -220,7 +220,7 @@ defmodule Juvet.SlackAPI.Chat do
   end
 
   defp encode_blocks(nil), do: nil
-  defp encode_blocks(blocks), do: Poison.encode!(blocks)
+  defp encode_blocks(blocks), do: Juvet.JSON.encode!(blocks)
 
   defp transform_options(options) do
     options

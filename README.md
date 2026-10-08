@@ -145,6 +145,27 @@ config :juvet,
   ]
 ```
 
+#### JSON and HTTP client
+
+Juvet encodes and decodes JSON with [Jason](https://hex.pm/packages/jason) and calls Slack with [Req](https://hex.pm/packages/req) by default. Both can be swapped:
+
+```
+# config/config.exs
+
+config :juvet, :json_library, Jason
+config :juvet, :http_client, Juvet.HTTPClient.Req
+```
+
+`:json_library` takes any module with `encode!/1`, `decode/2` and `decode!/2`. `:http_client` takes any module that implements the `Juvet.HTTPClient` behaviour.
+
+Options for the default client are passed straight to Req. For example, to stub Slack in your tests with `Req.Test`:
+
+```
+# config/test.exs
+
+config :juvet, Juvet.HTTPClient.Req, plug: {Req.Test, Juvet.HTTPClient}
+```
+
 ### Mount Router
 
 The client application that is using Juvet can use the router from your client application. You just need to mount the `Juvet.Plug`.

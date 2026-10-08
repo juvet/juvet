@@ -4,7 +4,7 @@ defmodule Juvet.Mixfile do
   def project do
     [
       app: :juvet,
-      version: "0.6.3",
+      version: "0.7.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       name: "Juvet",
@@ -19,20 +19,12 @@ defmodule Juvet.Mixfile do
   end
 
   def cli do
-    [
-      preferred_envs: [
-        vcr: :test,
-        "vcr.delete": :test,
-        "vcr.check": :test,
-        "vcr.show": :test,
-        record: :test
-      ]
-    ]
+    [preferred_envs: [record: :test]]
   end
 
   def application do
     [
-      extra_applications: [:logger, :httpoison, :websockex],
+      extra_applications: [:logger, :websockex],
       mod: {Juvet, []}
     ]
   end
@@ -51,14 +43,12 @@ defmodule Juvet.Mixfile do
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
-      {:exvcr, "~> 0.13", only: [:dev, :test]},
-      {:httpoison, "~> 1.0"},
-      {:jason, "~> 1.4", optional: true},
+      {:jason, "~> 1.4"},
       {:mock, "~> 0.3.0", only: :test},
       {:oauth2, "~> 2.1.0"},
       {:plug, "~> 1.14"},
       {:plug_cowboy, "~> 2.0", only: :test},
-      {:poison, "~> 4.0"},
+      {:req, "~> 0.5"},
       {:websockex, "~> 0.5"}
     ]
   end

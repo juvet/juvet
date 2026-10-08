@@ -75,7 +75,7 @@ defmodule Juvet.Router.Conn do
     !is_nil(get_response_sent(get_private(conn)))
   end
 
-  defp format_response_body(body) when is_map(body), do: body |> Poison.encode!()
+  defp format_response_body(body) when is_map(body), do: body |> Juvet.JSON.encode!()
   defp format_response_body(body), do: body
 
   defp get_config(%Plug.Conn{} = conn), do: get_config(get_private(conn))

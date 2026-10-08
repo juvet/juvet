@@ -25,7 +25,7 @@ defmodule Juvet.Integration.SlackBlockActionTest do
         "type" => "block_actions",
         "actions" => [%{"action_id" => "test_action_id"}]
       }
-      |> Poison.encode!()
+      |> Jason.encode!()
 
     [
       {"token", "SLACK_TOKEN"},

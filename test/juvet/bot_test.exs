@@ -1,6 +1,8 @@
 defmodule Juvet.Bot.BotTest do
   use ExUnit.Case
-  use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
+  import Juvet.CassetteHelpers
+
+  setup {Req.Test, :set_req_test_to_shared}
 
   import Juvet.ConfigurationHelpers
 
@@ -63,7 +65,7 @@ defmodule Juvet.Bot.BotTest do
 
         client = SlackRTMReceiver.get_connection(pid)
 
-        message = Poison.encode!(%{type: "hello"})
+        message = Jason.encode!(%{type: "hello"})
         WebSockex.send_frame(client, {:text, message})
 
         :timer.sleep(500)

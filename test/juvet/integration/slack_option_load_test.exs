@@ -31,7 +31,7 @@ defmodule Juvet.Integration.SlackOptionLoadTest do
         {"is_cleared", true}
       ]
       |> Enum.into(%{})
-      |> Poison.encode!()
+      |> Jason.encode!()
 
     [
       {"payload", payload}
