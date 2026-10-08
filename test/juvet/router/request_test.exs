@@ -104,4 +104,26 @@ defmodule Juvet.Router.RequestTest do
       refute Request.match_path?(request, "/slack/blah")
     end
   end
+
+  describe "match_exact_path?/2" do
+    test "returns true if the path is exactly the match" do
+      assert Request.match_exact_path?(request("/auth/slack"), "/auth/slack")
+    end
+
+    test "ignores trailing slashes and the query string" do
+      assert Request.match_exact_path?(request("/auth/slack/?code=CODE"), "/auth/slack")
+      assert Request.match_exact_path?(request("/auth/slack"), "/auth/slack/")
+    end
+
+    test "returns false if the path only starts with the match" do
+      refute Request.match_exact_path?(request("/auth/slack/callback"), "/auth/slack")
+    end
+
+    test "returns false without a path or a match" do
+      refute Request.match_exact_path?(%Request{path: nil}, "/auth/slack")
+      refute Request.match_exact_path?(request("/auth/slack"), nil)
+    end
+  end
+
+  defp request(path), do: Request.new(%{method: "GET", request_path: path})
 end

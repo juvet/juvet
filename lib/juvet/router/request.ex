@@ -82,7 +82,31 @@ defmodule Juvet.Router.Request do
   def match_path?(%__MODULE__{path: path}, nil), do: !is_nil(path)
   def match_path?(%__MODULE__{path: path}, match), do: Regex.match?(~r/^#{match}/, path)
 
+  @doc """
+  Returns true if the request path is exactly `match`, ignoring a query string
+  and trailing slashes.
+
+  Unlike `match_path?/2`, `/auth/slack/callback` does not match `/auth/slack`.
+  OAuth endpoints use this so the callback is never routed to the request
+  endpoint.
+  """
+  @spec match_exact_path?(Juvet.Router.Request.t(), String.t() | nil) :: boolean()
+  def match_exact_path?(%__MODULE__{path: path}, match)
+      when is_binary(path) and is_binary(match),
+      do: normalize_path(path) == normalize_path(match)
+
+  def match_exact_path?(%__MODULE__{}, _match), do: false
+
   defp base_url_port(:http, 80), do: ""
   defp base_url_port(:https, 443), do: ""
   defp base_url_port(_, port), do: [?:, Integer.to_string(port)]
+
+  defp normalize_path(path) do
+    [path | _query] = String.split(path, "?", parts: 2)
+
+    case String.trim_trailing(path, "/") do
+      "" -> "/"
+      trimmed -> trimmed
+    end
+  end
 end

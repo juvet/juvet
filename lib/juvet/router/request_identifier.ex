@@ -25,7 +25,7 @@ defmodule Juvet.Router.RequestIdentifier do
     def oauth_path(request, configuration) do
       Juvet.Config.oauth_paths_for(:slack, configuration)
       |> Enum.find_value(fn path ->
-        if Request.match_path?(request, path[:path]), do: to_string(path[:type])
+        if Request.match_exact_path?(request, path[:path]), do: to_string(path[:type])
       end)
     end
 
@@ -38,7 +38,7 @@ defmodule Juvet.Router.RequestIdentifier do
     defp match_oauth_paths?(request, paths) do
       paths
       |> Enum.any?(fn path ->
-        Request.match_path?(request, path[:path])
+        Request.match_exact_path?(request, path[:path])
       end)
     end
   end

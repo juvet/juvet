@@ -10,7 +10,7 @@ defmodule Juvet.Middleware.IdentifyRequestTest do
 
       [
         configuration: configuration,
-        oauth_request_path: Juvet.Config.slack(configuration)["oauth_request_endpoint"]
+        oauth_request_path: Juvet.Config.slack(configuration)[:oauth_request_endpoint]
       ]
     end
 
