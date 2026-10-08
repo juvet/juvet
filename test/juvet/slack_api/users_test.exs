@@ -1,12 +1,8 @@
 defmodule Juvet.SlackAPI.UsersTest do
   use ExUnit.Case, async: true
-  use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
+  import Juvet.CassetteHelpers
 
   alias Juvet.SlackAPI
-
-  setup_all do
-    HTTPoison.start()
-  end
 
   setup do
     {:ok, user: "USER1", token: "TOKEN"}

@@ -58,7 +58,7 @@ defmodule Juvet.PlugHelpers do
               message: "Response status of #{conn.status} does not match #{status}"
             )
 
-        conn.resp_body |> Poison.decode!()
+        conn.resp_body |> Jason.decode!()
       end
 
       defp ensure_encodable(map) do

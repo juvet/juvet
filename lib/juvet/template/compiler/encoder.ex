@@ -2,23 +2,13 @@ defmodule Juvet.Template.Compiler.Encoder do
   @moduledoc """
   Behaviour for JSON encoding in the template compiler.
 
-  ## Configuration
+  Encoding goes through `Juvet.JSON`, so it uses the `:json_library` config:
 
-  Configure the encoder in your application config:
-
-      config :juvet, :json_encoder, Jason
-
-  Defaults to Poison if not configured.
+      config :juvet, :json_library, Jason
   """
 
   @callback encode!(term()) :: String.t()
 
   @spec encode!(term()) :: String.t()
-  def encode!(data) do
-    encoder().encode!(data)
-  end
-
-  defp encoder do
-    Application.get_env(:juvet, :json_encoder, Poison)
-  end
+  defdelegate encode!(data), to: Juvet.JSON
 end

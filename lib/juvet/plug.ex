@@ -27,7 +27,7 @@ defmodule Juvet.Plug do
     parsers: [:json, :multipart, :urlencoded],
     pass: ["*/*"],
     body_reader: {Juvet.CacheBodyReader, :read_body, []},
-    json_decoder: Poison
+    json_decoder: {Juvet.JSON, :decode!, []}
   )
 
   plug(:dispatch)

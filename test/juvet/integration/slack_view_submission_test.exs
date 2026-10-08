@@ -36,7 +36,7 @@ defmodule Juvet.Integration.SlackViewSubmissionTest do
         {"view", view}
       ]
       |> Enum.into(%{})
-      |> Poison.encode!()
+      |> Jason.encode!()
 
     [
       {"payload", payload}

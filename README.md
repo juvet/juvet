@@ -39,11 +39,11 @@ Thank you for the support! :heartbeat:
 
 ## SUPPORTED VERSIONS
 
-Juvet requires **Elixir ~> 1.14** and **Erlang/OTP 25+**.
+Juvet requires **Elixir ~> 1.15** and **Erlang/OTP 25+**.
 
 Every change is tested in CI against two version pairs:
 
-* the oldest supported pair (Elixir 1.14 / OTP 25), so the declared floor is always proven to work
+* the oldest supported pair (Elixir 1.15 / OTP 25), so the declared floor is always proven to work
 * the latest stable pair (currently Elixir 1.19 / OTP 28), with `--warnings-as-errors`, so consumers on newer Elixir never see compiler warnings from Juvet
 
 Raising the Elixir floor is considered a breaking change; it will only happen in a new minor version and will be called out in the [CHANGELOG](CHANGELOG.md).
@@ -143,6 +143,27 @@ config :juvet,
     events_endpoint: "/slack/events",
     options_load_endpoint: "/slack/options"
   ]
+```
+
+#### JSON and HTTP client
+
+Juvet encodes and decodes JSON with [Jason](https://hex.pm/packages/jason) and calls Slack with [Req](https://hex.pm/packages/req) by default. Both can be swapped:
+
+```
+# config/config.exs
+
+config :juvet, :json_library, Jason
+config :juvet, :http_client, Juvet.HTTPClient.Req
+```
+
+`:json_library` takes any module with `encode!/1`, `decode/2` and `decode!/2`. `:http_client` takes any module that implements the `Juvet.HTTPClient` behaviour.
+
+Options for the default client are passed straight to Req. For example, to stub Slack in your tests with `Req.Test`:
+
+```
+# config/test.exs
+
+config :juvet, Juvet.HTTPClient.Req, plug: {Req.Test, Juvet.HTTPClient}
 ```
 
 ### Mount Router
