@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Security
+
+- The Slack OAuth flow now requires a `state` parameter. The request phase
+  stores a random state in a signed, HttpOnly cookie scoped to the callback
+  endpoint (`Juvet.OAuth.State`), and the callback routes to the `error`
+  action with `context.error == :invalid_state` when it doesn't match.
+  **Breaking:** the request phase returns a configuration error unless
+  `slack: [state_secret: ...]` is set.
+- The Slack authorize URL no longer includes `client_secret`. It was being
+  sent to the browser of every user who started OAuth.
+
 ### Added
 
 - Cheex attribute values can be dotted paths (`text: item.decision`, any

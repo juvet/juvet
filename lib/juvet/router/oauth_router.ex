@@ -56,7 +56,6 @@ defmodule Juvet.Router.OAuthRouter do
       |> params_from_config([
         :app_id,
         :client_id,
-        :client_secret,
         :scope,
         :user_scope,
         :redirect_uri

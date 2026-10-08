@@ -169,9 +169,36 @@ end
 
 #### Authorizing with your Slack app
 
-Currently Juvet does not perform any oauth functionality. That will be coming soon so it is up to your application to connect your app to Slack via OAuth. If you are using [ueberauth](https://github.com/ueberauth/ueberauth), then [ueberauth_slack](https://github.com/ueberauth/ueberauth_slack) is a good choice to get your users authorized with Slack.
+Juvet handles the Slack OAuth v2 ("Add to Slack") flow. Configure the endpoints and your Slack app credentials:
 
-Once your get the bot access token for your team, you are ready to go.
+```elixir
+config :juvet,
+  router: MyRouter,
+  slack: [
+    oauth_request_endpoint: "/auth/slack",
+    oauth_callback_endpoint: "/auth/slack/callback",
+    client_id: System.fetch_env!("SLACK_CLIENT_ID"),
+    client_secret: System.fetch_env!("SLACK_CLIENT_SECRET"),
+    redirect_uri: "https://example.com/auth/slack/callback",
+    scope: "chat:write,commands",
+    state_secret: System.fetch_env!("SLACK_STATE_SECRET")
+  ]
+```
+
+Then route the results in your router:
+
+```elixir
+platform :slack do
+  oauth("success", to: "my_app.slack#oauth_success")
+  oauth("error", to: "my_app.slack#oauth_error")
+end
+```
+
+Visiting the request endpoint redirects to Slack. The success action receives the token response as `context.auth_response`. The error action receives `context.error`.
+
+The `state_secret` is required. Juvet sends a random `state` to Slack and stores it in a signed, HttpOnly cookie scoped to the callback endpoint. The callback checks that the `state` Slack sends back matches the cookie. If it doesn't, the request goes to the error action with `context.error` set to `:invalid_state`. This protects the flow against CSRF and login injection. Generate the secret with `mix phx.gen.secret` or `openssl rand -base64 48`.
+
+Once you have the bot access token for your team, you are ready to go.
 
 #### Connecting to your Slack app
 
