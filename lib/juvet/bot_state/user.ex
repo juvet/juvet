@@ -13,6 +13,9 @@ defmodule Juvet.BotState.User do
   @enforce_keys [:id]
   defstruct [:id, :name, :scopes, :token, :username]
 
+  @doc """
+  Populate a new `Juvet.BotState.User` from an authorization hash.
+  """
   def from_auth(auth) do
     %__MODULE__{
       id: get_in(auth, [:authed_user, :id]),
