@@ -12,7 +12,7 @@ defmodule Juvet.OAuth.Slack do
   def client do
     config()
     |> Client.new()
-    |> Client.put_serializer("application/json", Poison)
+    |> Client.put_serializer("application/json", Juvet.JSON.library())
   end
 
   @spec get_token!(params :: keyword()) :: OAuth2.Client.t()

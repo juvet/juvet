@@ -1,6 +1,8 @@
 defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
   use ExUnit.Case
-  use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
+  import Juvet.CassetteHelpers
+
+  setup {Req.Test, :set_req_test_to_shared}
 
   alias Juvet.Connection.SlackRTM
 
@@ -82,7 +84,7 @@ defmodule Juvet.Connection.SlackRTM.SlackRTMTest do
     test "publishes the message to incoming slack message subscribers", %{
       token: token
     } do
-      message = Poison.encode!(%{type: "hello"})
+      message = Jason.encode!(%{type: "hello"})
 
       use_cassette "rtm/connect/successful" do
         {:ok, pid} = SlackRTM.connect(self(), %{token: token})

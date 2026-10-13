@@ -1,6 +1,6 @@
 defmodule Juvet.Integration.SlackOauthTest do
   use ExUnit.Case, async: true
-  use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
+  import Juvet.CassetteHelpers
   use Juvet.PlugHelpers
 
   alias Juvet.OAuth.State

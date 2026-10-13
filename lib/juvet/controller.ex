@@ -169,10 +169,13 @@ defmodule Juvet.Controller do
   defp send_url_response(url, %Response{body: body}), do: send_url_response(url, body)
 
   defp send_url_response(url, response) when is_map(response),
-    do: send_url_response(url, response |> Poison.encode!())
+    do: send_url_response(url, response |> Juvet.JSON.encode!())
 
   defp send_url_response(url, response) when is_binary(response) do
-    HTTPoison.post!(url, response, [{"Content-Type", "application/json"}])
+    {:ok, response} =
+      Juvet.HTTPClient.request(:post, url, [{"content-type", "application/json"}], response)
+
+    response
   end
 
   defp send_the_response(context) do

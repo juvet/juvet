@@ -22,7 +22,7 @@ defmodule Juvet.FakeSlack.Websocket do
   end
 
   def websocket_handle({:text, message}, state) do
-    send_message_to_client_pid({:message_received, Poison.decode!(message)})
+    send_message_to_client_pid({:message_received, Jason.decode!(message)})
 
     {:reply, {:text, message}, state}
   end

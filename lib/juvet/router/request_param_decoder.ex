@@ -13,7 +13,7 @@ defmodule Juvet.Router.RequestParamDecoder do
     def decode(%Request{raw_params: nil} = request), do: request
 
     def decode(%Request{raw_params: %{"payload" => payload}} = request) do
-      case Poison.decode(payload) do
+      case Juvet.JSON.decode(payload) do
         {:ok, payload} ->
           %{request | raw_params: put_in(request.raw_params, ["payload"], payload)}
 

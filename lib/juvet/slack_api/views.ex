@@ -94,7 +94,7 @@ defmodule Juvet.SlackAPI.Views do
   end
 
   defp encode_view(nil), do: nil
-  defp encode_view(view), do: Poison.encode!(view)
+  defp encode_view(view), do: Juvet.JSON.encode!(view)
 
   defp transform_options(options) do
     options

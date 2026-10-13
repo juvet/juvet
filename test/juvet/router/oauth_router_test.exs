@@ -1,6 +1,6 @@
 defmodule Juvet.Router.OAuthRouterTest do
   use ExUnit.Case, async: true
-  use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
+  import Juvet.CassetteHelpers
 
   alias Juvet.Router.OAuthRouter
 

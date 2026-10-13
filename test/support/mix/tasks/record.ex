@@ -1,10 +1,9 @@
 defmodule Mix.Tasks.Record do
   @moduledoc """
-  Mix task to record VCR cassettes from Slack API requests.
+  Mix task to record Slack API responses into `test/fixtures/vcr_cassettes`.
   """
 
   use Mix.Task
-  use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
   alias Juvet.SlackAPI
 
@@ -17,61 +16,54 @@ defmodule Mix.Tasks.Record do
     "users.info"
   ]
 
-  @shortdoc "Re-record ExVCR cassettes for the Slack endpoints"
+  @cassette_dir "test/fixtures/vcr_cassettes"
+
+  @filters [
+    {~r/wss:.*=/, "ws:\\/\\/localhost:51345\\/ws"},
+    {~r{https://slack.com}, "http://localhost:51345"}
+  ]
+
+  @shortdoc "Re-record the Slack API cassettes"
   def run(args) do
+    Application.put_env(:juvet, Juvet.HTTPClient.Req, [])
+    Application.ensure_all_started(:req)
+
     params =
       args
       |> Enum.map(fn arg -> String.split(arg, ":") end)
       |> Enum.into(%{}, fn [a, b] -> {String.trim_trailing(a, ":"), b} end)
 
     {method, params} = Map.pop(params, "method")
-
-    methods =
-      case method do
-        nil -> @all_methods
-        method -> [method]
-      end
-
     params = params |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
 
-    Enum.each(methods, fn method_name ->
-      delete_cassettes(method_name)
-    end)
-
-    SlackAPI.start()
+    methods = if method, do: [method], else: @all_methods
 
     Enum.each(methods, fn method_name ->
-      record_successful(method_name, params)
-    end)
-
-    Enum.each(methods, fn method_name ->
-      record_invalid_auth(method_name)
+      record(method_name, "successful", params)
+      record(method_name, "invalid_auth", %{token: "blah"})
     end)
   end
 
   def cassette_directory_name(method_name) do
-    String.replace(method_name, ".", "/")
+    method_name |> String.replace(".", "/") |> String.downcase()
   end
 
-  def delete_cassettes(method_name) do
-    cassette_library_dir = ExVCR.Setting.get(:cassette_library_dir)
+  defp record(method_name, outcome, params) do
+    {:ok, response} = SlackAPI.make_request(method_name, params)
 
-    Mix.Task.rerun("vcr.delete", [
-      "-d",
-      "#{cassette_library_dir}/#{cassette_directory_name(method_name)}",
-      "--all"
-    ])
+    path = Path.join([@cassette_dir, cassette_directory_name(method_name), outcome <> ".json"])
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, Jason.encode!([%{response: to_cassette(response)}], pretty: true))
   end
 
-  def record_invalid_auth(method_name) do
-    use_cassette "#{cassette_directory_name(method_name)}/invalid_auth" do
-      SlackAPI.make_request(method_name, %{token: "blah"})
-    end
-  end
-
-  def record_successful(method_name, params) do
-    use_cassette "#{cassette_directory_name(method_name)}/successful" do
-      SlackAPI.make_request(method_name, params)
-    end
+  defp to_cassette(%{status: status, headers: headers, body: body}) do
+    %{
+      status_code: status,
+      headers: Map.new(headers),
+      body:
+        Enum.reduce(@filters, body, fn {pattern, replacement}, acc ->
+          Regex.replace(pattern, acc, replacement)
+        end)
+    }
   end
 end

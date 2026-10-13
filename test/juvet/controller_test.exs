@@ -230,5 +230,23 @@ defmodule Juvet.ControllerTest do
       assert conn.status == 404
       assert response.status == 404
     end
+
+    test "posts a map response as JSON when the context is a response url" do
+      Req.Test.stub(Juvet.HTTPClient, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+        assert conn.request_path == "/commands/1234/5678"
+        assert Plug.Conn.get_req_header(conn, "content-type") == ["application/json"]
+        assert Jason.decode!(body) == %{"text" => "Hello"}
+
+        Plug.Conn.send_resp(conn, 200, "ok")
+      end)
+
+      assert %{status: 200, body: "ok"} =
+               MyController.send_response_test(
+                 "https://hooks.slack.com/commands/1234/5678",
+                 Response.new(body: %{text: "Hello"})
+               )
+    end
   end
 end
