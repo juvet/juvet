@@ -3,6 +3,8 @@ defmodule Juvet.MiddlewareProcessor do
   Processes a list of middleware.
   """
 
+  require Logger
+
   @doc """
   Enumerates through all of the middleware from within the `Context` and calls `call/1` with
   the provided middleware.
@@ -24,6 +26,14 @@ defmodule Juvet.MiddlewareProcessor do
   """
   @spec process(module(), map()) :: {:ok, map()} | {:error, any()}
   def process(middleware, context) do
-    middleware.call(context)
+    middleware |> log_middleware_call() |> then(fn middleware -> middleware.call(context) end)
+  end
+
+  defp log_middleware_call(middleware, args \\ nil) do
+    Logger.debug(
+      "Calling middleware: #{inspect(middleware)}#{if args, do: " with args: #{inspect(args)}", else: ""}"
+    )
+
+    middleware
   end
 end
