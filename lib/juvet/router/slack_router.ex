@@ -48,9 +48,12 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   defp find_slack_route(%Route{type: :command, route: command_text} = route, request, _opts) do
-    if command_request?(request, command_text) and text_matches?(route, request) and
-         if_matches?(route, request),
-       do: route
+    matches? =
+      command_request?(request, command_text) and
+        text_matches?(route, request) and
+        if_matches?(route, request)
+
+    if matches?, do: route
   end
 
   defp find_slack_route(%Route{type: :event, route: event} = route, request, _opts) do
