@@ -87,25 +87,27 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   # Matches a command route's optional `:text` against the command's text: a
-  # string or list of strings against the first word (ignoring case), a regex
-  # against the whole trimmed text. Without `:text` any text matches.
+  # string against the text's leading words (ignoring case and spacing), a
+  # list when any entry does, a regex against the whole trimmed text. Without
+  # `:text` any text matches.
   defp text_matches?(route, %Request{raw_params: raw_params}) do
     text = (raw_params["text"] || "") |> String.trim()
 
     case Keyword.get(route.options, :text) do
       nil -> true
       %Regex{} = pattern -> Regex.match?(pattern, text)
-      words when is_list(words) -> first_word(text) in Enum.map(words, &String.downcase/1)
-      word when is_binary(word) -> first_word(text) == String.downcase(word)
+      phrases when is_list(phrases) -> Enum.any?(phrases, &leading_words?(text, &1))
+      phrase when is_binary(phrase) -> leading_words?(text, phrase)
     end
   end
 
-  defp first_word(text) do
-    text
-    |> String.downcase()
-    |> String.split(~r/\s+/, parts: 2, trim: true)
-    |> List.first()
+  defp leading_words?(text, phrase) do
+    expected = words(phrase)
+
+    expected != [] and Enum.take(words(text), length(expected)) == expected
   end
+
+  defp words(text), do: text |> String.downcase() |> String.split(~r/\s+/, trim: true)
 
   # Evaluates the route's optional `:if` predicate against the request.
   # When `:if` is absent the route is treated as matching.

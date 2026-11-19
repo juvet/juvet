@@ -38,11 +38,15 @@ defmodule Juvet.Router do
   end
 
   @doc """
-  Routes a slash command. `:text` narrows it to a subcommand: a string or list
-  of strings matches the first word of the text (ignoring case), a regex the
-  whole trimmed text. Without `:text` the route matches any text.
+  Routes a slash command. `:text` narrows it to a subcommand: a string matches
+  the leading words of the text (ignoring case and extra spaces), so
+  `"show sent"` matches `/super show sent today`; a list matches when any of
+  its entries does; a regex matches the whole trimmed text. Without `:text` the
+  route matches any text. Routes match in definition order, so define
+  `"show sent"` before `"show"`.
 
       command "/super", text: "billing", to: "billing#show"
+      command "/super", text: "show sent", to: "lists#sent"
       command "/super", text: ["list", "show"], to: "lists#show"
       command "/super", text: ~r/^$/, to: "home#show"
   """

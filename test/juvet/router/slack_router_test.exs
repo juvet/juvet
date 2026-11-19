@@ -199,6 +199,41 @@ defmodule Juvet.Router.SlackRouterTest do
       refute routed_to(routes, %{"text" => "billing"})
     end
 
+    test "a multi-word string matches the same number of leading words" do
+      routes = [Route.new(:command, "/super", text: "show sent", to: "sent")]
+
+      assert routed_to(routes, %{"text" => "show sent"}) == "sent"
+      assert routed_to(routes, %{"text" => " Show   SENT today"}) == "sent"
+      refute routed_to(routes, %{"text" => "show"})
+      refute routed_to(routes, %{"text" => "show received"})
+      refute routed_to(routes, %{"text" => "sent show"})
+    end
+
+    test "a list can mix one-word and multi-word entries" do
+      routes = [Route.new(:command, "/super", text: ["show received", "inbox"], to: "received")]
+
+      assert routed_to(routes, %{"text" => "show received"}) == "received"
+      assert routed_to(routes, %{"text" => "inbox"}) == "received"
+      refute routed_to(routes, %{"text" => "show sent"})
+    end
+
+    test "the longer phrase wins when it is defined first" do
+      routes = [
+        Route.new(:command, "/super", text: "show sent", to: "sent"),
+        Route.new(:command, "/super", text: "show", to: "show")
+      ]
+
+      assert routed_to(routes, %{"text" => "show sent"}) == "sent"
+      assert routed_to(routes, %{"text" => "show received"}) == "show"
+    end
+
+    test "a blank string matches nothing" do
+      routes = [Route.new(:command, "/super", text: "  ", to: "blank")]
+
+      refute routed_to(routes, %{"text" => ""})
+      refute routed_to(routes, %{"text" => "billing"})
+    end
+
     test "a regex matches against the whole trimmed text" do
       routes = [Route.new(:command, "/super", text: ~r/^$/, to: "bare")]
 
