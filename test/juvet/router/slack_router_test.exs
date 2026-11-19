@@ -139,6 +139,90 @@ defmodule Juvet.Router.SlackRouterTest do
     end
   end
 
+  describe "find_route/2 with a :text option on a command" do
+    defp command_router(routes) do
+      {:ok, platform} =
+        Enum.reduce(routes, {:ok, Platform.new(:slack)}, fn route, {:ok, acc} ->
+          Platform.put_route(acc, route)
+        end)
+
+      SlackRouter.new(platform)
+    end
+
+    defp command_request(params) do
+      request = Request.new(%{params: Map.merge(%{"command" => "/super"}, params)})
+      %{request | platform: :slack, verified?: true}
+    end
+
+    defp routed_to(routes, params) do
+      case SlackRouter.find_route(command_router(routes), command_request(params)) do
+        {:ok, route} -> route.options[:to]
+        {:error, _} -> nil
+      end
+    end
+
+    test "matches any text when :text is not given" do
+      routes = [Route.new(:command, "/super", to: "any")]
+
+      assert routed_to(routes, %{"text" => "whatever you like"}) == "any"
+      assert routed_to(routes, %{}) == "any"
+    end
+
+    test "a string matches the first word of the text, ignoring case and spacing" do
+      routes = [Route.new(:command, "/super", text: "billing", to: "billing")]
+
+      assert routed_to(routes, %{"text" => "billing"}) == "billing"
+      assert routed_to(routes, %{"text" => "  Billing now please"}) == "billing"
+      refute routed_to(routes, %{"text" => "broadcast"})
+      refute routed_to(routes, %{"text" => "billings"})
+      refute routed_to(routes, %{})
+    end
+
+    # Before :text was honored the first route for a command caught every
+    # subcommand, so routes had to be ordered and guarded with :if.
+    test "picks the route whose text matches, whatever order they were defined in" do
+      routes = [
+        Route.new(:command, "/super", text: "billing", to: "billing"),
+        Route.new(:command, "/super", text: "broadcast", to: "broadcast")
+      ]
+
+      assert routed_to(routes, %{"text" => "broadcast"}) == "broadcast"
+      assert routed_to(routes, %{"text" => "billing"}) == "billing"
+      refute routed_to(routes, %{"text" => "help"})
+    end
+
+    test "a list matches when the first word is any of them" do
+      routes = [Route.new(:command, "/super", text: ["list", "show"], to: "list")]
+
+      assert routed_to(routes, %{"text" => "show sent"}) == "list"
+      assert routed_to(routes, %{"text" => "list"}) == "list"
+      refute routed_to(routes, %{"text" => "billing"})
+    end
+
+    test "a regex matches against the whole trimmed text" do
+      routes = [Route.new(:command, "/super", text: ~r/^$/, to: "bare")]
+
+      assert routed_to(routes, %{"text" => ""}) == "bare"
+      assert routed_to(routes, %{"text" => "   "}) == "bare"
+      assert routed_to(routes, %{}) == "bare"
+      refute routed_to(routes, %{"text" => "list"})
+    end
+
+    test "requires :text and :if to both match" do
+      routes = [
+        Route.new(:command, "/super",
+          text: "billing",
+          if: fn %{raw_params: params} -> params["user_id"] == "U1" end,
+          to: "billing"
+        )
+      ]
+
+      assert routed_to(routes, %{"text" => "billing", "user_id" => "U1"}) == "billing"
+      refute routed_to(routes, %{"text" => "billing", "user_id" => "U2"})
+      refute routed_to(routes, %{"text" => "broadcast", "user_id" => "U1"})
+    end
+  end
+
   describe "request_format/1" do
     test "returns :message when the payload has a message request" do
       payload = %{

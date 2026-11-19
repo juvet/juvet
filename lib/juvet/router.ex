@@ -37,6 +37,15 @@ defmodule Juvet.Router do
     end
   end
 
+  @doc """
+  Routes a slash command. `:text` narrows it to a subcommand: a string or list
+  of strings matches the first word of the text (ignoring case), a regex the
+  whole trimmed text. Without `:text` the route matches any text.
+
+      command "/super", text: "billing", to: "billing#show"
+      command "/super", text: ["list", "show"], to: "lists#show"
+      command "/super", text: ~r/^$/, to: "home#show"
+  """
   defmacro command(command, options \\ []) do
     quote do
       Router.State.put_route_on_top!(

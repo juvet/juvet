@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** command routes honor their `:text` option. A string or list of
+  strings matches the first word of the command text (ignoring case), a regex
+  the whole trimmed text; without `:text` a route still matches any text.
+  `:text` used to be stored but ignored, so the first route for a command caught
+  every subcommand and routes had to be ordered and guarded with `:if`. Routes
+  that already set `:text` now only match it.
 - **Breaking:** Juvet calls Slack with Req and encodes JSON with Jason instead of
   HTTPoison and Poison. Both are now configurable, the same way Phoenix and
   Swoosh are: `config :juvet, :json_library, Jason` and

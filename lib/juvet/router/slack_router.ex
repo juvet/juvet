@@ -48,7 +48,9 @@ defmodule Juvet.Router.SlackRouter do
   end
 
   defp find_slack_route(%Route{type: :command, route: command_text} = route, request, _opts) do
-    if command_request?(request, command_text) and if_matches?(route, request), do: route
+    if command_request?(request, command_text) and text_matches?(route, request) and
+         if_matches?(route, request),
+       do: route
   end
 
   defp find_slack_route(%Route{type: :event, route: event} = route, request, _opts) do
@@ -79,6 +81,27 @@ defmodule Juvet.Router.SlackRouter do
          _opts
        ) do
     if view_submission_request?(request, callback_id) and if_matches?(route, request), do: route
+  end
+
+  # Matches a command route's optional `:text` against the command's text: a
+  # string or list of strings against the first word (ignoring case), a regex
+  # against the whole trimmed text. Without `:text` any text matches.
+  defp text_matches?(route, %Request{raw_params: raw_params}) do
+    text = (raw_params["text"] || "") |> String.trim()
+
+    case Keyword.get(route.options, :text) do
+      nil -> true
+      %Regex{} = pattern -> Regex.match?(pattern, text)
+      words when is_list(words) -> first_word(text) in Enum.map(words, &String.downcase/1)
+      word when is_binary(word) -> first_word(text) == String.downcase(word)
+    end
+  end
+
+  defp first_word(text) do
+    text
+    |> String.downcase()
+    |> String.split(~r/\s+/, parts: 2, trim: true)
+    |> List.first()
   end
 
   # Evaluates the route's optional `:if` predicate against the request.
