@@ -21,6 +21,7 @@ defmodule Juvet.Controller.SlackViewState do
   defp form_value(%{"selected_date" => value}), do: value
   defp form_value(%{"selected_option" => %{"value" => value}}), do: value
   defp form_value(%{"selected_time" => value}), do: value
+  defp form_value(%{"selected_users" => users}), do: users
 
   defp form_value(%{"selected_options" => options}) do
     Enum.map(options, fn %{"value" => value} -> value end)

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- `parse_view_state/1` returns the selected user ids of a multi users select
+  (`selected_users`) instead of the raw action map.
+
 ### Changed
 
 - **Breaking:** command routes honor their `:text` option. A string matches the
