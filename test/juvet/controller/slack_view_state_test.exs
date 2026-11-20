@@ -19,6 +19,29 @@ defmodule Juvet.Controller.SlackViewStateTest do
              }
     end
 
+    test "returns the user ids from Slack's multi users select" do
+      view_state = %{
+        "block_id" => %{
+          "assignees" => %{
+            "selected_users" => ["U111", "U222"],
+            "type" => "multi_users_select"
+          }
+        }
+      }
+
+      assert SlackViewState.parse(view_state) == %{"assignees" => ["U111", "U222"]}
+    end
+
+    test "returns an empty list when nobody is selected in a multi users select" do
+      view_state = %{
+        "block_id" => %{
+          "assignees" => %{"selected_users" => [], "type" => "multi_users_select"}
+        }
+      }
+
+      assert SlackViewState.parse(view_state) == %{"assignees" => []}
+    end
+
     test "returns a map of keys and values parsed from Slack's plain text value" do
       view_state = %{
         "block_id" => %{
