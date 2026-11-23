@@ -16,6 +16,9 @@ defmodule Juvet.BotState.Team do
 
   alias Juvet.BotState.User
 
+  @doc """
+  Populate a new `Juvet.BotState.Team` from an authorization hash.
+  """
   def from_auth(auth) do
     %__MODULE__{
       id: get_in(auth, [:team, :id]),
@@ -25,6 +28,10 @@ defmodule Juvet.BotState.Team do
     }
   end
 
+  @doc """
+  Puts a new `Juvet.BotState.User` into the `Juvet.BotState.Team` and returns a new `Juvet.BotState.Team` with
+  the new user.
+  """
   @spec put_user(Juvet.BotState.Team.t(), map()) ::
           {Juvet.BotState.Team.t(), Juvet.BotState.User.t()}
   def put_user(team, %{id: user_id} = user) do
@@ -44,11 +51,18 @@ defmodule Juvet.BotState.Team do
     end
   end
 
+  @doc """
+  Returns a boolean to indiciated if the provided `Juvet.BotState.Team` contains a `Juvet.BotState.User`
+  with the specified user id..
+  """
   @spec has_user?(Juvet.BotState.Team.t(), String.t()) :: boolean()
   def has_user?(team, user_id) do
     Enum.any?(team.users, &find(&1, user_id))
   end
 
+  @doc """
+  Returns a `Juvet.BotState.User` with the specified user_id from the `Juvet.BotState.Team.`
+  """
   @spec user(Juvet.BotState.Team.t(), String.t()) :: Juvet.BotState.User.t() | nil
   def user(team, user_id) do
     case Enum.find(team.users, &find(&1, user_id)) do
