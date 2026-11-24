@@ -30,6 +30,26 @@ defmodule Juvet.PlugTest do
 
       assert conn.status == 200
     end
+
+    test "logs why it didn't handle the request when asked to" do
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          request!(:post, "/slack/events", nil, nil,
+            configuration: [router: MyRouter, log_unhandled_requests: true]
+          )
+        end)
+
+      assert log =~ "Juvet did not handle POST /slack/events"
+    end
+
+    test "stays quiet about it by default" do
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          request!(:post, "/slack/events", nil, nil, configuration: [router: MyRouter])
+        end)
+
+      refute log =~ "Juvet did not handle"
+    end
   end
 
   describe "GET /slack/blah" do
