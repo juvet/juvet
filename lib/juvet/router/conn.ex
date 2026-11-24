@@ -4,6 +4,10 @@ defmodule Juvet.Router.Conn do
   the response built within the same context.
   """
 
+  require Logger
+
+  alias Juvet.Config
+
   @private_key :juvet
 
   @spec get_private(Plug.Conn.t(), any()) :: any()
@@ -98,6 +102,31 @@ defmodule Juvet.Router.Conn do
   defp maybe_halt(conn, false), do: conn
   defp maybe_halt(conn, true), do: conn |> Plug.Conn.halt()
 
+  defp describe(%{"event" => %{"type" => type}} = params),
+    do: "event #{type} team=#{params["team_id"]}"
+
+  defp describe(%{"command" => command} = params),
+    do: "command #{command} team=#{params["team_id"]}"
+
+  defp describe(%{"payload" => payload}) when is_binary(payload) do
+    case Juvet.JSON.decode(payload) do
+      {:ok, %{"type" => type} = decoded} -> "#{type} team=#{get_in(decoded, ["team", "id"])}"
+      _ -> "payload"
+    end
+  end
+
+  defp describe(_params), do: "request"
+
+  defp error_message(%{__exception__: true} = error), do: Exception.message(error)
+  defp error_message(error), do: inspect(error)
+
+  defp log_unhandled(conn, error) do
+    Logger.warning(
+      "Juvet did not handle #{conn.method} #{conn.request_path} " <>
+        "(#{describe(conn.body_params)}): #{error_message(error)}"
+    )
+  end
+
   defp maybe_send_response(%{conn: %{state: :chunked} = conn}), do: conn
   defp maybe_send_response(%{conn: %{state: :sent} = conn}), do: conn
 
@@ -108,7 +137,11 @@ defmodule Juvet.Router.Conn do
 
   defp put_headers(conn, _body), do: conn
 
-  defp send_error(conn, _error), do: conn |> Plug.Conn.send_resp(200, "")
+  defp send_error(conn, error) do
+    if Config.log_unhandled_requests?(get_config(conn)), do: log_unhandled(conn, error)
+
+    conn |> Plug.Conn.send_resp(200, "")
+  end
 
   defp set_sent(%Plug.Conn{} = conn) do
     conn |> put_private(%{response_sent: NaiveDateTime.utc_now()})

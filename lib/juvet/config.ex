@@ -11,6 +11,7 @@ defmodule Juvet.Config do
   config :juvet,
     bot: MyBot,
     router: MyRouter,
+    log_unhandled_requests: true,
     slack: [
       actions_endpoint: "/slack/actions",
       commands_endpoint: "/slack/commands",
@@ -22,6 +23,7 @@ defmodule Juvet.Config do
 
   @defaults [
     bot: MyBot,
+    log_unhandled_requests: false,
     router: nil,
     slack: nil
   ]
@@ -39,6 +41,15 @@ defmodule Juvet.Config do
   def invalid?(config) do
     bot(config) |> to_string() |> String.trim() == ""
   end
+
+  @doc """
+  Whether to log a warning, with the reason, for each request Juvet answers
+  without handling (a failed verification, no matching route, a middleware
+  error). Juvet answers those with an empty 200 either way.
+  """
+  @spec log_unhandled_requests?(Keyword.t()) :: boolean()
+  def log_unhandled_requests?(config),
+    do: Keyword.get(config, :log_unhandled_requests, @defaults[:log_unhandled_requests]) == true
 
   @doc """
   Returns a map for each configured platform and their type and path.
