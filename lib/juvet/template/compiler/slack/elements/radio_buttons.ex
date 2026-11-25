@@ -14,8 +14,9 @@ defmodule Juvet.Template.Compiler.Slack.Elements.RadioButtons do
     |> maybe_put(:confirm, compile_confirm(el))
   end
 
-  defp put_options(map, %{children: %{options: options}}) when is_list(options),
-    do: Map.put(map, :options, Enum.map(options, &Slack.compile_element/1))
+  defp put_options(map, %{children: %{options: options}})
+       when is_list(options) or is_map(options),
+       do: Map.put(map, :options, Enum.map(List.wrap(options), &Slack.compile_element/1))
 
   defp put_options(map, %{children: %{options: %{} = option}}),
     do: Map.put(map, :options, [Slack.compile_element(option)])

@@ -99,11 +99,14 @@ defmodule Juvet.Template.Compiler.Slack.Elements.Select do
     end
   end
 
-  defp put_options_or_groups(map, %{children: %{option_groups: groups}}) when is_list(groups),
-    do: Map.put(map, :option_groups, Enum.map(groups, &Slack.compile_element/1))
+  defp put_options_or_groups(map, %{children: %{option_groups: groups}})
+       when is_list(groups) or is_map(groups),
+       do:
+         Map.put(map, :option_groups, groups |> List.wrap() |> Enum.map(&Slack.compile_element/1))
 
-  defp put_options_or_groups(map, %{children: %{options: options}}) when is_list(options),
-    do: Map.put(map, :options, Enum.map(options, &Slack.compile_element/1))
+  defp put_options_or_groups(map, %{children: %{options: options}})
+       when is_list(options) or is_map(options),
+       do: Map.put(map, :options, options |> List.wrap() |> Enum.map(&Slack.compile_element/1))
 
   defp put_options_or_groups(map, _), do: map
 
