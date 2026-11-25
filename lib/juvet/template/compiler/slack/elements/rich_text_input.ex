@@ -7,11 +7,22 @@ defmodule Juvet.Template.Compiler.Slack.Elements.RichTextInput do
   def compile(%{element: :rich_text_input, attributes: attrs} = el) do
     %{type: "rich_text_input"}
     |> maybe_put(:action_id, attrs[:action_id])
-    |> maybe_put(:initial_value, attrs[:initial_value])
+    |> maybe_put(:initial_value, compile_initial_value(attrs[:initial_value]))
     |> maybe_put(:placeholder, compile_placeholder(attrs))
     |> maybe_put(:focus_on_load, attrs[:focus_on_load])
     |> maybe_put(:dispatch_action_config, compile_dispatch_action_config(el))
   end
+
+  defp compile_initial_value(text) when text in [nil, ""], do: nil
+
+  defp compile_initial_value(text) when is_binary(text) do
+    %{
+      type: "rich_text",
+      elements: [%{type: "rich_text_section", elements: [%{type: "text", text: text}]}]
+    }
+  end
+
+  defp compile_initial_value(rich_text), do: rich_text
 
   defp compile_placeholder(%{placeholder: %{text: _} = attrs}),
     do: Text.compile(attrs.text, Map.put_new(attrs, :type, :plain_text))

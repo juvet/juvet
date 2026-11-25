@@ -91,4 +91,35 @@ defmodule Juvet.Template.CompilerTest do
       assert [%{value: "a"}] = overflow[:options]
     end
   end
+
+  describe "compile/1 with a rich text input" do
+    defp rich_text_input(initial_value) do
+      compile_source("""
+      :slack.view
+        type: :home
+        blocks:
+          .actions
+            elements:
+              .rich_text_input
+                action_id: "search"
+                initial_value: "#{initial_value}"
+      """)[:blocks]
+      |> hd()
+      |> Map.fetch!(:elements)
+      |> hd()
+    end
+
+    test "wraps plain initial text in the rich text Slack expects" do
+      assert rich_text_input("deck acme")[:initial_value] == %{
+               type: "rich_text",
+               elements: [
+                 %{type: "rich_text_section", elements: [%{type: "text", text: "deck acme"}]}
+               ]
+             }
+    end
+
+    test "leaves out an empty initial text" do
+      refute Map.has_key?(rich_text_input(""), :initial_value)
+    end
+  end
 end
