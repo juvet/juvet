@@ -7,8 +7,8 @@ defmodule Juvet.Template.Compiler.Slack.Objects.OptionGroup do
     %{label: %{type: "plain_text", text: label}, options: compile_options(el)}
   end
 
-  defp compile_options(%{children: %{options: options}}) when is_list(options),
-    do: Enum.map(options, &Slack.compile_element/1)
+  defp compile_options(%{children: %{options: options}}) when is_list(options) or is_map(options),
+    do: options |> List.wrap() |> Enum.map(&Slack.compile_element/1)
 
   defp compile_options(_), do: []
 end
